@@ -26,7 +26,8 @@ template<typename BoxType> void alignedbox(const BoxType& _box)
      AlignedBox.h
   */
   typedef typename BoxType::Scalar Scalar;
-  typedef typename NumTraits<Scalar>::Real RealScalar;
+  typedef NumTraits<Scalar> ScalarTraits;
+  typedef typename ScalarTraits::Real RealScalar;
   typedef Matrix<Scalar, BoxType::AmbientDimAtCompileTime, 1> VectorType;
 
   const Index dim = _box.dim();
@@ -80,7 +81,172 @@ template<typename BoxType> void alignedbox(const BoxType& _box)
 
 }
 
+template<typename BoxType> void alignedboxTranslatable(const BoxType& _box)
+{
+  typedef typename BoxType::Scalar Scalar;
+  typedef Matrix<Scalar, BoxType::AmbientDimAtCompileTime, 1> VectorType;
+  typedef Transform<Scalar, BoxType::AmbientDimAtCompileTime, Isometry> IsometryTransform;
 
+  alignedbox(_box);
+
+  const Index dim = _box.dim();
+
+  // box((-1, -1, -1), (1, 1, 1))
+  BoxType a(-VectorType::Ones(dim), VectorType::Ones(dim));
+
+  for (Index d = 0; d < dim; ++d)
+    VERIFY_IS_APPROX(a.sizes()[d], Scalar(2));
+
+  BoxType b = a;
+  VectorType translate = VectorType::Ones(dim);
+  translate[0] = Scalar(2);
+  b.translate(translate);
+  // translate by (2, 1, 1) -> box((1, 0, 0), (3, 2, 2))
+
+  for (Index d = 0; d < dim; ++d)
+    VERIFY_IS_APPROX(b.sizes()[d], Scalar(2));
+
+  VERIFY_IS_APPROX((b.min)()[0], Scalar(1));
+  for (Index d = 1; d < dim; ++d)
+    VERIFY_IS_APPROX((b.min)()[d], Scalar(0));
+
+  VERIFY_IS_APPROX((b.max)()[0], Scalar(3));
+  for (Index d = 1; d < dim; ++d)
+    VERIFY_IS_APPROX((b.max)()[d], Scalar(2));
+
+  // Test the * and *= operator for applying a transform
+
+  IsometryTransform tf = IsometryTransform::Identity();
+  tf.translation() = -translate;
+
+  BoxType c = b * tf;  // operator* honours translation
+  // translate by (-2, -1, -1) -> box((-1, -1, -1), (1, 1, 1))
+  for (Index d = 0; d < dim; ++d)
+  {
+    VERIFY_IS_APPROX(c.sizes()[d], a.sizes()[d]);
+    VERIFY_IS_APPROX((c.min)()[d], (a.min)()[d]);
+    VERIFY_IS_APPROX((c.max)()[d], (a.max)()[d]);
+  }
+
+  c *= tf;  // operator*= honours translation
+  // translate by (-2, -1, -1) -> box((-3, -2, -2), (-1, 0, 0))
+  for (Index d = 0; d < dim; ++d)
+    VERIFY_IS_APPROX(c.sizes()[d], a.sizes()[d]);
+
+  VERIFY_IS_APPROX((c.min)()[0], Scalar(-3));
+  VERIFY_IS_APPROX((c.max)()[0], Scalar(-1));
+  for (Index d = 1; d < dim; ++d)
+  {
+    VERIFY_IS_APPROX((c.min)()[d], Scalar(-2));
+    VERIFY_IS_APPROX((c.max)()[d], Scalar(0));
+  }
+}
+
+template<typename Scalar, typename Derived>
+RotationBase<Derived, 2>* rotate2D(Scalar _angle) {
+  return new Rotation2D<Scalar>(_angle);
+}
+
+template<typename Scalar, typename Derived>
+RotationBase<Derived, 3>* rotate3DZAxis(Scalar _angle) {
+  return new AngleAxis<Scalar>(_angle, Matrix<Scalar, 3, 1>(0, 0, 1));
+}
+
+template<typename BoxType, typename Derived> void alignedboxRotatable(
+    const BoxType& _box,
+    RotationBase<Derived, BoxType::AmbientDimAtCompileTime>* (*_rotate)(typename BoxType::Scalar _angle))
+{
+  alignedboxTranslatable(_box);
+
+  typedef typename BoxType::Scalar Scalar;
+  typedef Matrix<Scalar, BoxType::AmbientDimAtCompileTime, 1> VectorType;
+  typedef Transform<Scalar, BoxType::AmbientDimAtCompileTime, Isometry> IsometryTransform;
+
+  const Index dim = _box.dim();
+
+  // in this kind of comments the 3D case values will be illustrated
+  // box((-1, -1, -1), (1, 1, 1))
+  BoxType a(-VectorType::Ones(dim), VectorType::Ones(dim));
+
+  // to allow templating this test for both 2D and 3D cases, we always set all
+  // but the first coordinate to the same value; so basically 3D case works as
+  // if you were looking at the scene from top
+
+  VectorType min = -2*VectorType::Ones(dim);
+  min[0] = -3;
+  VectorType max = VectorType::Zero(dim);
+  max[0] = -1;
+  BoxType c(min, max);
+  // box((-3, -2, -2), (-1, 0, 0))
+
+  IsometryTransform tf2 = IsometryTransform::Identity();
+  // for some weird reason the following statement has to be put separate from
+  // the following rotate call, otherwise precision problems arise...
+  RotationBase<Derived, BoxType::AmbientDimAtCompileTime>* rot = _rotate(Scalar(EIGEN_PI));
+  tf2.rotate(*rot);
+  delete rot;
+
+  c *= tf2;
+  // rotate by 180 deg ->  box((-3, -2, -2), (-1, 0, 0))
+
+  for (Index d = 0; d < dim; ++d)
+    VERIFY_IS_APPROX(c.sizes()[d], a.sizes()[d]);
+
+  VERIFY_IS_APPROX((c.min)()[0], Scalar(-3));
+  VERIFY_IS_APPROX((c.max)()[0], Scalar(-1));
+  for (Index d = 1; d < dim; ++d)
+  {
+    VERIFY_IS_APPROX((c.min)()[d], Scalar(-2));
+    // VERIFY_IS_APPROX isn't good for comparisons against zero!
+    VERIFY_IS_APPROX((c.max)()[d] + Scalar(1), Scalar(1));
+  }
+
+  rot = _rotate(Scalar(EIGEN_PI/2));
+  tf2.rotate(*rot);
+  delete rot;
+
+  c *= tf2;
+  // rotate by 90 deg ->  box((-3, -2, -2), (-1, 0, 0))
+
+  for (Index d = 0; d < dim; ++d)
+    VERIFY_IS_APPROX(c.sizes()[d], a.sizes()[d]);
+
+  VERIFY_IS_APPROX((c.min)()[0], Scalar(-3));
+  VERIFY_IS_APPROX((c.max)()[0], Scalar(-1));
+  for (Index d = 1; d < dim; ++d)
+  {
+    VERIFY_IS_APPROX((c.min)()[d], Scalar(-2));
+    // VERIFY_IS_APPROX isn't good for comparisons against zero!
+    VERIFY_IS_APPROX((c.max)()[d] + Scalar(1), Scalar(1));
+  }
+
+  rot = _rotate(Scalar(EIGEN_PI/3));
+  tf2.rotate(*rot);
+  delete rot;
+
+  c *= tf2;
+  // rotate by 60 deg ->  box((-4.36, -3.36, -2), (0.36, 1.36, 0))
+  // just draw the figure and these numbers will pop out
+
+  const VectorType sizes = a.sizes();
+  const VectorType halfSizes = sizes / Scalar(2);
+  const Scalar diagonal = numext::hypot(halfSizes[0], halfSizes[1]);
+  const Scalar newCorner = Scalar(Scalar(numext::cos(EIGEN_PI / 12)) * diagonal);
+  for (Index d = 0; d < 2; ++d)
+    VERIFY_IS_APPROX(c.sizes()[d], Scalar(2 * newCorner));
+  for (Index d = 2; d < dim; ++d)
+    VERIFY_IS_APPROX(c.sizes()[d], sizes[d]);
+
+  VERIFY_IS_APPROX((c.min)()[0], Scalar(-3 - Scalar(newCorner - halfSizes[0])));
+  VERIFY_IS_APPROX((c.max)()[0], Scalar(-1 + Scalar(newCorner - halfSizes[0])));
+  VERIFY_IS_APPROX((c.min)()[1], Scalar(-2 - Scalar(newCorner - halfSizes[1])));
+  VERIFY_IS_APPROX((c.max)()[1], Scalar(0 + Scalar(newCorner - halfSizes[1])));
+  for (Index d = 2; d < dim; ++d)
+  {
+    VERIFY_IS_APPROX((c.min)()[d], Scalar(-2));
+    VERIFY_IS_APPROX((c.max)()[d], Scalar(0));
+  }
+}
 
 template<typename BoxType>
 void alignedboxCastTests(const BoxType& _box)
@@ -165,21 +331,21 @@ void test_geo_alignedbox()
 {
   for(int i = 0; i < g_repeat; i++)
   {
-    CALL_SUBTEST_1( alignedbox(AlignedBox2f()) );
+    CALL_SUBTEST_1( (alignedboxRotatable<AlignedBox2f, Rotation2Df>(AlignedBox2f(), &rotate2D)) );
     CALL_SUBTEST_2( alignedboxCastTests(AlignedBox2f()) );
 
-    CALL_SUBTEST_3( alignedbox(AlignedBox3f()) );
+    CALL_SUBTEST_3( (alignedboxRotatable<AlignedBox3f, AngleAxisf>(AlignedBox3f(), &rotate3DZAxis)) );
     CALL_SUBTEST_4( alignedboxCastTests(AlignedBox3f()) );
 
-    CALL_SUBTEST_5( alignedbox(AlignedBox4d()) );
+    CALL_SUBTEST_5( alignedboxTranslatable(AlignedBox4d()) );
     CALL_SUBTEST_6( alignedboxCastTests(AlignedBox4d()) );
 
-    CALL_SUBTEST_7( alignedbox(AlignedBox1d()) );
+    CALL_SUBTEST_7( alignedboxTranslatable(AlignedBox1d()) );
     CALL_SUBTEST_8( alignedboxCastTests(AlignedBox1d()) );
 
-    CALL_SUBTEST_9( alignedbox(AlignedBox1i()) );
-    CALL_SUBTEST_10( alignedbox(AlignedBox2i()) );
-    CALL_SUBTEST_11( alignedbox(AlignedBox3i()) );
+    CALL_SUBTEST_9( alignedboxTranslatable(AlignedBox1i()) );
+    CALL_SUBTEST_10( alignedboxTranslatable(AlignedBox2i()) );
+    CALL_SUBTEST_11( alignedboxTranslatable(AlignedBox3i()) );
 
     CALL_SUBTEST_14( alignedbox(AlignedBox<double,Dynamic>(4)) );
   }
