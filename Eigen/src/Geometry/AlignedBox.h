@@ -38,7 +38,9 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(_Scalar,_AmbientDim)
   typedef typename ScalarTraits::Real               RealScalar;
   typedef typename ScalarTraits::NonInteger         NonInteger;
   typedef Matrix<Scalar,AmbientDimAtCompileTime,1>  VectorType;
+  typedef Matrix<Scalar,AmbientDimAtCompileTime,AmbientDimAtCompileTime>  RotationMatrixType;
   typedef CwiseBinaryOp<internal::scalar_sum_op<Scalar>, const VectorType, const VectorType> VectorTypeSum;
+  typedef Transform<Scalar, AmbientDimAtCompileTime, Affine | AffineCompact> AffineTransform;
 
   /** Define constants to name the corners of a 1D, 2D or 3D axis aligned bounding box */
   enum CornerType
@@ -246,6 +248,15 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(_Scalar,_AmbientDim)
     return *this;
   }
 
+  /** \returns a copy of \c *this translated by the vector \a t. */
+  template<typename Derived>
+  EIGEN_DEVICE_FUNC inline AlignedBox translated(const MatrixBase<Derived>& a_t) const
+  {
+    AlignedBox result(m_min, m_max);
+    result.translate(a_t);
+    return result;
+  }
+
   /** \returns the squared distance between the point \a p and the box \c *this,
     * and zero if \a p is inside the box.
     * \sa exteriorDistance(const MatrixBase&), squaredExteriorDistance(const AlignedBox&)
@@ -273,6 +284,47 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(_Scalar,_AmbientDim)
     */
   EIGEN_DEVICE_FUNC inline NonInteger exteriorDistance(const AlignedBox& b) const
   { EIGEN_USING_STD_MATH(sqrt) return sqrt(NonInteger(squaredExteriorDistance(b))); }
+
+  /**
+   * Specialization of transform for pure translation.
+   */
+  EIGEN_DEVICE_FUNC inline void transform(
+      const typename AffineTransform::TranslationType& translation)
+  {
+    this->translate(translation);
+  }
+
+  /**
+   * Transforms this box by \a transform and recomputes it to
+   * still be an axis-aligned box.
+   */
+  EIGEN_DEVICE_FUNC inline void transform(const AffineTransform& transform)
+  {
+    // Method adapted from FCL src/shape/geometric_shapes_utility.cpp#computeBV<AABB, Box>(...) (BSD-licensed code):
+    // https://github.com/flexible-collision-library/fcl/blob/fcl-0.4/src/shape/geometric_shapes_utility.cpp#L292
+    //
+    // Here's a nice explanation why it works: https://zeuxcg.org/2010/10/17/aabb-from-obb-with-component-wise-abs/
+
+    // two times rotated extent
+    const VectorType rotated_extent_2 = transform.linear().cwiseAbs() * sizes();
+    // two times new center
+    const VectorType rotated_center_2 = transform.linear() * (this->m_max + this->m_min) +
+        Scalar(2) * transform.translation();
+
+    this->m_max = (rotated_center_2 + rotated_extent_2) / Scalar(2);
+    this->m_min = (rotated_center_2 - rotated_extent_2) / Scalar(2);
+  }
+
+  /**
+   * \returns a copy of \c *this transformed by \a transform and recomputed to
+   * still be an axis-aligned box.
+   */
+  EIGEN_DEVICE_FUNC AlignedBox transformed(const AffineTransform& transform) const
+  {
+    AlignedBox result(m_min, m_max);
+    result.transform(transform);
+    return result;
+  }
 
   /** \returns \c *this with scalar type casted to \a NewScalarType
     *
