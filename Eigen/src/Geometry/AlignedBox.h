@@ -275,77 +275,129 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(_Scalar,_AmbientDim)
   EIGEN_DEVICE_FUNC inline NonInteger exteriorDistance(const AlignedBox& b) const
   { EIGEN_USING_STD_MATH(sqrt) return sqrt(NonInteger(squaredExteriorDistance(b))); }
 
-  // HACK: operator_muleq is a workaround function that allows us to have separate
+  /**
+   * Translates this box by \a translate.
+   */
+  EIGEN_DEVICE_FUNC inline void translateInPlace(
+      const typename IsometryTransform::TranslationType& translation)
+  {
+    this->m_min += translation;
+    this->m_max += translation;
+  }
+
+  /**
+   * \returns This box translateed by \a translate.
+   */
+  EIGEN_DEVICE_FUNC AlignedBox translated(
+      const typename IsometryTransform::TranslationType& translation) const
+  {
+    AlignedBox result(m_min, m_max);
+    result.translateInPlace(translation);
+    return result;
+  }
+
+  /**
+   * Translates this box by \a translate.
+   */
+  EIGEN_DEVICE_FUNC inline void translateInPlace(
+      typename IsometryTransform::ConstTranslationPart& translation)
+  {
+    this->m_min += translation;
+    this->m_max += translation;
+  }
+
+  /**
+   * \returns This box translateed by \a translate.
+   */
+  EIGEN_DEVICE_FUNC AlignedBox translated(
+      typename IsometryTransform::ConstTranslationPart& translation) const
+  {
+    AlignedBox result(m_min, m_max);
+    result.translateInPlace(translation);
+    return result;
+  }
+
+private:
+  // HACK: transformInternal is a workaround function that allows us to have separate
   // specializations of operator*= for integral and non-integral types; the problem
   // is that normally SFINAE only works on deduced template args, so we'd like to
   // have there template<typename S = Scalar>, but C++98 doesn't allow default
   // values for template arguments; so we instead make the compiler to deduce the
-  // type from the additional argument to operator_muleq.
+  // type from the additional argument to transformInternal.
 
+  // We do not want to pose any condition using S, but we have to for SFINAE to work
   template <typename S> EIGEN_DEVICE_FUNC inline
-  typename internal::enable_if<(!std::numeric_limits<S>::is_integer && AmbientDimAtCompileTime == Dynamic), AlignedBox>::type
-  &operator_muleq(const IsometryTransform &, const S*)
+  typename internal::enable_if<!NumTraits<S>::IsComplex && AmbientDimAtCompileTime == 1, AlignedBox>::type
+  &transformInternal(const IsometryTransform& transform, const S*)
   {
-    // TODO implement
-    throw new std::runtime_error("not yet implemented");
+    this->translateInPlace(transform.translation());
+    return *this;
   }
 
   template <typename S> EIGEN_DEVICE_FUNC inline
-  typename internal::enable_if<(!std::numeric_limits<S>::is_integer && int(AmbientDimAtCompileTime) > 1), AlignedBox>::type
-  &operator_muleq(const IsometryTransform &transform, const S*)
+  typename internal::enable_if<!NumTraits<S>::IsComplex && !std::numeric_limits<S>::is_integer && AmbientDimAtCompileTime != 1, AlignedBox>::type
+  &transformInternal(const IsometryTransform &transform, const S*)
   {
-    typename IsometryTransform::ConstTranslationPart t = transform.translation();
-    const typename IsometryTransform::LinearMatrixType r = transform.rotation();
-
     // Method adapted from FCL src/shape/geometric_shapes_utility.cpp#computeBV<AABB, Box>(...) (BSD-licensed code):
     // https://github.com/flexible-collision-library/fcl/blob/fcl-0.4/src/shape/geometric_shapes_utility.cpp#L292
     //
     // Here's a nice explanation why it works: https://zeuxcg.org/2010/10/17/aabb-from-obb-with-component-wise-abs/
 
-    const VectorType center = this->center();
-    const VectorType box = this->sizes();
-    const VectorType v_delta = (r.cwiseAbs() * box) / RealScalar(2);
+    if (this->dim() == 1)
+    {
+      this->translateInPlace(transform.translation());
+      return *this;
+    }
 
-    this->m_min = center + t - v_delta;
-    this->m_max = center + t + v_delta;
+    const VectorType v_delta = (transform.linear().cwiseAbs() * this->sizes()) / Scalar(2);
+
+    this->m_min = this->center() + transform.translation();
+    this->m_max = this->m_min + v_delta;
+    this->m_min -= v_delta;
 
     return *this;
   }
 
   template <typename S> EIGEN_DEVICE_FUNC inline
-  typename internal::enable_if<std::numeric_limits<S>::is_integer || AmbientDimAtCompileTime == 1, AlignedBox>::type
-  &operator_muleq(const IsometryTransform &transform, const S*)
+  typename internal::enable_if<!NumTraits<S>::IsComplex && std::numeric_limits<S>::is_integer && AmbientDimAtCompileTime != 1, AlignedBox>::type
+  &transformInternal(const IsometryTransform &transform, const S*)
   {
-    typename IsometryTransform::ConstTranslationPart
-        t = transform.translation();
+    if (this->dim() == 1)
+    {
+      this->translateInPlace(transform.translation());
+      return *this;
+    }
 
-    // integral types can only be translated
+    const VectorType v_delta = ((transform.linear().cwiseAbs() * this->sizes()).
+        template cast<NonInteger>()/ NonInteger (2)).template cast<Scalar>();
 
-    this->m_min += t;
-    this->m_max += t;
+    this->m_min = this->center() + transform.translation();
+    this->m_max = this->m_min + v_delta;
+    this->m_min -= v_delta;
 
     return *this;
   }
 
+public:
   /**
-   * \returns This box transformed by \a transform and recomputed to
+   * Transforms this box by \a transform and recomputes it to
    * still be an axis-aligned box.
    */
-  EIGEN_DEVICE_FUNC inline AlignedBox &operator*=(
+  EIGEN_DEVICE_FUNC inline void transformInPlace(
       const IsometryTransform &transform)
   {
-    return operator_muleq(transform, (Scalar*)NULL);
+    transformInternal(transform, (Scalar*)NULL);
   }
 
   /**
    * \returns This box transformed by \a transform and recomputed to
    * still be an axis-aligned box.
    */
-  EIGEN_DEVICE_FUNC AlignedBox operator*(
+  EIGEN_DEVICE_FUNC AlignedBox transformed(
       const IsometryTransform& transform) const
   {
     AlignedBox result(m_min, m_max);
-    result *= transform;
+    result.transformInPlace(transform);
     return result;
   }
 

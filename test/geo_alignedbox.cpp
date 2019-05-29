@@ -119,7 +119,7 @@ template<typename BoxType> void alignedboxTranslatable(const BoxType& _box)
   IsometryTransform tf = IsometryTransform::Identity();
   tf.translation() = -translate;
 
-  BoxType c = b * tf;  // operator* honours translation
+  BoxType c = b.transformed(tf);
   // translate by (-2, -1, -1) -> box((-1, -1, -1), (1, 1, 1))
   for (Index d = 0; d < dim; ++d)
   {
@@ -128,7 +128,7 @@ template<typename BoxType> void alignedboxTranslatable(const BoxType& _box)
     VERIFY_IS_APPROX((c.max)()[d], (a.max)()[d]);
   }
 
-  c *= tf;  // operator*= honours translation
+  c.transformInPlace(tf);
   // translate by (-2, -1, -1) -> box((-3, -2, -2), (-1, 0, 0))
   for (Index d = 0; d < dim; ++d)
     VERIFY_IS_APPROX(c.sizes()[d], a.sizes()[d]);
@@ -142,19 +142,19 @@ template<typename BoxType> void alignedboxTranslatable(const BoxType& _box)
   }
 }
 
-template<typename Scalar, typename Derived>
-RotationBase<Derived, 2>* rotate2D(Scalar _angle) {
-  return new Rotation2D<Scalar>(_angle);
+template<typename Scalar, typename Rotation>
+Rotation rotate2D(Scalar _angle) {
+  return Rotation2D<Scalar>(_angle);
 }
 
-template<typename Scalar, typename Derived>
-RotationBase<Derived, 3>* rotate3DZAxis(Scalar _angle) {
-  return new AngleAxis<Scalar>(_angle, Matrix<Scalar, 3, 1>(0, 0, 1));
+template<typename Scalar, typename Rotation>
+Rotation rotate3DZAxis(Scalar _angle) {
+  return AngleAxis<Scalar>(_angle, Matrix<Scalar, 3, 1>(0, 0, 1));
 }
 
-template<typename BoxType, typename Derived> void alignedboxRotatable(
+template<typename BoxType, typename Rotation> void alignedboxRotatable(
     const BoxType& _box,
-    RotationBase<Derived, BoxType::AmbientDimAtCompileTime>* (*_rotate)(typename BoxType::Scalar _angle))
+    Rotation (*_rotate)(typename BoxType::Scalar _angle))
 {
   alignedboxTranslatable(_box);
 
@@ -182,11 +182,10 @@ template<typename BoxType, typename Derived> void alignedboxRotatable(
   IsometryTransform tf2 = IsometryTransform::Identity();
   // for some weird reason the following statement has to be put separate from
   // the following rotate call, otherwise precision problems arise...
-  RotationBase<Derived, BoxType::AmbientDimAtCompileTime>* rot = _rotate(Scalar(EIGEN_PI));
-  tf2.rotate(*rot);
-  delete rot;
+  Rotation rot = _rotate(Scalar(EIGEN_PI));
+  tf2.rotate(rot);
 
-  c *= tf2;
+  c.transformInPlace(tf2);
   // rotate by 180 deg ->  box((-3, -2, -2), (-1, 0, 0))
 
   for (Index d = 0; d < dim; ++d)
@@ -202,10 +201,9 @@ template<typename BoxType, typename Derived> void alignedboxRotatable(
   }
 
   rot = _rotate(Scalar(EIGEN_PI/2));
-  tf2.rotate(*rot);
-  delete rot;
+  tf2.rotate(rot);
 
-  c *= tf2;
+  c.transformInPlace(tf2);
   // rotate by 90 deg ->  box((-3, -2, -2), (-1, 0, 0))
 
   for (Index d = 0; d < dim; ++d)
@@ -221,10 +219,9 @@ template<typename BoxType, typename Derived> void alignedboxRotatable(
   }
 
   rot = _rotate(Scalar(EIGEN_PI/3));
-  tf2.rotate(*rot);
-  delete rot;
+  tf2.rotate(rot);
 
-  c *= tf2;
+  c.transformInPlace(tf2);
   // rotate by 60 deg ->  box((-4.36, -3.36, -2), (0.36, 1.36, 0))
   // just draw the figure and these numbers will pop out
 
@@ -244,7 +241,8 @@ template<typename BoxType, typename Derived> void alignedboxRotatable(
   for (Index d = 2; d < dim; ++d)
   {
     VERIFY_IS_APPROX((c.min)()[d], Scalar(-2));
-    VERIFY_IS_APPROX((c.max)()[d], Scalar(0));
+    // VERIFY_IS_APPROX isn't good for comparisons against zero!
+    VERIFY_IS_APPROX((c.max)()[d] + Scalar(1), Scalar(1));
   }
 }
 
