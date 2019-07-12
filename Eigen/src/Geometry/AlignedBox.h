@@ -247,6 +247,15 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(_Scalar,_AmbientDim)
     return *this;
   }
 
+  /** Translate \c *this by the vector \a t and returns a new \c AlignedBox. */
+  template<typename Derived>
+  EIGEN_DEVICE_FUNC inline AlignedBox translated(const MatrixBase<Derived>& a_t) const
+  {
+    AlignedBox result(m_min, m_max);
+    result.translate(a_t);
+    return result;
+  }
+
   /** \returns the squared distance between the point \a p and the box \c *this,
     * and zero if \a p is inside the box.
     * \sa exteriorDistance(const MatrixBase&), squaredExteriorDistance(const AlignedBox&)
@@ -276,67 +285,29 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(_Scalar,_AmbientDim)
   { EIGEN_USING_STD_MATH(sqrt) return sqrt(NonInteger(squaredExteriorDistance(b))); }
 
   /**
-   * Translates this box by \a translate.
+   * Specialization of transformInPlace for pure translation.
    */
-  EIGEN_DEVICE_FUNC inline void translateInPlace(
-      const typename IsometryTransform::TranslationType& translation)
-  {
-    this->m_min += translation;
-    this->m_max += translation;
-  }
-
-  /**
-   * \returns This box translateed by \a translate.
-   */
-  EIGEN_DEVICE_FUNC AlignedBox translated(
-      const typename IsometryTransform::TranslationType& translation) const
-  {
-    AlignedBox result(m_min, m_max);
-    result.translateInPlace(translation);
-    return result;
-  }
-
-  /**
-   * Translates this box by \a translate.
-   */
-  EIGEN_DEVICE_FUNC inline void translateInPlace(
+  EIGEN_DEVICE_FUNC inline void transformInPlace(
       typename IsometryTransform::ConstTranslationPart& translation)
   {
-    this->m_min += translation;
-    this->m_max += translation;
+    this->translate(translation);
   }
 
   /**
-   * \returns This box translateed by \a translate.
+   * Specialization of transformInPlace for pure translation.
    */
-  EIGEN_DEVICE_FUNC AlignedBox translated(
-      typename IsometryTransform::ConstTranslationPart& translation) const
+  EIGEN_DEVICE_FUNC inline void transformInPlace(
+      const typename IsometryTransform::TranslationType& translation)
   {
-    AlignedBox result(m_min, m_max);
-    result.translateInPlace(translation);
-    return result;
+    this->translate(translation);
   }
 
-private:
-  // HACK: transformInternal is a workaround function that allows us to have separate
-  // specializations of operator*= for integral and non-integral types; the problem
-  // is that normally SFINAE only works on deduced template args, so we'd like to
-  // have there template<typename S = Scalar>, but C++98 doesn't allow default
-  // values for template arguments; so we instead make the compiler to deduce the
-  // type from the additional argument to transformInternal.
-
-  // We do not want to pose any condition using S, but we have to for SFINAE to work
-  template <typename S> EIGEN_DEVICE_FUNC inline
-  typename internal::enable_if<!NumTraits<S>::IsComplex && AmbientDimAtCompileTime == 1, AlignedBox>::type
-  &transformInternal(const IsometryTransform& transform, const S*)
-  {
-    this->translateInPlace(transform.translation());
-    return *this;
-  }
-
-  template <typename S> EIGEN_DEVICE_FUNC inline
-  typename internal::enable_if<!NumTraits<S>::IsComplex && !std::numeric_limits<S>::is_integer && AmbientDimAtCompileTime != 1, AlignedBox>::type
-  &transformInternal(const IsometryTransform &transform, const S*)
+  /**
+   * Transforms this box by \a transform and recomputes it to
+   * still be an axis-aligned box.
+   */
+  EIGEN_DEVICE_FUNC inline void transformInPlace(
+      const IsometryTransform& transform)
   {
     // Method adapted from FCL src/shape/geometric_shapes_utility.cpp#computeBV<AABB, Box>(...) (BSD-licensed code):
     // https://github.com/flexible-collision-library/fcl/blob/fcl-0.4/src/shape/geometric_shapes_utility.cpp#L292
@@ -345,27 +316,8 @@ private:
 
     if (this->dim() == 1)
     {
-      this->translateInPlace(transform.translation());
-      return *this;
-    }
-
-    const VectorType v_delta = (transform.linear().cwiseAbs() * this->sizes()) / Scalar(2);
-
-    this->m_min = this->center() + transform.translation();
-    this->m_max = this->m_min + v_delta;
-    this->m_min -= v_delta;
-
-    return *this;
-  }
-
-  template <typename S> EIGEN_DEVICE_FUNC inline
-  typename internal::enable_if<!NumTraits<S>::IsComplex && std::numeric_limits<S>::is_integer && AmbientDimAtCompileTime != 1, AlignedBox>::type
-  &transformInternal(const IsometryTransform &transform, const S*)
-  {
-    if (this->dim() == 1)
-    {
-      this->translateInPlace(transform.translation());
-      return *this;
+      this->translate(transform.translation());
+      return;
     }
 
     const VectorType v_delta = ((transform.linear().cwiseAbs() * this->sizes()).
@@ -374,19 +326,6 @@ private:
     this->m_min = this->center() + transform.translation();
     this->m_max = this->m_min + v_delta;
     this->m_min -= v_delta;
-
-    return *this;
-  }
-
-public:
-  /**
-   * Transforms this box by \a transform and recomputes it to
-   * still be an axis-aligned box.
-   */
-  EIGEN_DEVICE_FUNC inline void transformInPlace(
-      const IsometryTransform &transform)
-  {
-    transformInternal(transform, (Scalar*)NULL);
   }
 
   /**

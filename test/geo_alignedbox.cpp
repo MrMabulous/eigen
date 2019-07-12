@@ -114,7 +114,7 @@ template<typename BoxType> void alignedboxTranslatable(const BoxType& _box)
   for (Index d = 1; d < dim; ++d)
     VERIFY_IS_APPROX((b.max)()[d], Scalar(2));
 
-  // Test the * and *= operator for applying a transform
+  // Test transformInPlace
 
   IsometryTransform tf = IsometryTransform::Identity();
   tf.translation() = -translate;
@@ -140,6 +140,13 @@ template<typename BoxType> void alignedboxTranslatable(const BoxType& _box)
     VERIFY_IS_APPROX((c.min)()[d], Scalar(-2));
     VERIFY_IS_APPROX((c.max)()[d], Scalar(0));
   }
+
+  // test for roundoff errors
+  IsometryTransform identity;
+  identity.setIdentity();
+  BoxType transformedC;
+  transformedC.extend(c.transformed(identity));
+  VERIFY(transformedC.contains(c));
 }
 
 template<typename Scalar, typename Rotation>
@@ -148,17 +155,33 @@ Rotation rotate2D(Scalar _angle) {
 }
 
 template<typename Scalar, typename Rotation>
+Rotation rotate2DIntegral(typename NumTraits<Scalar>::NonInteger _angle) {
+  typedef typename NumTraits<Scalar>::NonInteger NonInteger;
+  return Rotation2D<NonInteger>(_angle).toRotationMatrix().
+      template cast<Scalar>();
+}
+
+template<typename Scalar, typename Rotation>
 Rotation rotate3DZAxis(Scalar _angle) {
   return AngleAxis<Scalar>(_angle, Matrix<Scalar, 3, 1>(0, 0, 1));
 }
 
+template<typename Scalar, typename Rotation>
+Rotation rotate3DZAxisIntegral(typename NumTraits<Scalar>::NonInteger _angle) {
+  typedef typename NumTraits<Scalar>::NonInteger NonInteger;
+  return AngleAxis<NonInteger>(_angle, Matrix<NonInteger, 3, 1>(0, 0, 1)).
+      toRotationMatrix().template cast<Scalar>();
+}
+
 template<typename BoxType, typename Rotation> void alignedboxRotatable(
     const BoxType& _box,
-    Rotation (*_rotate)(typename BoxType::Scalar _angle))
+    Rotation (*_rotate)(typename NumTraits<typename BoxType::Scalar>::NonInteger _angle),
+    const bool allowNonIntegralRotations = true)
 {
   alignedboxTranslatable(_box);
 
   typedef typename BoxType::Scalar Scalar;
+  typedef typename NumTraits<Scalar>::NonInteger NonInteger;
   typedef Matrix<Scalar, BoxType::AmbientDimAtCompileTime, 1> VectorType;
   typedef Transform<Scalar, BoxType::AmbientDimAtCompileTime, Isometry> IsometryTransform;
 
@@ -182,7 +205,7 @@ template<typename BoxType, typename Rotation> void alignedboxRotatable(
   IsometryTransform tf2 = IsometryTransform::Identity();
   // for some weird reason the following statement has to be put separate from
   // the following rotate call, otherwise precision problems arise...
-  Rotation rot = _rotate(Scalar(EIGEN_PI));
+  Rotation rot = _rotate(NonInteger(EIGEN_PI));
   tf2.rotate(rot);
 
   c.transformInPlace(tf2);
@@ -200,7 +223,7 @@ template<typename BoxType, typename Rotation> void alignedboxRotatable(
     VERIFY_IS_APPROX((c.max)()[d] + Scalar(1), Scalar(1));
   }
 
-  rot = _rotate(Scalar(EIGEN_PI/2));
+  rot = _rotate(NonInteger(EIGEN_PI/2));
   tf2.rotate(rot);
 
   c.transformInPlace(tf2);
@@ -218,7 +241,10 @@ template<typename BoxType, typename Rotation> void alignedboxRotatable(
     VERIFY_IS_APPROX((c.max)()[d] + Scalar(1), Scalar(1));
   }
 
-  rot = _rotate(Scalar(EIGEN_PI/3));
+  if (!allowNonIntegralRotations)
+    return;
+
+  rot = _rotate(NonInteger(EIGEN_PI/3));
   tf2.rotate(rot);
 
   c.transformInPlace(tf2);
@@ -342,8 +368,8 @@ void test_geo_alignedbox()
     CALL_SUBTEST_8( alignedboxCastTests(AlignedBox1d()) );
 
     CALL_SUBTEST_9( alignedboxTranslatable(AlignedBox1i()) );
-    CALL_SUBTEST_10( alignedboxTranslatable(AlignedBox2i()) );
-    CALL_SUBTEST_11( alignedboxTranslatable(AlignedBox3i()) );
+    CALL_SUBTEST_10( (alignedboxRotatable<AlignedBox2i, Matrix2i>(AlignedBox2i(), &rotate2DIntegral<int, Matrix2i>, false)) );
+    CALL_SUBTEST_11( (alignedboxRotatable<AlignedBox3i, Matrix3i>(AlignedBox3i(), &rotate3DZAxisIntegral<int, Matrix3i>, false)) );
 
     CALL_SUBTEST_14( alignedbox(AlignedBox<double,Dynamic>(4)) );
   }
