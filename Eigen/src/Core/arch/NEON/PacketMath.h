@@ -108,18 +108,33 @@ struct packet_traits<float> : default_packet_traits {
     size = 4,
     HasHalfPacket = 0,  // Packet2f intrinsics not implemented yet
 
-    HasDiv = 1,
+    HasAdd       = 1,
+    HasSub       = 1,
+    HasMul       = 1,
+    HasNegate    = 1,
+    HasAbs       = 1,
+    HasArg       = 0,
+    HasAbs2      = 1,
+    HasMin       = 1,
+    HasMax       = 1,
+    HasConj      = 1,
+    HasSetLinear = 0,
+    HasBlend     = 0,
+    HasReduxp    = 1,
+
+    HasDiv   = 1,
     HasFloor = 1,
-    // FIXME check the Has*
-    HasSin = EIGEN_FAST_MATH,
-    HasCos = EIGEN_FAST_MATH,
-    HasLog = 1,
-    HasExp = 1,
+
+    HasSin  = EIGEN_FAST_MATH,
+    HasCos  = EIGEN_FAST_MATH,
+    HasLog  = 1,
+    HasExp  = 1,
     HasSqrt = 0,
     HasTanh = EIGEN_FAST_MATH,
-    HasErf = EIGEN_FAST_MATH
+    HasErf  = EIGEN_FAST_MATH
   };
 };
+
 template <>
 struct packet_traits<int32_t> : default_packet_traits {
   typedef Packet4i type;
@@ -128,8 +143,21 @@ struct packet_traits<int32_t> : default_packet_traits {
     Vectorizable = 1,
     AlignedOnScalar = 1,
     size=4,
-    HasHalfPacket=0 // Packet2i intrinsics not implemented yet
-    // FIXME check the Has*
+    HasHalfPacket=0, // Packet2i intrinsics not implemented yet
+
+    HasAdd       = 1,
+    HasSub       = 1,
+    HasMul       = 1,
+    HasNegate    = 1,
+    HasAbs       = 1,
+    HasArg       = 0,
+    HasAbs2      = 1,
+    HasMin       = 1,
+    HasMax       = 1,
+    HasConj      = 1,
+    HasSetLinear = 0,
+    HasBlend     = 0,
+    HasReduxp    = 1
   };
 };
 
