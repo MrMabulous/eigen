@@ -59,16 +59,16 @@ struct eigen_packet_wrapper
 };
 typedef eigen_packet_wrapper<float32x2_t,0> Packet2f;
 typedef eigen_packet_wrapper<float32x4_t,1> Packet4f;
-typedef eigen_packet_wrapper<int32x4_t  ,2> Packet4i;
-typedef eigen_packet_wrapper<int32x2_t  ,3> Packet2i;
+typedef eigen_packet_wrapper<int32x2_t  ,2> Packet2i;
+typedef eigen_packet_wrapper<int32x4_t  ,3> Packet4i;
 typedef eigen_packet_wrapper<uint32x4_t ,4> Packet4ui;
 
 #else
 
 typedef float32x2_t Packet2f;
 typedef float32x4_t Packet4f;
-typedef int32x4_t   Packet4i;
 typedef int32x2_t   Packet2i;
+typedef int32x4_t   Packet4i;
 typedef uint32x4_t  Packet4ui;
 
 #endif // EIGEN_COMP_MSVC
