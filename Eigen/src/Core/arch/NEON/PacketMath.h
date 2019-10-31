@@ -448,23 +448,18 @@ template<> EIGEN_STRONG_INLINE int32_t pfirst<Packet4i>(const Packet4i& a)
 
 template<> EIGEN_STRONG_INLINE Packet4f preverse(const Packet4f& a)
 {
-  float32x2_t a_lo, a_hi;
-  Packet4f a_r64;
-
-  a_r64 = vrev64q_f32(a);
-  a_lo = vget_low_f32(a_r64);
-  a_hi = vget_high_f32(a_r64);
-  return vcombine_f32(a_hi, a_lo);
+  const float32x4_t a_r64 = vrev64q_f32(a);
+  return vcombine_f32(vget_high_f32(a_r64), vget_low_f32(a_r64));
 }
 template<> EIGEN_STRONG_INLINE Packet4i preverse(const Packet4i& a)
 {
-  int32x2_t a_lo, a_hi;
-  Packet4i a_r64;
-
-  a_r64 = vrev64q_s32(a);
-  a_lo = vget_low_s32(a_r64);
-  a_hi = vget_high_s32(a_r64);
-  return vcombine_s32(a_hi, a_lo);
+  const int32x4_t a_r64 = vrev64q_s32(a);
+  return vcombine_s32(vget_high_s32(a_r64), vget_low_s32(a_r64));
+}
+template<> EIGEN_STRONG_INLINE Packet4ui preverse(const Packet4ui& a)
+{
+  const uint32x4_t a_r64 = vrev64q_u32(a);
+  return vcombine_u32(vget_high_u32(a_r64), vget_low_u32(a_r64));
 }
 
 template<> EIGEN_STRONG_INLINE Packet4f pabs(const Packet4f& a) { return vabsq_f32(a); }

@@ -189,16 +189,7 @@ template<> EIGEN_STRONG_INLINE std::complex<float> pfirst<Packet2cf>(const Packe
 }
 
 template<> EIGEN_STRONG_INLINE Packet2cf preverse(const Packet2cf& a)
-{
-  float32x2_t a_lo, a_hi;
-  Packet4f a_r128;
-
-  a_lo = vget_low_f32(a.v);
-  a_hi = vget_high_f32(a.v);
-  a_r128 = vcombine_f32(a_hi, a_lo);
-
-  return Packet2cf(a_r128);
-}
+{ return Packet2cf(vcombine_f32(vget_high_f32(a.v), vget_low_f32(a.v))); }
 
 template<> EIGEN_STRONG_INLINE Packet2cf pcplxflip<Packet2cf>(const Packet2cf& a)
 { return Packet2cf(vrev64q_f32(a.v)); }
