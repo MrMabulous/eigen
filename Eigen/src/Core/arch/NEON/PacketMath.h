@@ -390,6 +390,9 @@ template<> EIGEN_STRONG_INLINE Packet4i ploaddup<Packet4i>(const int32_t* from)
   return vcombine_s32(lo, hi);
 }
 
+template<> EIGEN_STRONG_INLINE Packet4f ploadquad<Packet4f>(const float* from) { return vld1q_dup_f32(from); }
+template<> EIGEN_STRONG_INLINE Packet4i ploadquad<Packet4i>(const int32_t* from) { return vld1q_dup_s32(from); }
+
 template<> EIGEN_STRONG_INLINE void pstore<float>(float* to, const Packet4f& from)
 { EIGEN_DEBUG_ALIGNED_STORE vst1q_f32(to,from); }
 template<> EIGEN_STRONG_INLINE void pstore<int32_t>(int32_t* to, const Packet4i& from)
