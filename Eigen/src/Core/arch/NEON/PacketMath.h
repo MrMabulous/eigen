@@ -508,31 +508,17 @@ template<> EIGEN_STRONG_INLINE Packet4i preduxp<Packet4i>(const Packet4i* vecs)
 // mul
 template<> EIGEN_STRONG_INLINE float predux_mul<Packet4f>(const Packet4f& a)
 {
-  float32x2_t a_lo, a_hi, prod;
-
-  // Get a_lo = |a1|a2| and a_hi = |a3|a4|
-  a_lo = vget_low_f32(a);
-  a_hi = vget_high_f32(a);
   // Get the product of a_lo * a_hi -> |a1*a3|a2*a4|
-  prod = vmul_f32(a_lo, a_hi);
+  const float32x2_t prod = vmul_f32(vget_low_f32(a), vget_high_f32(a));
   // Multiply prod with its swapped value |a2*a4|a1*a3|
-  prod = vmul_f32(prod, vrev64_f32(prod));
-
-  return vget_lane_f32(prod, 0);
+  return vget_lane_f32(vmul_f32(prod, vrev64_f32(prod)), 0);
 }
 template<> EIGEN_STRONG_INLINE int32_t predux_mul<Packet4i>(const Packet4i& a)
 {
-  int32x2_t a_lo, a_hi, prod;
-
-  // Get a_lo = |a1|a2| and a_hi = |a3|a4|
-  a_lo = vget_low_s32(a);
-  a_hi = vget_high_s32(a);
   // Get the product of a_lo * a_hi -> |a1*a3|a2*a4|
-  prod = vmul_s32(a_lo, a_hi);
+  const int32x2_t prod = vmul_s32(vget_low_s32(a), vget_high_s32(a));
   // Multiply prod with its swapped value |a2*a4|a1*a3|
-  prod = vmul_s32(prod, vrev64_s32(prod));
-
-  return vget_lane_s32(prod, 0);
+  return vget_lane_s32(vmul_s32(prod, vrev64_s32(prod)), 0);
 }
 
 // min
