@@ -163,8 +163,7 @@ template<> EIGEN_STRONG_INLINE void pstoreu<std::complex<float> >(std::complex<f
 template<> EIGEN_DEVICE_FUNC inline Packet2cf pgather<std::complex<float>, Packet2cf>(
     const std::complex<float>* from, Index stride)
 {
-  Packet4f res = pset1<Packet4f>(0.f);
-  res = vsetq_lane_f32(std::real(from[0*stride]), res, 0);
+  Packet4f res = vdupq_n_f32(std::real(from[0*stride]));
   res = vsetq_lane_f32(std::imag(from[0*stride]), res, 1);
   res = vsetq_lane_f32(std::real(from[1*stride]), res, 2);
   res = vsetq_lane_f32(std::imag(from[1*stride]), res, 3);

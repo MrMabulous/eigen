@@ -403,36 +403,34 @@ template<> EIGEN_STRONG_INLINE void pstoreu<int32_t>(int32_t* to, const Packet4i
 
 template<> EIGEN_DEVICE_FUNC inline Packet4f pgather<float, Packet4f>(const float* from, Index stride)
 {
-  Packet4f res = pset1<Packet4f>(0.f);
-  res = vsetq_lane_f32(from[0*stride], res, 0);
-  res = vsetq_lane_f32(from[1*stride], res, 1);
-  res = vsetq_lane_f32(from[2*stride], res, 2);
-  res = vsetq_lane_f32(from[3*stride], res, 3);
+  Packet4f res = vld1q_dup_f32(from);
+  res = vld1q_lane_f32(from + 1*stride, res, 1);
+  res = vld1q_lane_f32(from + 2*stride, res, 2);
+  res = vld1q_lane_f32(from + 3*stride, res, 3);
   return res;
 }
 template<> EIGEN_DEVICE_FUNC inline Packet4i pgather<int32_t, Packet4i>(const int32_t* from, Index stride)
 {
-  Packet4i res = pset1<Packet4i>(0);
-  res = vsetq_lane_s32(from[0*stride], res, 0);
-  res = vsetq_lane_s32(from[1*stride], res, 1);
-  res = vsetq_lane_s32(from[2*stride], res, 2);
-  res = vsetq_lane_s32(from[3*stride], res, 3);
+  Packet4i res = vld1q_dup_s32(from);
+  res = vld1q_lane_s32(from + 1*stride, res, 1);
+  res = vld1q_lane_s32(from + 2*stride, res, 2);
+  res = vld1q_lane_s32(from + 3*stride, res, 3);
   return res;
 }
 
 template<> EIGEN_DEVICE_FUNC inline void pscatter<float, Packet4f>(float* to, const Packet4f& from, Index stride)
 {
-  to[stride*0] = vgetq_lane_f32(from, 0);
-  to[stride*1] = vgetq_lane_f32(from, 1);
-  to[stride*2] = vgetq_lane_f32(from, 2);
-  to[stride*3] = vgetq_lane_f32(from, 3);
+  vst1q_lane_f32(to + stride*0, from, 0);
+  vst1q_lane_f32(to + stride*1, from, 1);
+  vst1q_lane_f32(to + stride*2, from, 2);
+  vst1q_lane_f32(to + stride*3, from, 3);
 }
 template<> EIGEN_DEVICE_FUNC inline void pscatter<int32_t, Packet4i>(int32_t* to, const Packet4i& from, Index stride)
 {
-  to[stride*0] = vgetq_lane_s32(from, 0);
-  to[stride*1] = vgetq_lane_s32(from, 1);
-  to[stride*2] = vgetq_lane_s32(from, 2);
-  to[stride*3] = vgetq_lane_s32(from, 3);
+  vst1q_lane_s32(to + stride*0, from, 0);
+  vst1q_lane_s32(to + stride*1, from, 1);
+  vst1q_lane_s32(to + stride*2, from, 2);
+  vst1q_lane_s32(to + stride*3, from, 3);
 }
 
 template<> EIGEN_STRONG_INLINE void prefetch<float>(const float* addr) { EIGEN_ARM_PREFETCH(addr); }
@@ -794,15 +792,15 @@ template<> EIGEN_STRONG_INLINE void pstoreu<double>(double* to, const Packet2d& 
 template<> EIGEN_DEVICE_FUNC inline Packet2d pgather<double, Packet2d>(const double* from, Index stride)
 {
   Packet2d res = pset1<Packet2d>(0.0);
-  res = vsetq_lane_f64(from[0*stride], res, 0);
-  res = vsetq_lane_f64(from[1*stride], res, 1);
+  res = vld1q_lane_f64(from + 0*stride, res, 0);
+  res = vld1q_lane_f64(from + 1*stride, res, 1);
   return res;
 }
 
 template<> EIGEN_DEVICE_FUNC inline void pscatter<double, Packet2d>(double* to, const Packet2d& from, Index stride)
 {
-  to[stride*0] = vgetq_lane_f64(from, 0);
-  to[stride*1] = vgetq_lane_f64(from, 1);
+  vst1q_lane_f64(to + stride*0, from, 0);
+  vst1q_lane_f64(to + stride*1, from, 1);
 }
 
 template<> EIGEN_STRONG_INLINE void prefetch<double>(const double* addr) { EIGEN_ARM_PREFETCH(addr); }
