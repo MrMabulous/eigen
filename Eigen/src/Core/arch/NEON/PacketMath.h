@@ -374,19 +374,9 @@ template<> EIGEN_STRONG_INLINE Packet4i ploadu<Packet4i>(const int32_t* from)
 { EIGEN_DEBUG_UNALIGNED_LOAD return vld1q_s32(from); }
 
 template<> EIGEN_STRONG_INLINE Packet4f ploaddup<Packet4f>(const float* from)
-{
-  float32x2_t lo, hi;
-  lo = vld1_dup_f32(from);
-  hi = vld1_dup_f32(from+1);
-  return vcombine_f32(lo, hi);
-}
+{ return vcombine_f32(vld1_dup_f32(from), vld1_dup_f32(from+1)); }
 template<> EIGEN_STRONG_INLINE Packet4i ploaddup<Packet4i>(const int32_t* from)
-{
-  int32x2_t lo, hi;
-  lo = vld1_dup_s32(from);
-  hi = vld1_dup_s32(from+1);
-  return vcombine_s32(lo, hi);
-}
+{ return vcombine_s32(vld1_dup_s32(from), vld1_dup_s32(from+1)); }
 
 template<> EIGEN_STRONG_INLINE Packet4f ploadquad<Packet4f>(const float* from) { return vld1q_dup_f32(from); }
 template<> EIGEN_STRONG_INLINE Packet4i ploadquad<Packet4i>(const int32_t* from) { return vld1q_dup_s32(from); }
