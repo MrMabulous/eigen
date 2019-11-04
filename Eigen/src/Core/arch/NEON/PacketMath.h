@@ -524,25 +524,13 @@ template<> EIGEN_STRONG_INLINE int32_t predux_mul<Packet4i>(const Packet4i& a)
 // min
 template<> EIGEN_STRONG_INLINE float predux_min<Packet4f>(const Packet4f& a)
 {
-  float32x2_t a_lo, a_hi, min;
-
-  a_lo = vget_low_f32(a);
-  a_hi = vget_high_f32(a);
-  min = vpmin_f32(a_lo, a_hi);
-  min = vpmin_f32(min, min);
-
-  return vget_lane_f32(min, 0);
+  const float32x2_t min = vmin_f32(vget_low_f32(a), vget_high_f32(a));
+  return vget_lane_f32(vpmin_f32(min, min), 0);
 }
 template<> EIGEN_STRONG_INLINE int32_t predux_min<Packet4i>(const Packet4i& a)
 {
-  int32x2_t a_lo, a_hi, min;
-
-  a_lo = vget_low_s32(a);
-  a_hi = vget_high_s32(a);
-  min = vpmin_s32(a_lo, a_hi);
-  min = vpmin_s32(min, min);
-
-  return vget_lane_s32(min, 0);
+  const int32x2_t min = vmin_s32(vget_low_s32(a), vget_high_s32(a));
+  return vget_lane_s32(vpmin_s32(min, min), 0);
 }
 
 // max
