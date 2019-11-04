@@ -536,25 +536,13 @@ template<> EIGEN_STRONG_INLINE int32_t predux_min<Packet4i>(const Packet4i& a)
 // max
 template<> EIGEN_STRONG_INLINE float predux_max<Packet4f>(const Packet4f& a)
 {
-  float32x2_t a_lo, a_hi, max;
-
-  a_lo = vget_low_f32(a);
-  a_hi = vget_high_f32(a);
-  max = vpmax_f32(a_lo, a_hi);
-  max = vpmax_f32(max, max);
-
-  return vget_lane_f32(max, 0);
+  const float32x2_t max = vmax_f32(vget_low_f32(a), vget_high_f32(a));
+  return vget_lane_f32(vpmax_f32(max, max), 0);
 }
 template<> EIGEN_STRONG_INLINE int32_t predux_max<Packet4i>(const Packet4i& a)
 {
-  int32x2_t a_lo, a_hi, max;
-
-  a_lo = vget_low_s32(a);
-  a_hi = vget_high_s32(a);
-  max = vpmax_s32(a_lo, a_hi);
-  max = vpmax_s32(max, max);
-
-  return vget_lane_s32(max, 0);
+  const int32x2_t max = vmax_s32(vget_low_s32(a), vget_high_s32(a));
+  return vget_lane_s32(vpmax_s32(max, max), 0);
 }
 
 template<> EIGEN_STRONG_INLINE bool predux_any(const Packet4f& x)
