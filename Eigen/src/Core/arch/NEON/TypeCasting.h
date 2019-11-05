@@ -10,13 +10,15 @@
 #ifndef EIGEN_TYPE_CASTING_NEON_H
 #define EIGEN_TYPE_CASTING_NEON_H
 
+#include <Eigen/src/Core/util/Meta.h>
+
 namespace Eigen {
 
 namespace internal {
 
-template<> struct type_casting_traits<float,int>
+template<> struct type_casting_traits<float,numext::int32_t>
 { enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
-template<> struct type_casting_traits<int,float>
+template<> struct type_casting_traits<numext::int32_t,float>
 { enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
 
 template<> EIGEN_STRONG_INLINE Packet4f pcast<Packet4i,Packet4f>(const Packet4i& a) { return vcvtq_f32_s32(a); }
