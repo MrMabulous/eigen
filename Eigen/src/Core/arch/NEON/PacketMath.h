@@ -3468,6 +3468,39 @@ ptranspose(PacketBlock<Packet2ul, 2>& kernel)
 #endif
 }
 
+template<> EIGEN_DEVICE_FUNC inline Packet2f pselect( const Packet2f& mask, const Packet2f& a, const Packet2f& b)
+{ return vbsl_f32(vreinterpret_u32_f32(mask), a, b); }
+template<> EIGEN_DEVICE_FUNC inline Packet4f pselect(const Packet4f& mask, const Packet4f& a, const Packet4f& b)
+{ return vbslq_f32(vreinterpretq_u32_f32(mask), a, b); }
+template<> EIGEN_DEVICE_FUNC inline Packet8c pselect(const Packet8c& mask, const Packet8c& a, const Packet8c& b)
+{ return vbsl_s8(vreinterpret_u8_s8(mask), a, b); }
+template<> EIGEN_DEVICE_FUNC inline Packet16c pselect(const Packet16c& mask, const Packet16c& a, const Packet16c& b)
+{ return vbslq_s8(vreinterpretq_u8_s8(mask), a, b); }
+template<> EIGEN_DEVICE_FUNC inline Packet8uc pselect(const Packet8uc& mask, const Packet8uc& a, const Packet8uc& b)
+{ return vbsl_u8(mask, a, b); }
+template<> EIGEN_DEVICE_FUNC inline Packet16uc pselect(const Packet16uc& mask, const Packet16uc& a, const Packet16uc& b)
+{ return vbslq_u8(mask, a, b); }
+template<> EIGEN_DEVICE_FUNC inline Packet4s pselect(const Packet4s& mask, const Packet4s& a, const Packet4s& b)
+{ return vbsl_s16(vreinterpret_u16_s16(mask), a, b); }
+template<> EIGEN_DEVICE_FUNC inline Packet8s pselect(const Packet8s& mask, const Packet8s& a, const Packet8s& b)
+{ return vbslq_s16(vreinterpretq_u16_s16(mask), a, b); }
+template<> EIGEN_DEVICE_FUNC inline Packet4us pselect(const Packet4us& mask, const Packet4us& a, const Packet4us& b)
+{ return vbsl_u16(mask, a, b); }
+template<> EIGEN_DEVICE_FUNC inline Packet8us pselect(const Packet8us& mask, const Packet8us& a, const Packet8us& b)
+{ return vbslq_u16(mask, a, b); }
+template<> EIGEN_DEVICE_FUNC inline Packet2i pselect(const Packet2i& mask, const Packet2i& a, const Packet2i& b)
+{ return vbsl_s32(vreinterpret_u32_s32(mask), a, b); }
+template<> EIGEN_DEVICE_FUNC inline Packet4i pselect(const Packet4i& mask, const Packet4i& a, const Packet4i& b)
+{ return vbslq_s32(vreinterpretq_u32_s32(mask), a, b); }
+template<> EIGEN_DEVICE_FUNC inline Packet2ui pselect(const Packet2ui& mask, const Packet2ui& a, const Packet2ui& b)
+{ return vbsl_u32(mask, a, b); }
+template<> EIGEN_DEVICE_FUNC inline Packet4ui pselect(const Packet4ui& mask, const Packet4ui& a, const Packet4ui& b)
+{ return vbslq_u32(mask, a, b); }
+template<> EIGEN_DEVICE_FUNC inline Packet2l pselect(const Packet2l& mask, const Packet2l& a, const Packet2l& b)
+{ return vbslq_s64(vreinterpretq_u64_s64(mask), a, b); }
+template<> EIGEN_DEVICE_FUNC inline Packet2ul pselect(const Packet2ul& mask, const Packet2ul& a, const Packet2ul& b)
+{ return vbslq_u64(mask, a, b); }
+
 /**
  * Computes the integer square root
  * @remarks The calculation is performed using an algorithm which iterates through each binary digit of the result
@@ -3804,6 +3837,10 @@ ptranspose(PacketBlock<Packet2d, 2>& kernel)
   kernel.packet[0] = tmp1;
   kernel.packet[1] = tmp2;
 }
+
+template<> EIGEN_DEVICE_FUNC inline Packet2d pselect( const Packet2d& mask, const Packet2d& a, const Packet2d& b)
+{ return vbslq_f64(vreinterpretq_u64_f64(mask), a, b); }
+
 #endif // EIGEN_ARCH_ARM64
 
 } // end namespace internal
