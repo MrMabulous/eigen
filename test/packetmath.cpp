@@ -263,7 +263,7 @@ template<typename Scalar,typename Packet> void packetmath()
     }
   }
 
-  if (PacketTraits::HasBlend || g_vectorize_sse) {
+  if (PacketTraits::HasInsert || g_vectorize_sse) {
     // pinsertfirst
     for (int i=0; i<PacketSize; ++i)
       ref[i] = data1[i];
@@ -273,7 +273,7 @@ template<typename Scalar,typename Packet> void packetmath()
     VERIFY(test::areApprox(ref, data2, PacketSize) && "internal::pinsertfirst");
   }
 
-  if (PacketTraits::HasBlend || g_vectorize_sse) {
+  if (PacketTraits::HasInsert || g_vectorize_sse) {
     // pinsertlast
     for (int i=0; i<PacketSize; ++i)
       ref[i] = data1[i];
