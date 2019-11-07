@@ -456,23 +456,13 @@ template<> EIGEN_STRONG_INLINE Packet4f pldexp<Packet4f>(const Packet4f& a, cons
 
 template<> EIGEN_STRONG_INLINE float predux<Packet4f>(const Packet4f& a)
 {
-  float32x2_t a_lo, a_hi, sum;
-
-  a_lo = vget_low_f32(a);
-  a_hi = vget_high_f32(a);
-  sum = vpadd_f32(a_lo, a_hi);
-  sum = vpadd_f32(sum, sum);
-  return vget_lane_f32(sum, 0);
+  const float32x2_t sum = vadd_f32(vget_low_f32(a), vget_high_f32(a));
+  return vget_lane_f32(vpadd_f32(sum, sum), 0);
 }
 template<> EIGEN_STRONG_INLINE int32_t predux<Packet4i>(const Packet4i& a)
 {
-  int32x2_t a_lo, a_hi, sum;
-
-  a_lo = vget_low_s32(a);
-  a_hi = vget_high_s32(a);
-  sum = vpadd_s32(a_lo, a_hi);
-  sum = vpadd_s32(sum, sum);
-  return vget_lane_s32(sum, 0);
+  const int32x2_t sum = vadd_s32(vget_low_s32(a), vget_high_s32(a));
+  return vget_lane_s32(vpadd_s32(sum, sum), 0);
 }
 
 template<> EIGEN_STRONG_INLINE Packet4f preduxp<Packet4f>(const Packet4f* vecs)

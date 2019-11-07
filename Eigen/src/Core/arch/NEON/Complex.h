@@ -195,14 +195,8 @@ template<> EIGEN_STRONG_INLINE Packet2cf pcplxflip<Packet2cf>(const Packet2cf& a
 
 template<> EIGEN_STRONG_INLINE std::complex<float> predux<Packet2cf>(const Packet2cf& a)
 {
-  float32x2_t a1, a2;
   std::complex<float> s;
-
-  a1 = vget_low_f32(a.v);
-  a2 = vget_high_f32(a.v);
-  a2 = vadd_f32(a1, a2);
-  vst1_f32(reinterpret_cast<float*>(&s), a2);
-
+  vst1_f32(reinterpret_cast<float*>(&s), vadd_f32(vget_low_f32(a.v), vget_high_f32(a.v)));
   return s;
 }
 
