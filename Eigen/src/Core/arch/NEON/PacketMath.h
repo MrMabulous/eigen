@@ -640,10 +640,10 @@ PALIGN_NEON(3, Packet4i, vextq_s32)
 
 #undef PALIGN_NEON
 
-EIGEN_DEVICE_FUNC inline void ptranspose(PacketBlock<Packet4f,4>& kernel)
+EIGEN_DEVICE_FUNC inline void ptranspose(PacketBlock<Packet4f, 4>& kernel)
 {
-  float32x4x2_t tmp1 = vzipq_f32(kernel.packet[0], kernel.packet[1]);
-  float32x4x2_t tmp2 = vzipq_f32(kernel.packet[2], kernel.packet[3]);
+  const float32x4x2_t tmp1 = vzipq_f32(kernel.packet[0], kernel.packet[1]);
+  const float32x4x2_t tmp2 = vzipq_f32(kernel.packet[2], kernel.packet[3]);
 
   kernel.packet[0] = vcombine_f32(vget_low_f32(tmp1.val[0]), vget_low_f32(tmp2.val[0]));
   kernel.packet[1] = vcombine_f32(vget_high_f32(tmp1.val[0]), vget_high_f32(tmp2.val[0]));
@@ -651,10 +651,10 @@ EIGEN_DEVICE_FUNC inline void ptranspose(PacketBlock<Packet4f,4>& kernel)
   kernel.packet[3] = vcombine_f32(vget_high_f32(tmp1.val[1]), vget_high_f32(tmp2.val[1]));
 }
 
-EIGEN_DEVICE_FUNC inline void ptranspose(PacketBlock<Packet4i,4>& kernel)
+EIGEN_DEVICE_FUNC inline void ptranspose(PacketBlock<Packet4i, 4>& kernel)
 {
-  int32x4x2_t tmp1 = vzipq_s32(kernel.packet[0], kernel.packet[1]);
-  int32x4x2_t tmp2 = vzipq_s32(kernel.packet[2], kernel.packet[3]);
+  const int32x4x2_t tmp1 = vzipq_s32(kernel.packet[0], kernel.packet[1]);
+  const int32x4x2_t tmp2 = vzipq_s32(kernel.packet[2], kernel.packet[3]);
 
   kernel.packet[0] = vcombine_s32(vget_low_s32(tmp1.val[0]), vget_low_s32(tmp2.val[0]));
   kernel.packet[1] = vcombine_s32(vget_high_s32(tmp1.val[0]), vget_high_s32(tmp2.val[0]));
@@ -874,11 +874,11 @@ PALIGN_NEON(1, Packet2d, vextq_f64)
 EIGEN_DEVICE_FUNC inline void
 ptranspose(PacketBlock<Packet2d, 2>& kernel)
 {
-  float64x2_t trn1 = vzip1q_f64(kernel.packet[0], kernel.packet[1]);
-  float64x2_t trn2 = vzip2q_f64(kernel.packet[0], kernel.packet[1]);
+  const float64x2_t tmp1 = vzip1q_f64(kernel.packet[0], kernel.packet[1]);
+  const float64x2_t tmp2 = vzip2q_f64(kernel.packet[0], kernel.packet[1]);
 
-  kernel.packet[0] = trn1;
-  kernel.packet[1] = trn2;
+  kernel.packet[0] = tmp1;
+  kernel.packet[1] = tmp2;
 }
 #endif // EIGEN_ARCH_ARM64
 
