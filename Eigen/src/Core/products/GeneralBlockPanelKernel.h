@@ -2543,51 +2543,6 @@ EIGEN_DONT_INLINE void gemm_pack_rhs<Scalar, Index, DataMapper, nr, ColMajor, Co
   Index packet_cols4 = nr>=4 ? (cols/4) * 4 : 0;
   Index count = 0;
   const Index peeled_k = (depth/PacketSize)*PacketSize;
-//   if(nr>=8)
-//   {
-//     for(Index j2=0; j2<packet_cols8; j2+=8)
-//     {
-//       // skip what we have before
-//       if(PanelMode) count += 8 * offset;
-//       const Scalar* b0 = &rhs[(j2+0)*rhsStride];
-//       const Scalar* b1 = &rhs[(j2+1)*rhsStride];
-//       const Scalar* b2 = &rhs[(j2+2)*rhsStride];
-//       const Scalar* b3 = &rhs[(j2+3)*rhsStride];
-//       const Scalar* b4 = &rhs[(j2+4)*rhsStride];
-//       const Scalar* b5 = &rhs[(j2+5)*rhsStride];
-//       const Scalar* b6 = &rhs[(j2+6)*rhsStride];
-//       const Scalar* b7 = &rhs[(j2+7)*rhsStride];
-//       Index k=0;
-//       if(PacketSize==8) // TODO enable vectorized transposition for PacketSize==4
-//       {
-//         for(; k<peeled_k; k+=PacketSize) {
-//           PacketBlock<Packet> kernel;
-//           for (int p = 0; p < PacketSize; ++p) {
-//             kernel.packet[p] = ploadu<Packet>(&rhs[(j2+p)*rhsStride+k]);
-//           }
-//           ptranspose(kernel);
-//           for (int p = 0; p < PacketSize; ++p) {
-//             pstoreu(blockB+count, cj.pconj(kernel.packet[p]));
-//             count+=PacketSize;
-//           }
-//         }
-//       }
-//       for(; k<depth; k++)
-//       {
-//         blockB[count+0] = cj(b0[k]);
-//         blockB[count+1] = cj(b1[k]);
-//         blockB[count+2] = cj(b2[k]);
-//         blockB[count+3] = cj(b3[k]);
-//         blockB[count+4] = cj(b4[k]);
-//         blockB[count+5] = cj(b5[k]);
-//         blockB[count+6] = cj(b6[k]);
-//         blockB[count+7] = cj(b7[k]);
-//         count += 8;
-//       }
-//       // skip what we have after
-//       if(PanelMode) count += 8 * (stride-offset-depth);
-//     }
-//   }
 
   if(nr>=4)
   {
@@ -2667,39 +2622,6 @@ EIGEN_DONT_INLINE void gemm_pack_rhs<Scalar, Index, DataMapper, nr, RowMajor, Co
   Index packet_cols4 = nr>=4 ? (cols/4) * 4 : 0;
   Index count = 0;
 
-//   if(nr>=8)
-//   {
-//     for(Index j2=0; j2<packet_cols8; j2+=8)
-//     {
-//       // skip what we have before
-//       if(PanelMode) count += 8 * offset;
-//       for(Index k=0; k<depth; k++)
-//       {
-//         if (PacketSize==8) {
-//           Packet A = ploadu<Packet>(&rhs[k*rhsStride + j2]);
-//           pstoreu(blockB+count, cj.pconj(A));
-//         } else if (PacketSize==4) {
-//           Packet A = ploadu<Packet>(&rhs[k*rhsStride + j2]);
-//           Packet B = ploadu<Packet>(&rhs[k*rhsStride + j2 + PacketSize]);
-//           pstoreu(blockB+count, cj.pconj(A));
-//           pstoreu(blockB+count+PacketSize, cj.pconj(B));
-//         } else {
-//           const Scalar* b0 = &rhs[k*rhsStride + j2];
-//           blockB[count+0] = cj(b0[0]);
-//           blockB[count+1] = cj(b0[1]);
-//           blockB[count+2] = cj(b0[2]);
-//           blockB[count+3] = cj(b0[3]);
-//           blockB[count+4] = cj(b0[4]);
-//           blockB[count+5] = cj(b0[5]);
-//           blockB[count+6] = cj(b0[6]);
-//           blockB[count+7] = cj(b0[7]);
-//         }
-//         count += 8;
-//       }
-//       // skip what we have after
-//       if(PanelMode) count += 8 * (stride-offset-depth);
-//     }
-//   }
   if(nr>=4)
   {
     for(Index j2=packet_cols8; j2<packet_cols4; j2+=4)
