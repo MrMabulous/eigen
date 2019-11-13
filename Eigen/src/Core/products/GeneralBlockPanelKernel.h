@@ -2524,9 +2524,9 @@ EIGEN_DONT_INLINE void gemm_pack_lhs<Scalar, Index, DataMapper, Pack1, Pack2, Pa
 template<typename Scalar, typename Index, typename DataMapper, int nr, bool Conjugate, bool PanelMode>
 struct gemm_pack_rhs<Scalar, Index, DataMapper, nr, ColMajor, Conjugate, PanelMode>
 {
-  typedef typename packet_traits<Scalar>::type Packet;
+  typedef typename find_packet_full<Scalar, 4, typename packet_traits<Scalar>::type>::type Packet;
+  enum { PacketSize = unpacket_traits<Packet>::size };
   typedef typename DataMapper::LinearMapper LinearMapper;
-  enum { PacketSize = packet_traits<Scalar>::size };
   EIGEN_DONT_INLINE void operator()(Scalar* blockB, const DataMapper& rhs, Index depth, Index cols, Index stride=0, Index offset=0);
 };
 
