@@ -2539,14 +2539,13 @@ EIGEN_DONT_INLINE void gemm_pack_rhs<Scalar, Index, DataMapper, nr, ColMajor, Co
   EIGEN_UNUSED_VARIABLE(offset);
   eigen_assert(((!PanelMode) && stride==0 && offset==0) || (PanelMode && stride>=depth && offset<=stride));
   conj_if<NumTraits<Scalar>::IsComplex && Conjugate> cj;
-  Index packet_cols8 = nr>=8 ? (cols/8) * 8 : 0;
   Index packet_cols4 = nr>=4 ? (cols/4) * 4 : 0;
   Index count = 0;
   const Index peeled_k = (depth/PacketSize)*PacketSize;
 
   if(nr>=4)
   {
-    for(Index j2=packet_cols8; j2<packet_cols4; j2+=4)
+    for(Index j2=0; j2<packet_cols4; j2+=4)
     {
       // skip what we have before
       if(PanelMode) count += 4 * offset;
@@ -2618,13 +2617,12 @@ EIGEN_DONT_INLINE void gemm_pack_rhs<Scalar, Index, DataMapper, nr, RowMajor, Co
   EIGEN_UNUSED_VARIABLE(offset);
   eigen_assert(((!PanelMode) && stride==0 && offset==0) || (PanelMode && stride>=depth && offset<=stride));
   conj_if<NumTraits<Scalar>::IsComplex && Conjugate> cj;
-  Index packet_cols8 = nr>=8 ? (cols/8) * 8 : 0;
   Index packet_cols4 = nr>=4 ? (cols/4) * 4 : 0;
   Index count = 0;
 
   if(nr>=4)
   {
-    for(Index j2=packet_cols8; j2<packet_cols4; j2+=4)
+    for(Index j2=0; j2<packet_cols4; j2+=4)
     {
       // skip what we have before
       if(PanelMode) count += 4 * offset;
