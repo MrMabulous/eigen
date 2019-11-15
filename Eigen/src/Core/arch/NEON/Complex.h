@@ -82,7 +82,7 @@ template<> struct unpacket_traits<Packet2cf>
 template<> EIGEN_STRONG_INLINE Packet2cf pset1<Packet2cf>(const std::complex<float>& from)
 {
   float32x2_t r64;
-  r64 = vld1_f32((const float *)&from);
+  r64 = vld1_f32(reinterpret_cast<const float*>(&from));
 
   return Packet2cf(vcombine_f32(r64, r64));
 }
@@ -146,19 +146,19 @@ template<> EIGEN_STRONG_INLINE Packet2cf pandnot<Packet2cf>(const Packet2cf& a, 
 { return Packet2cf(vreinterpretq_f32_u32(vbicq_u32(vreinterpretq_u32_f32(a.v), vreinterpretq_u32_f32(b.v)))); }
 
 template<> EIGEN_STRONG_INLINE Packet2cf pload<Packet2cf>(const std::complex<float>* from)
-{ EIGEN_DEBUG_ALIGNED_LOAD return Packet2cf(pload<Packet4f>((const float*)from)); }
+{ EIGEN_DEBUG_ALIGNED_LOAD return Packet2cf(pload<Packet4f>(reinterpret_cast<const float*>(from))); }
 
 template<> EIGEN_STRONG_INLINE Packet2cf ploadu<Packet2cf>(const std::complex<float>* from)
-{ EIGEN_DEBUG_UNALIGNED_LOAD return Packet2cf(ploadu<Packet4f>((const float*)from)); }
+{ EIGEN_DEBUG_UNALIGNED_LOAD return Packet2cf(ploadu<Packet4f>(reinterpret_cast<const float*>(from))); }
 
 template<> EIGEN_STRONG_INLINE Packet2cf ploaddup<Packet2cf>(const std::complex<float>* from)
 { return pset1<Packet2cf>(*from); }
 
 template<> EIGEN_STRONG_INLINE void pstore <std::complex<float> >(std::complex<float> *to, const Packet2cf& from)
-{ EIGEN_DEBUG_ALIGNED_STORE pstore((float*)to, from.v); }
+{ EIGEN_DEBUG_ALIGNED_STORE pstore(reinterpret_cast<float*>(to), from.v); }
 
 template<> EIGEN_STRONG_INLINE void pstoreu<std::complex<float> >(std::complex<float> *to, const Packet2cf& from)
-{ EIGEN_DEBUG_UNALIGNED_STORE pstoreu((float*)to, from.v); }
+{ EIGEN_DEBUG_UNALIGNED_STORE pstoreu(reinterpret_cast<float*>(to), from.v); }
 
 template<> EIGEN_DEVICE_FUNC inline Packet2cf pgather<std::complex<float>, Packet2cf>(
     const std::complex<float>* from, Index stride)
@@ -179,12 +179,12 @@ template<> EIGEN_DEVICE_FUNC inline void pscatter<std::complex<float>, Packet2cf
 }
 
 template<> EIGEN_STRONG_INLINE void prefetch<std::complex<float> >(const std::complex<float> *addr)
-{ EIGEN_ARM_PREFETCH((const float *)addr); }
+{ EIGEN_ARM_PREFETCH(reinterpret_cast<const float*>(addr)); }
 
 template<> EIGEN_STRONG_INLINE std::complex<float> pfirst<Packet2cf>(const Packet2cf& a)
 {
   EIGEN_ALIGN16 std::complex<float> x[2];
-  vst1q_f32((float *)x, a.v);
+  vst1q_f32(reinterpret_cast<float*>(x), a.v);
   return x[0];
 }
 
@@ -211,7 +211,7 @@ template<> EIGEN_STRONG_INLINE std::complex<float> predux<Packet2cf>(const Packe
   a1 = vget_low_f32(a.v);
   a2 = vget_high_f32(a.v);
   a2 = vadd_f32(a1, a2);
-  vst1_f32((float *)&s, a2);
+  vst1_f32(reinterpret_cast<float*>(&s), a2);
 
   return s;
 }
@@ -250,7 +250,7 @@ template<> EIGEN_STRONG_INLINE std::complex<float> predux_mul<Packet2cf>(const P
   // Add v1, v2
   prod = vadd_f32(v1, v2);
 
-  vst1_f32((float *)&s, prod);
+  vst1_f32(reinterpret_cast<float*>(&s), prod);
 
   return s;
 }
@@ -371,10 +371,10 @@ template<> struct unpacket_traits<Packet1cd>
 };
 
 template<> EIGEN_STRONG_INLINE Packet1cd pload<Packet1cd>(const std::complex<double>* from)
-{ EIGEN_DEBUG_ALIGNED_LOAD return Packet1cd(pload<Packet2d>((const double*)from)); }
+{ EIGEN_DEBUG_ALIGNED_LOAD return Packet1cd(pload<Packet2d>(reinterpret_cast<const double*>(from))); }
 
 template<> EIGEN_STRONG_INLINE Packet1cd ploadu<Packet1cd>(const std::complex<double>* from)
-{ EIGEN_DEBUG_UNALIGNED_LOAD return Packet1cd(ploadu<Packet2d>((const double*)from)); }
+{ EIGEN_DEBUG_UNALIGNED_LOAD return Packet1cd(ploadu<Packet2d>(reinterpret_cast<const double*>(from))); }
 
 template<> EIGEN_STRONG_INLINE Packet1cd pset1<Packet1cd>(const std::complex<double>& from)
 {
@@ -442,13 +442,13 @@ template<> EIGEN_STRONG_INLINE Packet1cd ploaddup<Packet1cd>(const std::complex<
 { return pset1<Packet1cd>(*from); }
 
 template<> EIGEN_STRONG_INLINE void pstore <std::complex<double> >(std::complex<double> *to, const Packet1cd& from)
-{ EIGEN_DEBUG_ALIGNED_STORE pstore((double*)to, from.v); }
+{ EIGEN_DEBUG_ALIGNED_STORE pstore(reinterpret_cast<double*>(to), from.v); }
 
 template<> EIGEN_STRONG_INLINE void pstoreu<std::complex<double> >(std::complex<double> *to, const Packet1cd& from)
-{ EIGEN_DEBUG_UNALIGNED_STORE pstoreu((double*)to, from.v); }
+{ EIGEN_DEBUG_UNALIGNED_STORE pstoreu(reinterpret_cast<double*>(to), from.v); }
 
 template<> EIGEN_STRONG_INLINE void prefetch<std::complex<double> >(const std::complex<double> *addr)
-{ EIGEN_ARM_PREFETCH((const double *)addr); }
+{ EIGEN_ARM_PREFETCH(reinterpret_cast<const double*>(addr)); }
 
 template<> EIGEN_DEVICE_FUNC inline Packet1cd pgather<std::complex<double>, Packet1cd>(
     const std::complex<double>* from, Index stride)
