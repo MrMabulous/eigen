@@ -81,9 +81,7 @@ template<> struct unpacket_traits<Packet2cf>
 
 template<> EIGEN_STRONG_INLINE Packet2cf pset1<Packet2cf>(const std::complex<float>& from)
 {
-  float32x2_t r64;
-  r64 = vld1_f32(reinterpret_cast<const float*>(&from));
-
+  const float32x2_t r64 = vld1_f32(reinterpret_cast<const float*>(&from));
   return Packet2cf(vcombine_f32(r64, r64));
 }
 
