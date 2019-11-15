@@ -202,14 +202,9 @@ template<> EIGEN_STRONG_INLINE std::complex<float> predux<Packet2cf>(const Packe
 
 template<> EIGEN_STRONG_INLINE Packet2cf preduxp<Packet2cf>(const Packet2cf* vecs)
 {
-  Packet4f sum1, sum2, sum;
-
-  // Add the first two 64-bit float32x2_t of vecs[0]
-  sum1 = vcombine_f32(vget_low_f32(vecs[0].v), vget_low_f32(vecs[1].v));
-  sum2 = vcombine_f32(vget_high_f32(vecs[0].v), vget_high_f32(vecs[1].v));
-  sum = vaddq_f32(sum1, sum2);
-
-  return Packet2cf(sum);
+  const Packet4f sum1 = vcombine_f32(vget_low_f32(vecs[0].v), vget_low_f32(vecs[1].v));
+  const Packet4f sum2 = vcombine_f32(vget_high_f32(vecs[0].v), vget_high_f32(vecs[1].v));
+  return Packet2cf(vaddq_f32(sum1, sum2));
 }
 
 template<> EIGEN_STRONG_INLINE std::complex<float> predux_mul<Packet2cf>(const Packet2cf& a)

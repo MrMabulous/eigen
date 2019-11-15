@@ -467,41 +467,19 @@ template<> EIGEN_STRONG_INLINE int32_t predux<Packet4i>(const Packet4i& a)
 
 template<> EIGEN_STRONG_INLINE Packet4f preduxp<Packet4f>(const Packet4f* vecs)
 {
-  float32x4x2_t vtrn1, vtrn2, res1, res2;
-  Packet4f sum1, sum2, sum;
-
-  // NEON zip performs interleaving of the supplied vectors.
-  // We perform two interleaves in a row to acquire the transposed vector
-  vtrn1 = vzipq_f32(vecs[0], vecs[2]);
-  vtrn2 = vzipq_f32(vecs[1], vecs[3]);
-  res1 = vzipq_f32(vtrn1.val[0], vtrn2.val[0]);
-  res2 = vzipq_f32(vtrn1.val[1], vtrn2.val[1]);
-
-  // Do the addition of the resulting vectors
-  sum1 = vaddq_f32(res1.val[0], res1.val[1]);
-  sum2 = vaddq_f32(res2.val[0], res2.val[1]);
-  sum = vaddq_f32(sum1, sum2);
-
-  return sum;
+  const float32x4x2_t vtrn1 = vzipq_f32(vecs[0], vecs[2]);
+  const float32x4x2_t vtrn2 = vzipq_f32(vecs[1], vecs[3]);
+  const float32x4x2_t res1 = vzipq_f32(vtrn1.val[0], vtrn2.val[0]);
+  const float32x4x2_t res2 = vzipq_f32(vtrn1.val[1], vtrn2.val[1]);
+  return vaddq_f32(vaddq_f32(res1.val[0], res1.val[1]), vaddq_f32(res2.val[0], res2.val[1]));
 }
 template<> EIGEN_STRONG_INLINE Packet4i preduxp<Packet4i>(const Packet4i* vecs)
 {
-  int32x4x2_t vtrn1, vtrn2, res1, res2;
-  Packet4i sum1, sum2, sum;
-
-  // NEON zip performs interleaving of the supplied vectors.
-  // We perform two interleaves in a row to acquire the transposed vector
-  vtrn1 = vzipq_s32(vecs[0], vecs[2]);
-  vtrn2 = vzipq_s32(vecs[1], vecs[3]);
-  res1 = vzipq_s32(vtrn1.val[0], vtrn2.val[0]);
-  res2 = vzipq_s32(vtrn1.val[1], vtrn2.val[1]);
-
-  // Do the addition of the resulting vectors
-  sum1 = vaddq_s32(res1.val[0], res1.val[1]);
-  sum2 = vaddq_s32(res2.val[0], res2.val[1]);
-  sum = vaddq_s32(sum1, sum2);
-
-  return sum;
+  const int32x4x2_t vtrn1 = vzipq_s32(vecs[0], vecs[2]);
+  const int32x4x2_t vtrn2 = vzipq_s32(vecs[1], vecs[3]);
+  const int32x4x2_t res1 = vzipq_s32(vtrn1.val[0], vtrn2.val[0]);
+  const int32x4x2_t res2 = vzipq_s32(vtrn1.val[1], vtrn2.val[1]);
+  return vaddq_s32(vaddq_s32(res1.val[0], res1.val[1]), vaddq_s32(res2.val[0], res2.val[1]));
 }
 
 // Other reduction functions:
@@ -763,15 +741,7 @@ template<> EIGEN_STRONG_INLINE double predux<Packet2d>(const Packet2d& a)
 
 template<> EIGEN_STRONG_INLINE Packet2d preduxp<Packet2d>(const Packet2d* vecs)
 {
-  float64x2_t trn1, trn2;
-
-  // NEON zip performs interleaving of the supplied vectors.
-  // We perform two interleaves in a row to acquire the transposed vector
-  trn1 = vzip1q_f64(vecs[0], vecs[1]);
-  trn2 = vzip2q_f64(vecs[0], vecs[1]);
-
-  // Do the addition of the resulting vectors
-  return vaddq_f64(trn1, trn2);
+  return vaddq_f64(vzip1q_f64(vecs[0], vecs[1]), vzip2q_f64(vecs[0], vecs[1]));
 }
 // Other reduction functions:
 // mul
