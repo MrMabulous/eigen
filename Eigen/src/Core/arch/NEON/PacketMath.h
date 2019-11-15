@@ -211,15 +211,13 @@ template<> EIGEN_STRONG_INLINE Packet4f pset1frombits<Packet4f>(unsigned int fro
 
 template<> EIGEN_STRONG_INLINE Packet4f plset<Packet4f>(const float& a)
 {
-  const float f[] = {0.0f,1.0f,2.0f,3.0f};
-  Packet4f countdown = vld1q_f32(f);
-  return vaddq_f32(pset1<Packet4f>(a), countdown);
+  const float c[] = {0.0f,1.0f,2.0f,3.0f};
+  return vaddq_f32(pset1<Packet4f>(a), vld1q_f32(c));
 }
 template<> EIGEN_STRONG_INLINE Packet4i plset<Packet4i>(const int32_t& a)
 {
-  const int32_t i[] = {0,1,2,3};
-  Packet4i countdown = vld1q_s32(i);
-  return vaddq_s32(pset1<Packet4i>(a), countdown);
+  const int32_t c[] = {0,1,2,3};
+  return vaddq_s32(pset1<Packet4i>(a), vld1q_s32(c));
 }
 
 template<> EIGEN_STRONG_INLINE Packet4f padd<Packet4f>(const Packet4f& a, const Packet4f& b) { return vaddq_f32(a,b); }
@@ -729,9 +727,8 @@ template<> EIGEN_STRONG_INLINE Packet2d pset1<Packet2d>(const double&  from) { r
 
 template<> EIGEN_STRONG_INLINE Packet2d plset<Packet2d>(const double& a)
 {
-  const double countdown_raw[] = {0.0,1.0};
-  const Packet2d countdown = vld1q_f64(countdown_raw);
-  return vaddq_f64(pset1<Packet2d>(a), countdown);
+  const double c[] = {0.0,1.0};
+  return vaddq_f64(pset1<Packet2d>(a), vld1q_f64(c));
 }
 
 template<> EIGEN_STRONG_INLINE Packet2d padd<Packet2d>(const Packet2d& a, const Packet2d& b) { return vaddq_f64(a,b); }
