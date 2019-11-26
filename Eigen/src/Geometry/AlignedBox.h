@@ -288,15 +288,6 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(_Scalar,_AmbientDim)
    * Specialization of transformInPlace for pure translation.
    */
   EIGEN_DEVICE_FUNC inline void transformInPlace(
-      typename IsometryTransform::ConstTranslationPart& translation)
-  {
-    this->translate(translation);
-  }
-
-  /**
-   * Specialization of transformInPlace for pure translation.
-   */
-  EIGEN_DEVICE_FUNC inline void transformInPlace(
       const typename IsometryTransform::TranslationType& translation)
   {
     this->translate(translation);
