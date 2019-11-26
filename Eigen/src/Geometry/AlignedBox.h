@@ -247,7 +247,7 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(_Scalar,_AmbientDim)
     return *this;
   }
 
-  /** Translate \c *this by the vector \a t and returns a new \c AlignedBox. */
+  /** \returns a copy of \c *this translated by the vector \a t. */
   template<typename Derived>
   EIGEN_DEVICE_FUNC inline AlignedBox translated(const MatrixBase<Derived>& a_t) const
   {
@@ -320,7 +320,7 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(_Scalar,_AmbientDim)
   }
 
   /**
-   * \returns This box transformed by \a transform and recomputed to
+   * \returns a copy of \c *this transformed by \a transform and recomputed to
    * still be an axis-aligned box.
    */
   EIGEN_DEVICE_FUNC AlignedBox transformed(
