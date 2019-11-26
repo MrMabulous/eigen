@@ -285,9 +285,9 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(_Scalar,_AmbientDim)
   { EIGEN_USING_STD_MATH(sqrt) return sqrt(NonInteger(squaredExteriorDistance(b))); }
 
   /**
-   * Specialization of transformInPlace for pure translation.
+   * Specialization of transform for pure translation.
    */
-  EIGEN_DEVICE_FUNC inline void transformInPlace(
+  EIGEN_DEVICE_FUNC inline void transform(
       const typename IsometryTransform::TranslationType& translation)
   {
     this->translate(translation);
@@ -297,8 +297,7 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(_Scalar,_AmbientDim)
    * Transforms this box by \a transform and recomputes it to
    * still be an axis-aligned box.
    */
-  EIGEN_DEVICE_FUNC inline void transformInPlace(
-      const IsometryTransform& transform)
+  EIGEN_DEVICE_FUNC inline void transform(const IsometryTransform& transform)
   {
     // Method adapted from FCL src/shape/geometric_shapes_utility.cpp#computeBV<AABB, Box>(...) (BSD-licensed code):
     // https://github.com/flexible-collision-library/fcl/blob/fcl-0.4/src/shape/geometric_shapes_utility.cpp#L292
@@ -327,7 +326,7 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(_Scalar,_AmbientDim)
       const IsometryTransform& transform) const
   {
     AlignedBox result(m_min, m_max);
-    result.transformInPlace(transform);
+    result.transform(transform);
     return result;
   }
 

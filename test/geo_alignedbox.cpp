@@ -114,7 +114,7 @@ template<typename BoxType> void alignedboxTranslatable(const BoxType& _box)
   for (Index d = 1; d < dim; ++d)
     VERIFY_IS_APPROX((b.max)()[d], Scalar(2));
 
-  // Test transformInPlace
+  // Test transform
 
   IsometryTransform tf = IsometryTransform::Identity();
   tf.translation() = -translate;
@@ -128,7 +128,7 @@ template<typename BoxType> void alignedboxTranslatable(const BoxType& _box)
     VERIFY_IS_APPROX((c.max)()[d], (a.max)()[d]);
   }
 
-  c.transformInPlace(tf);
+  c.transform(tf);
   // translate by (-2, -1, -1) -> box((-3, -2, -2), (-1, 0, 0))
   for (Index d = 0; d < dim; ++d)
     VERIFY_IS_APPROX(c.sizes()[d], a.sizes()[d]);
@@ -208,7 +208,7 @@ template<typename BoxType, typename Rotation> void alignedboxRotatable(
   Rotation rot = _rotate(NonInteger(EIGEN_PI));
   tf2.rotate(rot);
 
-  c.transformInPlace(tf2);
+  c.transform(tf2);
   // rotate by 180 deg ->  box((-3, -2, -2), (-1, 0, 0))
 
   for (Index d = 0; d < dim; ++d)
@@ -226,7 +226,7 @@ template<typename BoxType, typename Rotation> void alignedboxRotatable(
   rot = _rotate(NonInteger(EIGEN_PI/2));
   tf2.rotate(rot);
 
-  c.transformInPlace(tf2);
+  c.transform(tf2);
   // rotate by 90 deg ->  box((-3, -2, -2), (-1, 0, 0))
 
   for (Index d = 0; d < dim; ++d)
@@ -247,7 +247,7 @@ template<typename BoxType, typename Rotation> void alignedboxRotatable(
   rot = _rotate(NonInteger(EIGEN_PI/3));
   tf2.rotate(rot);
 
-  c.transformInPlace(tf2);
+  c.transform(tf2);
   // rotate by 60 deg ->  box((-4.36, -3.36, -2), (0.36, 1.36, 0))
   // just draw the figure and these numbers will pop out
 
