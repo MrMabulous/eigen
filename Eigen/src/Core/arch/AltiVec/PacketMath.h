@@ -171,10 +171,11 @@ struct packet_traits<int> : default_packet_traits {
     size = 4,
     HasHalfPacket = 0,
 
-    HasAdd  = 1,
-    HasSub  = 1,
-    HasMul  = 1,
-    HasDiv  = 0,
+    HasAdd   = 1,
+    HasSub   = 1,
+    HasShift = 1,
+    HasMul   = 1,
+    HasDiv   = 0,
     HasBlend = 1
   };
 };

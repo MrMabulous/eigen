@@ -165,6 +165,7 @@ template<> struct packet_traits<int>    : default_packet_traits
     AlignedOnScalar = 1,
     size=4,
 
+    HasShift = 1,
     HasBlend = 1
   };
 };
