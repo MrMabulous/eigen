@@ -19,6 +19,9 @@ using namespace std;
 template<typename T> EIGEN_DONT_INLINE
 void kill_extra_precision(T& ) {  }
 
+// VERIFY_IS_APPROX isn't good for comparisons against zero!
+#define VERIFY_ALMOST_ZERO(num) VERIFY_IS_APPROX((num) + Scalar(1), Scalar(1))
+
 
 template<typename BoxType> void alignedbox(const BoxType& _box)
 {
@@ -147,6 +150,27 @@ template<typename BoxType> void alignedboxTranslatable(const BoxType& _box)
   BoxType transformedC;
   transformedC.extend(c.transformed(identity));
   VERIFY(transformedC.contains(c));
+
+  for (size_t i = 0; i < 10; ++i)
+  {
+    VectorType minCorner, maxCorner;
+    for (Index d = 0; d < dim; ++d)
+    {
+      minCorner[d] = internal::random<Scalar>(-10,10);
+      maxCorner[d] = minCorner[d] + internal::random<Scalar>(0, 10);
+    }
+
+    c = BoxType(minCorner, maxCorner);
+
+    VectorType translate = VectorType::Random();
+    c.translate(translate);
+
+    for (Index d = 0; d < dim; ++d)
+    {
+      VERIFY_IS_APPROX((c.min)()[d], minCorner[d] + translate[d]);
+      VERIFY_IS_APPROX((c.max)()[d], maxCorner[d] + translate[d]);
+    }
+  }
 }
 
 template<typename Scalar, typename Rotation>
@@ -195,11 +219,11 @@ template<typename BoxType, typename Rotation> void alignedboxRotatable(
   // but the first coordinate to the same value; so basically 3D case works as
   // if you were looking at the scene from top
 
-  VectorType min = -2*VectorType::Ones(dim);
-  min[0] = -3;
-  VectorType max = VectorType::Zero(dim);
-  max[0] = -1;
-  BoxType c(min, max);
+  VectorType minPoint = -2*VectorType::Ones(dim);
+  minPoint[0] = -3;
+  VectorType maxPoint = VectorType::Zero(dim);
+  maxPoint[0] = -1;
+  BoxType c(minPoint, maxPoint);
   // box((-3, -2, -2), (-1, 0, 0))
 
   IsometryTransform tf2 = IsometryTransform::Identity();
@@ -209,66 +233,129 @@ template<typename BoxType, typename Rotation> void alignedboxRotatable(
   tf2.rotate(rot);
 
   c.transform(tf2);
-  // rotate by 180 deg ->  box((-3, -2, -2), (-1, 0, 0))
+  // rotate by 180 deg around origin -> box((1, 0, -2), (3, 2, 0))
 
   for (Index d = 0; d < dim; ++d)
     VERIFY_IS_APPROX(c.sizes()[d], a.sizes()[d]);
 
-  VERIFY_IS_APPROX((c.min)()[0], Scalar(-3));
-  VERIFY_IS_APPROX((c.max)()[0], Scalar(-1));
-  for (Index d = 1; d < dim; ++d)
+  VERIFY_IS_APPROX((c.min)()[0], Scalar(1));
+  VERIFY_IS_APPROX((c.max)()[0], Scalar(3));
+  VERIFY_IS_APPROX((c.min)()[1], Scalar(0));
+  VERIFY_IS_APPROX((c.max)()[1], Scalar(2));
+  for (Index d = 2; d < dim; ++d)
   {
-    VERIFY_IS_APPROX((c.min)()[d], Scalar(-2));
-    // VERIFY_IS_APPROX isn't good for comparisons against zero!
-    VERIFY_IS_APPROX((c.max)()[d] + Scalar(1), Scalar(1));
+    VERIFY_IS_APPROX((c.min)()[2], Scalar(-2));
+    VERIFY_ALMOST_ZERO((c.max)()[2]);
   }
 
   rot = _rotate(NonInteger(EIGEN_PI/2));
+  tf2.setIdentity();
   tf2.rotate(rot);
 
   c.transform(tf2);
-  // rotate by 90 deg ->  box((-3, -2, -2), (-1, 0, 0))
+  // rotate by 90 deg around origin ->  box((-2, 1, -2), (0, 3, 0))
 
   for (Index d = 0; d < dim; ++d)
     VERIFY_IS_APPROX(c.sizes()[d], a.sizes()[d]);
 
-  VERIFY_IS_APPROX((c.min)()[0], Scalar(-3));
-  VERIFY_IS_APPROX((c.max)()[0], Scalar(-1));
-  for (Index d = 1; d < dim; ++d)
+  VERIFY_IS_APPROX((c.min)()[0], Scalar(-2));
+  VERIFY_ALMOST_ZERO((c.max)()[0]);
+  VERIFY_IS_APPROX((c.min)()[1], Scalar(1));
+  VERIFY_IS_APPROX((c.max)()[1], Scalar(3));
+  for (Index d = 2; d < dim; ++d)
   {
-    VERIFY_IS_APPROX((c.min)()[d], Scalar(-2));
-    // VERIFY_IS_APPROX isn't good for comparisons against zero!
-    VERIFY_IS_APPROX((c.max)()[d] + Scalar(1), Scalar(1));
+    VERIFY_IS_APPROX((c.min)()[2], Scalar(-2));
+    VERIFY_ALMOST_ZERO((c.max)()[2]);
   }
 
   if (!allowNonIntegralRotations)
     return;
 
-  rot = _rotate(NonInteger(EIGEN_PI/3));
+  VectorType cornerBL = (c.min)();
+  VectorType cornerTR = (c.max)();
+  VectorType cornerBR = (c.min)(); cornerBR[0] = cornerTR[0];
+  VectorType cornerTL = (c.max)(); cornerTL[0] = cornerBL[0];
+
+  NonInteger angle = NonInteger(EIGEN_PI/3);
+  rot = _rotate(angle);
+  tf2.setIdentity();
   tf2.rotate(rot);
 
   c.transform(tf2);
-  // rotate by 60 deg ->  box((-4.36, -3.36, -2), (0.36, 1.36, 0))
+  // rotate by 60 deg ->  box((-3.59, -1.23, -2), (-0.86, 1.5, 0))
   // just draw the figure and these numbers will pop out
 
-  const VectorType sizes = a.sizes();
-  const VectorType halfSizes = sizes / Scalar(2);
-  const Scalar diagonal = numext::hypot(halfSizes[0], halfSizes[1]);
-  const Scalar newCorner = Scalar(Scalar(numext::cos(EIGEN_PI / 12)) * diagonal);
-  for (Index d = 0; d < 2; ++d)
-    VERIFY_IS_APPROX(c.sizes()[d], Scalar(2 * newCorner));
-  for (Index d = 2; d < dim; ++d)
-    VERIFY_IS_APPROX(c.sizes()[d], sizes[d]);
+  cornerBL = tf2 * cornerBL;
+  cornerBR = tf2 * cornerBR;
+  cornerTL = tf2 * cornerTL;
+  cornerTR = tf2 * cornerTR;
+  
+  VectorType minCorner;
+  VectorType maxCorner;
+  minCorner[0] = (min)((min)(cornerBL[0], cornerBR[0]), (min)(cornerTL[0], cornerTR[0]));
+  maxCorner[0] = (max)((max)(cornerBL[0], cornerBR[0]), (max)(cornerTL[0], cornerTR[0]));
+  minCorner[1] = (min)((min)(cornerBL[1], cornerBR[1]), (min)(cornerTL[1], cornerTR[1]));
+  maxCorner[1] = (max)((max)(cornerBL[1], cornerBR[1]), (max)(cornerTL[1], cornerTR[1]));
 
-  VERIFY_IS_APPROX((c.min)()[0], Scalar(-3 - Scalar(newCorner - halfSizes[0])));
-  VERIFY_IS_APPROX((c.max)()[0], Scalar(-1 + Scalar(newCorner - halfSizes[0])));
-  VERIFY_IS_APPROX((c.min)()[1], Scalar(-2 - Scalar(newCorner - halfSizes[1])));
-  VERIFY_IS_APPROX((c.max)()[1], Scalar(0 + Scalar(newCorner - halfSizes[1])));
+  for (Index d = 2; d < dim; ++d)
+    VERIFY_IS_APPROX(c.sizes()[d], a.sizes()[d]);
+
+  VERIFY_IS_APPROX((c.min)()[0], minCorner[0]);
+  VERIFY_IS_APPROX((c.min)()[0], Scalar(Scalar(-sqrt(2*2 + 3*3)) * Scalar(cos(Scalar(atan(2.0/3.0)) - angle/2))));
+  VERIFY_IS_APPROX((c.max)()[0], maxCorner[0]);
+  VERIFY_IS_APPROX((c.max)()[0], Scalar(-sin(angle)));
+  VERIFY_IS_APPROX((c.min)()[1], minCorner[1]);
+  VERIFY_IS_APPROX((c.min)()[1], Scalar(Scalar(-sqrt(1*1 + 2*2)) * Scalar(sin(Scalar(atan(2.0/1.0)) - angle/2))));
+  VERIFY_IS_APPROX((c.max)()[1], maxCorner[1]);
+  VERIFY_IS_APPROX((c.max)()[1], Scalar(3 * cos(angle)));
   for (Index d = 2; d < dim; ++d)
   {
     VERIFY_IS_APPROX((c.min)()[d], Scalar(-2));
-    // VERIFY_IS_APPROX isn't good for comparisons against zero!
-    VERIFY_IS_APPROX((c.max)()[d] + Scalar(1), Scalar(1));
+    VERIFY_ALMOST_ZERO((c.max)()[d]);
+  }
+
+  // randomized test - transform the box and compare to a box made of transformed vertices
+  for (size_t i = 0; i < 10; ++i)
+  {
+    for (Index d = 0; d < dim; ++d)
+    {
+      minCorner[d] = internal::random<Scalar>(-10,10);
+      maxCorner[d] = minCorner[d] + internal::random<Scalar>(0, 10);
+    }
+
+    c = BoxType(minCorner, maxCorner);
+
+    std::vector<VectorType> corners;
+    const size_t numCorners = (dim == 1 ? 2 : (dim == 2 ? 4 : 8));
+    for (int corner = 0; corner < static_cast<int>(numCorners); ++corner)
+      corners.push_back(c.corner(static_cast<typename BoxType::CornerType>(corner)));
+
+    angle = internal::random<NonInteger>(-EIGEN_PI, EIGEN_PI);
+    rot = _rotate(angle);
+    tf2.setIdentity();
+    tf2.rotate(rot);
+
+    c.transform(tf2);
+    for (size_t corner = 0; corner < numCorners; ++corner)
+      corners[corner] = tf2 * corners[corner];
+
+    for (Index d = 0; d < dim; ++d)
+    {
+      minCorner[d] = corners[0][d];
+      maxCorner[d] = corners[0][d];
+
+      for (size_t corner = 0; corner < numCorners; ++corner)
+      {
+        minCorner[d] = (min)(minCorner[d], corners[corner][d]);
+        maxCorner[d] = (max)(maxCorner[d], corners[corner][d]);
+      }
+    }
+
+    for (Index d = 0; d < dim; ++d)
+    {
+      VERIFY_IS_APPROX((c.min)()[d], minCorner[d]);
+      VERIFY_IS_APPROX((c.max)()[d], maxCorner[d]);
+    }
   }
 }
 

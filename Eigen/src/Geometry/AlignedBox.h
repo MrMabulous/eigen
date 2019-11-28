@@ -310,14 +310,14 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(_Scalar,_AmbientDim)
       return;
     }
 
-    typedef Matrix<NonInteger, AmbientDimAtCompileTime, 1> NonIntegerVectorType;
+    // two times rotated extent
+    const VectorType rotated_extent_2 = transform.linear().cwiseAbs() * sizes();
+    // two times new center
+    const VectorType rotated_center_2 = transform.linear() * (this->m_max + this->m_min) +
+        Scalar(2) * transform.translation();
 
-    const NonIntegerVectorType v_delta = (transform.linear().cwiseAbs() * this->sizes()).template cast<NonInteger>() / NonInteger(2);
-    const NonIntegerVectorType rotated_center = ((this->m_max + this->m_min).template cast<NonInteger>() / NonInteger(2));  // TODO: not yet rotated
-    const NonIntegerVectorType new_center = rotated_center + transform.translation().template cast<NonInteger>();
-
-    this->m_max = (new_center + v_delta).template cast<Scalar>();
-    this->m_min = (new_center - v_delta).template cast<Scalar>();
+    this->m_max = (rotated_center_2 + rotated_extent_2) / Scalar(2);
+    this->m_min = (rotated_center_2 - rotated_extent_2) / Scalar(2);
   }
 
   /**
