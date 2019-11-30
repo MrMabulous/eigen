@@ -89,6 +89,7 @@ template<typename BoxType> void alignedboxTranslatable(const BoxType& _box)
   typedef typename BoxType::Scalar Scalar;
   typedef Matrix<Scalar, BoxType::AmbientDimAtCompileTime, 1> VectorType;
   typedef Transform<Scalar, BoxType::AmbientDimAtCompileTime, Isometry> IsometryTransform;
+  typedef Transform<Scalar, BoxType::AmbientDimAtCompileTime, Affine> AffineTransform;
 
   alignedbox(_box);
 
@@ -144,9 +145,40 @@ template<typename BoxType> void alignedboxTranslatable(const BoxType& _box)
     VERIFY_ALMOST_ZERO((c.max)()[d]);
   }
 
+  // Scaling
+
+  AffineTransform atf = AffineTransform::Identity();
+  atf.scale(Scalar(3));
+  c.transform(atf);
+  // scale by 3 -> box((-9, -6, -6), (-3, 0, 0))
+  for (Index d = 0; d < dim; ++d)
+    VERIFY_IS_APPROX(c.sizes()[d], Scalar(3) * a.sizes()[d]);
+
+  VERIFY_IS_APPROX((c.min)()[0], Scalar(-9));
+  VERIFY_IS_APPROX((c.max)()[0], Scalar(-3));
+  for (Index d = 1; d < dim; ++d)
+  {
+    VERIFY_IS_APPROX((c.min)()[d], Scalar(-6));
+    VERIFY_ALMOST_ZERO((c.max)()[d]);
+  }
+
+  atf = AffineTransform::Identity();
+  atf.scale(Scalar(-3));
+  c.transform(atf);
+  // scale by -3 -> box((27, 18, 18), (9, 0, 0))
+  for (Index d = 0; d < dim; ++d)
+    VERIFY_IS_APPROX(c.sizes()[d], Scalar(9) * a.sizes()[d]);
+
+  VERIFY_IS_APPROX((c.min)()[0], Scalar(9));
+  VERIFY_IS_APPROX((c.max)()[0], Scalar(27));
+  for (Index d = 1; d < dim; ++d)
+  {
+    VERIFY_ALMOST_ZERO((c.min)()[d]);
+    VERIFY_IS_APPROX((c.max)()[d], Scalar(18));
+  }
+
   // test for roundoff errors
-  IsometryTransform identity;
-  identity.setIdentity();
+  IsometryTransform identity = IsometryTransform::Identity();
   BoxType transformedC;
   transformedC.extend(c.transformed(identity));
   VERIFY(transformedC.contains(c));
@@ -258,6 +290,7 @@ template<typename BoxType, typename Rotation> void alignedboxRotatable(
   typedef typename NumTraits<Scalar>::NonInteger NonInteger;
   typedef Matrix<Scalar, BoxType::AmbientDimAtCompileTime, 1> VectorType;
   typedef Transform<Scalar, BoxType::AmbientDimAtCompileTime, Isometry> IsometryTransform;
+  typedef Transform<Scalar, BoxType::AmbientDimAtCompileTime, Affine> AffineTransform;
 
   const Index dim = _box.dim();
 
@@ -294,8 +327,8 @@ template<typename BoxType, typename Rotation> void alignedboxRotatable(
   VERIFY_IS_APPROX((c.max)()[1], Scalar(2));
   for (Index d = 2; d < dim; ++d)
   {
-    VERIFY_IS_APPROX((c.min)()[2], Scalar(-2));
-    VERIFY_ALMOST_ZERO((c.max)()[2]);
+    VERIFY_IS_APPROX((c.min)()[d], Scalar(-2));
+    VERIFY_ALMOST_ZERO((c.max)()[d]);
   }
 
   rot = _rotate(NonInteger(EIGEN_PI / 2));
@@ -314,8 +347,27 @@ template<typename BoxType, typename Rotation> void alignedboxRotatable(
   VERIFY_IS_APPROX((c.max)()[1], Scalar(3));
   for (Index d = 2; d < dim; ++d)
   {
-    VERIFY_IS_APPROX((c.min)()[2], Scalar(-2));
-    VERIFY_ALMOST_ZERO((c.max)()[2]);
+    VERIFY_IS_APPROX((c.min)()[d], Scalar(-2));
+    VERIFY_ALMOST_ZERO((c.max)()[d]);
+  }
+
+  // box((0, 0, 0), (2, 2, 2))
+  AffineTransform atf = AffineTransform::Identity();
+  atf.linearExt()(0, 1) = Scalar(1);
+  c = BoxType(VectorType::Zero(), 2 * VectorType::Ones());
+  c.transform(atf);
+  // 45 deg shear in x direction -> box((0, 0, 0), (4, 2, 2))
+
+  VERIFY_IS_APPROX(c.sizes()[0], Scalar(4));
+  for (Index d = 1; d < dim; ++d)
+    VERIFY_IS_APPROX(c.sizes()[d], Scalar(2));
+
+  VERIFY_ALMOST_ZERO((c.min)()[0]);
+  VERIFY_IS_APPROX((c.max)()[0], Scalar(4));
+  for (Index d = 1; d < dim; ++d)
+  {
+    VERIFY_ALMOST_ZERO((c.min)()[d]);
+    VERIFY_IS_APPROX((c.max)()[d], Scalar(2));
   }
 }
 
@@ -329,6 +381,7 @@ template<typename BoxType, typename Rotation> void alignedboxNonIntegralRotatabl
   typedef typename NumTraits<Scalar>::NonInteger NonInteger;
   typedef Matrix<Scalar, BoxType::AmbientDimAtCompileTime, 1> VectorType;
   typedef Transform<Scalar, BoxType::AmbientDimAtCompileTime, Isometry> IsometryTransform;
+  typedef Transform<Scalar, BoxType::AmbientDimAtCompileTime, Affine> AffineTransform;
 
   const Index dim = _box.dim();
 
@@ -385,7 +438,7 @@ template<typename BoxType, typename Rotation> void alignedboxNonIntegralRotatabl
     VERIFY_ALMOST_ZERO((c.max)()[d]);
   }
 
-  // randomized test - transform the box and compare to a box made of transformed vertices
+  // randomized test - translate and rotate the box and compare to a box made of transformed vertices
   for (size_t i = 0; i < 10; ++i)
   {
     for (Index d = 0; d < dim; ++d)
@@ -404,10 +457,52 @@ template<typename BoxType, typename Rotation> void alignedboxNonIntegralRotatabl
 
     tf2.setIdentity();
     tf2.rotate(rotation);
+    tf2.translate(VectorType::Random());
 
     c.transform(tf2);
     for (size_t corner = 0; corner < numCorners; ++corner)
       corners[corner] = tf2 * corners[corner];
+
+    for (Index d = 0; d < dim; ++d)
+    {
+      minCorner[d] = corners[0][d];
+      maxCorner[d] = corners[0][d];
+
+      for (size_t corner = 0; corner < numCorners; ++corner)
+      {
+        minCorner[d] = (min)(minCorner[d], corners[corner][d]);
+        maxCorner[d] = (max)(maxCorner[d], corners[corner][d]);
+      }
+    }
+
+    for (Index d = 0; d < dim; ++d)
+    {
+      VERIFY_IS_APPROX((c.min)()[d], minCorner[d]);
+      VERIFY_IS_APPROX((c.max)()[d], maxCorner[d]);
+    }
+  }
+
+  // randomized test - transform the box with a random affine matrix and compare to a box made of transformed vertices
+  for (size_t i = 0; i < 10; ++i)
+  {
+    for (Index d = 0; d < dim; ++d)
+    {
+      minCorner[d] = internal::random<Scalar>(-10,10);
+      maxCorner[d] = minCorner[d] + internal::random<Scalar>(0, 10);
+    }
+
+    c = BoxType(minCorner, maxCorner);
+
+    std::vector<VectorType> corners = boxGetCorners(minCorner, maxCorner);
+    const size_t numCorners = corners.size();
+
+    AffineTransform atf = AffineTransform::Identity();
+    atf.linearExt() = AffineTransform::LinearPart::Random();
+    atf.translate(VectorType::Random());
+
+    c.transform(atf);
+    for (size_t corner = 0; corner < numCorners; ++corner)
+      corners[corner] = atf * corners[corner];
 
     for (Index d = 0; d < dim; ++d)
     {

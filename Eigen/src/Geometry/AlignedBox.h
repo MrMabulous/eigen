@@ -38,8 +38,9 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(_Scalar,_AmbientDim)
   typedef typename ScalarTraits::Real               RealScalar;
   typedef typename ScalarTraits::NonInteger         NonInteger;
   typedef Matrix<Scalar,AmbientDimAtCompileTime,1>  VectorType;
+  typedef Matrix<Scalar,AmbientDimAtCompileTime,AmbientDimAtCompileTime>  RotationMatrixType;
   typedef CwiseBinaryOp<internal::scalar_sum_op<Scalar>, const VectorType, const VectorType> VectorTypeSum;
-  typedef Transform<Scalar, AmbientDimAtCompileTime, Isometry> IsometryTransform;
+  typedef Transform<Scalar, AmbientDimAtCompileTime, Affine | AffineCompact> AffineTransform;
 
   /** Define constants to name the corners of a 1D, 2D or 3D axis aligned bounding box */
   enum CornerType
@@ -288,7 +289,7 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(_Scalar,_AmbientDim)
    * Specialization of transform for pure translation.
    */
   EIGEN_DEVICE_FUNC inline void transform(
-      const typename IsometryTransform::TranslationType& translation)
+      const typename AffineTransform::TranslationType& translation)
   {
     this->translate(translation);
   }
@@ -297,18 +298,12 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(_Scalar,_AmbientDim)
    * Transforms this box by \a transform and recomputes it to
    * still be an axis-aligned box.
    */
-  EIGEN_DEVICE_FUNC inline void transform(const IsometryTransform& transform)
+  EIGEN_DEVICE_FUNC inline void transform(const AffineTransform& transform)
   {
     // Method adapted from FCL src/shape/geometric_shapes_utility.cpp#computeBV<AABB, Box>(...) (BSD-licensed code):
     // https://github.com/flexible-collision-library/fcl/blob/fcl-0.4/src/shape/geometric_shapes_utility.cpp#L292
     //
     // Here's a nice explanation why it works: https://zeuxcg.org/2010/10/17/aabb-from-obb-with-component-wise-abs/
-
-    if (this->dim() == 1)
-    {
-      this->translate(transform.translation());
-      return;
-    }
 
     // two times rotated extent
     const VectorType rotated_extent_2 = transform.linear().cwiseAbs() * sizes();
@@ -324,8 +319,7 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(_Scalar,_AmbientDim)
    * \returns a copy of \c *this transformed by \a transform and recomputed to
    * still be an axis-aligned box.
    */
-  EIGEN_DEVICE_FUNC AlignedBox transformed(
-      const IsometryTransform& transform) const
+  EIGEN_DEVICE_FUNC AlignedBox transformed(const AffineTransform& transform) const
   {
     AlignedBox result(m_min, m_max);
     result.transform(transform);
