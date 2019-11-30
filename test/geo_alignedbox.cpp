@@ -111,7 +111,7 @@ template<typename BoxType> void alignedboxTranslatable(const BoxType& _box)
 
   VERIFY_IS_APPROX((b.min)()[0], Scalar(1));
   for (Index d = 1; d < dim; ++d)
-    VERIFY_IS_APPROX((b.min)()[d], Scalar(0));
+    VERIFY_ALMOST_ZERO((b.min)()[d]);
 
   VERIFY_IS_APPROX((b.max)()[0], Scalar(3));
   for (Index d = 1; d < dim; ++d)
@@ -141,7 +141,7 @@ template<typename BoxType> void alignedboxTranslatable(const BoxType& _box)
   for (Index d = 1; d < dim; ++d)
   {
     VERIFY_IS_APPROX((c.min)()[d], Scalar(-2));
-    VERIFY_IS_APPROX((c.max)()[d], Scalar(0));
+    VERIFY_ALMOST_ZERO((c.max)()[d]);
   }
 
   // test for roundoff errors
@@ -153,7 +153,8 @@ template<typename BoxType> void alignedboxTranslatable(const BoxType& _box)
 
   for (size_t i = 0; i < 10; ++i)
   {
-    VectorType minCorner, maxCorner;
+    VectorType minCorner;
+    VectorType maxCorner;
     for (Index d = 0; d < dim; ++d)
     {
       minCorner[d] = internal::random<Scalar>(-10,10);
@@ -162,7 +163,7 @@ template<typename BoxType> void alignedboxTranslatable(const BoxType& _box)
 
     c = BoxType(minCorner, maxCorner);
 
-    VectorType translate = VectorType::Random();
+    translate = VectorType::Random();
     c.translate(translate);
 
     for (Index d = 0; d < dim; ++d)
@@ -197,10 +198,59 @@ Rotation rotate3DZAxisIntegral(typename NumTraits<Scalar>::NonInteger _angle) {
       toRotationMatrix().template cast<Scalar>();
 }
 
+template<typename Scalar, typename Rotation>
+Rotation rotate4DZWAxis(Scalar _angle) {
+  Rotation result = Matrix<Scalar, 4, 4>::Identity();
+  result.block(0, 0, 3, 3) = rotate3DZAxis<Scalar, AngleAxisd>(_angle).toRotationMatrix();
+  return result;
+}
+
+template <typename MatrixType>
+MatrixType randomRotationMatrix()
+{
+  // algorithm from
+  // https://www.isprs-ann-photogramm-remote-sens-spatial-inf-sci.net/III-7/103/2016/isprs-annals-III-7-103-2016.pdf
+  const MatrixType rand = MatrixType::Random();
+  const MatrixType q = rand.householderQr().householderQ();
+  const JacobiSVD<MatrixType> svd = q.jacobiSvd(ComputeFullU | ComputeFullV);
+  const typename MatrixType::Scalar det = (svd.matrixU() * svd.matrixV().transpose()).determinant();
+  MatrixType diag = rand.Identity();
+  diag(MatrixType::RowsAtCompileTime - 1, MatrixType::ColsAtCompileTime - 1) = det;
+  const MatrixType rotation = svd.matrixU() * diag * svd.matrixV().transpose();
+  return rotation;
+}
+
+template <typename Scalar, int Dim>
+std::vector<Matrix<Scalar, Dim, 1> > boxGetCorners(const Matrix<Scalar, Dim, 1>& _min, const Matrix<Scalar, Dim, 1>& _max, int dim = Dim)
+{
+  std::vector<Matrix<Scalar, Dim, 1> > result;
+  if (dim == 1)
+  {
+    result.push_back(_min);
+    result.push_back(_max);
+  }
+  else
+  {
+    std::vector<Matrix<Scalar, Dim, 1> > shorter = boxGetCorners(_min, _max, dim - 1);
+    for (size_t i = 0; i < shorter.size(); ++i)
+    {
+      Matrix<Scalar, Dim , 1> vec = shorter[i];
+
+      Matrix<Scalar, Dim, 1> vec1 = _min;
+      vec1.block(Dim - dim, 0, dim - 1, 1) = vec.block(Dim - dim, 0, dim - 1, 1);
+      result.push_back(vec1);
+
+      Matrix<Scalar, Dim, 1> vec2 = _max;
+      vec2.block(Dim - dim, 0, dim - 1, 1) = vec.block(Dim - dim, 0, dim - 1, 1);
+      result.push_back(vec2);
+    }
+  }
+  return result;
+}
+
 template<typename BoxType, typename Rotation> void alignedboxRotatable(
     const BoxType& _box,
-    Rotation (*_rotate)(typename NumTraits<typename BoxType::Scalar>::NonInteger _angle),
-    const bool allowNonIntegralRotations = true)
+    Rotation (*_rotate)(typename NumTraits<typename BoxType::Scalar>::NonInteger /*_angle*/))
 {
   alignedboxTranslatable(_box);
 
@@ -219,7 +269,7 @@ template<typename BoxType, typename Rotation> void alignedboxRotatable(
   // but the first coordinate to the same value; so basically 3D case works as
   // if you were looking at the scene from top
 
-  VectorType minPoint = -2*VectorType::Ones(dim);
+  VectorType minPoint = -2 * VectorType::Ones(dim);
   minPoint[0] = -3;
   VectorType maxPoint = VectorType::Zero(dim);
   maxPoint[0] = -1;
@@ -240,7 +290,7 @@ template<typename BoxType, typename Rotation> void alignedboxRotatable(
 
   VERIFY_IS_APPROX((c.min)()[0], Scalar(1));
   VERIFY_IS_APPROX((c.max)()[0], Scalar(3));
-  VERIFY_IS_APPROX((c.min)()[1], Scalar(0));
+  VERIFY_ALMOST_ZERO((c.min)()[1]);
   VERIFY_IS_APPROX((c.max)()[1], Scalar(2));
   for (Index d = 2; d < dim; ++d)
   {
@@ -248,7 +298,7 @@ template<typename BoxType, typename Rotation> void alignedboxRotatable(
     VERIFY_ALMOST_ZERO((c.max)()[2]);
   }
 
-  rot = _rotate(NonInteger(EIGEN_PI/2));
+  rot = _rotate(NonInteger(EIGEN_PI / 2));
   tf2.setIdentity();
   tf2.rotate(rot);
 
@@ -267,9 +317,29 @@ template<typename BoxType, typename Rotation> void alignedboxRotatable(
     VERIFY_IS_APPROX((c.min)()[2], Scalar(-2));
     VERIFY_ALMOST_ZERO((c.max)()[2]);
   }
+}
 
-  if (!allowNonIntegralRotations)
-    return;
+template<typename BoxType, typename Rotation> void alignedboxNonIntegralRotatable(
+    const BoxType& _box,
+    Rotation (*_rotate)(typename NumTraits<typename BoxType::Scalar>::NonInteger /*_angle*/))
+{
+  alignedboxRotatable(_box, _rotate);
+
+  typedef typename BoxType::Scalar Scalar;
+  typedef typename NumTraits<Scalar>::NonInteger NonInteger;
+  typedef Matrix<Scalar, BoxType::AmbientDimAtCompileTime, 1> VectorType;
+  typedef Transform<Scalar, BoxType::AmbientDimAtCompileTime, Isometry> IsometryTransform;
+
+  const Index dim = _box.dim();
+
+  VectorType minPoint = -2 * VectorType::Ones(dim);
+  minPoint[0] = -2;
+  minPoint[1] = 1;
+  VectorType maxPoint = VectorType::Zero(dim);
+  maxPoint[0] = 0;
+  maxPoint[1] = 3;
+  BoxType c(minPoint, maxPoint);
+  // ((-2, 1, -2), (0, 3, 0))
 
   VectorType cornerBL = (c.min)();
   VectorType cornerTR = (c.max)();
@@ -277,7 +347,8 @@ template<typename BoxType, typename Rotation> void alignedboxRotatable(
   VectorType cornerTL = (c.max)(); cornerTL[0] = cornerBL[0];
 
   NonInteger angle = NonInteger(EIGEN_PI/3);
-  rot = _rotate(angle);
+  Rotation rot = _rotate(angle);
+  IsometryTransform tf2;
   tf2.setIdentity();
   tf2.rotate(rot);
 
@@ -298,7 +369,7 @@ template<typename BoxType, typename Rotation> void alignedboxRotatable(
   maxCorner[1] = (max)((max)(cornerBL[1], cornerBR[1]), (max)(cornerTL[1], cornerTR[1]));
 
   for (Index d = 2; d < dim; ++d)
-    VERIFY_IS_APPROX(c.sizes()[d], a.sizes()[d]);
+    VERIFY_IS_APPROX(c.sizes()[d], Scalar(2));
 
   VERIFY_IS_APPROX((c.min)()[0], minCorner[0]);
   VERIFY_IS_APPROX((c.min)()[0], Scalar(Scalar(-sqrt(2*2 + 3*3)) * Scalar(cos(Scalar(atan(2.0/3.0)) - angle/2))));
@@ -325,15 +396,14 @@ template<typename BoxType, typename Rotation> void alignedboxRotatable(
 
     c = BoxType(minCorner, maxCorner);
 
-    std::vector<VectorType> corners;
-    const size_t numCorners = (dim == 1 ? 2 : (dim == 2 ? 4 : 8));
-    for (int corner = 0; corner < static_cast<int>(numCorners); ++corner)
-      corners.push_back(c.corner(static_cast<typename BoxType::CornerType>(corner)));
+    std::vector<VectorType> corners = boxGetCorners(minCorner, maxCorner);
+    const size_t numCorners = corners.size();
 
-    angle = internal::random<NonInteger>(-EIGEN_PI, EIGEN_PI);
-    rot = _rotate(angle);
+    typename BoxType::RotationMatrixType rotation =
+        randomRotationMatrix<typename BoxType::RotationMatrixType>();
+
     tf2.setIdentity();
-    tf2.rotate(rot);
+    tf2.rotate(rotation);
 
     c.transform(tf2);
     for (size_t corner = 0; corner < numCorners; ++corner)
@@ -442,21 +512,21 @@ void test_geo_alignedbox()
 {
   for(int i = 0; i < g_repeat; i++)
   {
-    CALL_SUBTEST_1( (alignedboxRotatable<AlignedBox2f, Rotation2Df>(AlignedBox2f(), &rotate2D)) );
+    CALL_SUBTEST_1( (alignedboxNonIntegralRotatable<AlignedBox2f, Rotation2Df>(AlignedBox2f(), &rotate2D)) );
     CALL_SUBTEST_2( alignedboxCastTests(AlignedBox2f()) );
 
-    CALL_SUBTEST_3( (alignedboxRotatable<AlignedBox3f, AngleAxisf>(AlignedBox3f(), &rotate3DZAxis)) );
+    CALL_SUBTEST_3( (alignedboxNonIntegralRotatable<AlignedBox3f, AngleAxisf>(AlignedBox3f(), &rotate3DZAxis)) );
     CALL_SUBTEST_4( alignedboxCastTests(AlignedBox3f()) );
 
-    CALL_SUBTEST_5( alignedboxTranslatable(AlignedBox4d()) );
+    CALL_SUBTEST_5( (alignedboxNonIntegralRotatable<AlignedBox4d, Matrix4d>(AlignedBox4d(), &rotate4DZWAxis)) );
     CALL_SUBTEST_6( alignedboxCastTests(AlignedBox4d()) );
 
     CALL_SUBTEST_7( alignedboxTranslatable(AlignedBox1d()) );
     CALL_SUBTEST_8( alignedboxCastTests(AlignedBox1d()) );
 
     CALL_SUBTEST_9( alignedboxTranslatable(AlignedBox1i()) );
-    CALL_SUBTEST_10( (alignedboxRotatable<AlignedBox2i, Matrix2i>(AlignedBox2i(), &rotate2DIntegral<int, Matrix2i>, false)) );
-    CALL_SUBTEST_11( (alignedboxRotatable<AlignedBox3i, Matrix3i>(AlignedBox3i(), &rotate3DZAxisIntegral<int, Matrix3i>, false)) );
+    CALL_SUBTEST_10( (alignedboxRotatable<AlignedBox2i, Matrix2i>(AlignedBox2i(), &rotate2DIntegral<int, Matrix2i>)) );
+    CALL_SUBTEST_11( (alignedboxRotatable<AlignedBox3i, Matrix3i>(AlignedBox3i(), &rotate3DZAxisIntegral<int, Matrix3i>)) );
 
     CALL_SUBTEST_14( alignedbox(AlignedBox<double,Dynamic>(4)) );
   }
