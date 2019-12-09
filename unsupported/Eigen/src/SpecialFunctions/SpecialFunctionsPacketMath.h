@@ -16,6 +16,30 @@ namespace internal {
 
 /** \internal \returns the ln(|gamma(\a a)|) (coeff-wise) */
 template<typename Packet> EIGEN_DECLARE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS
+Packet pdawsn(const Packet& a) { using numext::dawsn; return dawsn(a); }
+
+/** \internal \returns the ln(|gamma(\a a)|) (coeff-wise) */
+template<typename Packet> EIGEN_DECLARE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS
+Packet pexpi(const Packet& a) { using numext::expi; return expi(a); }
+
+/** \internal \returns the ln(|gamma(\a a)|) (coeff-wise) */
+template<typename Packet> EIGEN_DECLARE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS
+Packet pfresnel_cos(const Packet& a) {
+  using numext::fresnel_cos; return fresnel_cos(a);
+}
+
+/** \internal \returns the ln(|gamma(\a a)|) (coeff-wise) */
+template<typename Packet> EIGEN_DECLARE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS
+Packet pfresnel_sin(const Packet& a) {
+  using numext::fresnel_sin; return fresnel_sin(a);
+}
+
+/** \internal \returns the ln(|gamma(\a a)|) (coeff-wise) */
+template<typename Packet> EIGEN_DECLARE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS
+Packet pspence(const Packet& a) { using numext::spence; return spence(a); }
+
+/** \internal \returns the ln(|gamma(\a a)|) (coeff-wise) */
+template<typename Packet> EIGEN_DECLARE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS
 Packet plgamma(const Packet& a) { using numext::lgamma; return lgamma(a); }
 
 /** \internal \returns the derivative of lgamma, psi(\a a) (coeff-wise) */
