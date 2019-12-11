@@ -467,8 +467,8 @@ struct functor_traits<scalar_spence_op<Scalar> > {
     // TODO
     Cost = 20 * NumTraits<Scalar>::MulCost + 10 * NumTraits<Scalar>::AddCost,
     // TODO
-    PacketAccess = (packet_traits<Scalar>::HasMul &&
-                    packet_traits<Scalar>::HasAdd)
+    PacketAccess = (packet_traits<Scalar>::HasLog &&
+                    packet_traits<Scalar>::HasLog1p)
   };
 };
 

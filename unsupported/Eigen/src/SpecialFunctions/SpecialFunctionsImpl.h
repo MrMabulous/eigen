@@ -2868,7 +2868,58 @@ struct fresnel_sin_impl {
 
 template <typename T, typename ScalarType>
 EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_spence(const T& x) {
-  return x;
+  const ScalarType A[] = {
+    ScalarType(4.65128586073990045278E-5),
+    ScalarType(7.31589045238094711071E-3),
+    ScalarType(1.33847639578309018650E-1),
+    ScalarType(8.79691311754530315341E-1),
+    ScalarType(2.71149851196553469920E0),
+    ScalarType(4.25697156008121755724E0),
+    ScalarType(3.29771340985225106936E0),
+    ScalarType(1.00000000000000000126E0),
+  };
+  const ScalarType B[] = {
+    ScalarType(6.90990488912553276999E-4),
+    ScalarType(2.54043763932544379113E-2),
+    ScalarType(2.82974860602568089943E-1),
+    ScalarType(1.41172597751831069617E0),
+    ScalarType(3.63800533345137075418E0),
+    ScalarType(5.03278880143316990390E0),
+    ScalarType(3.54771340985225096217E0),
+    ScalarType(9.99999999999999998740E-1),
+  };
+  const T zero = pset1<T>(0.0);
+  const T one = pset1<T>(1.0);
+  const T three_halves = pset1<T>(1.5);
+  const T half = pset1<T>(0.5);
+  const T nan = pset1<T>(NumTraits<ScalarType>::quiet_NaN());
+  // pi**2 / 6.
+  const T PI2O6 = pset1<T>(EIGEN_PI * EIGEN_PI / 6.0);
+  T y = pselect(pcmp_lt(x, pset1<T>(2.0)), x, pdiv(one, x));
+  T w = pselect(
+      pcmp_lt(three_halves, y),
+      psub(pdiv(one, y), one),
+      pselect(
+          pcmp_lt(y, half),
+          pnegate(y),
+          psub(y, one)));
+  T spence = pmul(pnegate(w), pdiv(
+      internal::ppolevl<T, 7>::run(w, A),
+      internal::ppolevl<T, 7>::run(w, B)));
+  spence = pselect(
+      pcmp_lt(y, half),
+      pmadd(pnegate(plog(y)), plog1p(-y), psub(PI2O6, spence)),
+      spence);
+  T z = plog(y);
+  spence = pselect(
+      pcmp_lt(three_halves, x),
+      pmadd(pnegate(pmul(half, z)), z, pnegate(spence)),
+      spence);
+
+  spence = pselect(pcmp_eq(x, zero), PI2O6, spence);
+  spence = pselect(pcmp_eq(x, one), zero, spence);
+  spence = pselect(pcmp_lt(x, zero), nan, spence);
+  return spence;
 }
 
 template <typename Scalar>
