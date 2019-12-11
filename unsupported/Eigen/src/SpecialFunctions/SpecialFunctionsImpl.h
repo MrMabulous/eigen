@@ -2183,10 +2183,289 @@ struct dawsn_impl {
 // We split this computation in to two so that in the scalar path
 // only one branch is evaluated (due to our template specialization of pselect
 // being an if statement.)
+//
+template <typename T, typename ScalarType>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_expi_interval_1(const T& x) {
+  /* 0 < x <= 2
+   Ei(x) - EUL - ln(x) = x A(x)/B(x)
+   Theoretical peak relative error 9.73e-18  */
+  const ScalarType A[] = {
+    ScalarType(-5.350447357812542947283E0),
+    ScalarType(2.185049168816613393830E2),
+    ScalarType(-4.176572384826693777058E3),
+    ScalarType(5.541176756393557601232E4),
+    ScalarType(-3.313381331178144034309E5),
+    ScalarType(1.592627163384945414220E6),
+  };
+  const ScalarType B[] = {
+    ScalarType(1.0),
+    ScalarType(-5.250547959112862969197E1),
+    ScalarType(1.259616186786790571525E3),
+    ScalarType(-1.756549581973534652631E4),
+    ScalarType(1.493062117002725991967E5),
+    ScalarType(-7.294949239640527645655E5),
+    ScalarType(1.592627163384945429726E6),
+  };
+
+  // Euler gamma.
+  const T EUL = pset1<T>(0.5772156649015329);
+
+  const T f = pdiv(
+      internal::ppolevl<T, 5>::run(x, A),
+      internal::ppolevl<T, 6>::run(x, B));
+  return pmadd(x, f, padd(EUL, plog(x)));
+}
+
+template <typename T, typename ScalarType>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_expi_interval_2(const T& x) {
+  /* 2 <= x <= 4
+   x exp(-x) Ei(x) - 1  =  1/x A6(1/x) / B6(1/x)
+   Theoretical absolute error = 4.89e-17  */
+  const ScalarType A6[] = {
+    ScalarType(1.981808503259689673238E-2),
+    ScalarType(-1.271645625984917501326E0),
+    ScalarType(-2.088160335681228318920E0),
+    ScalarType(2.755544509187936721172E0),
+    ScalarType(-4.409507048701600257171E-1),
+    ScalarType(4.665623805935891391017E-2),
+    ScalarType(-1.545042679673485262580E-3),
+    ScalarType(7.059980605299617478514E-5),
+  };
+  const ScalarType B6[] = {
+    ScalarType(1.0),
+    ScalarType(1.476498670914921440652E0),
+    ScalarType(5.629177174822436244827E-1),
+    ScalarType(1.699017897879307263248E-1),
+    ScalarType(2.291647179034212017463E-2),
+    ScalarType(4.450150439728752875043E-3),
+    ScalarType(1.727439612206521482874E-4),
+    ScalarType(3.953167195549672482304E-5),
+  };
+
+  const T one = pset1<T>(1.0);
+  const T w = pdiv(one, x);
+  T f = pdiv(
+      internal::ppolevl<T, 7>::run(w, A6),
+      internal::ppolevl<T, 7>::run(w, B6));
+  f = pmadd(w, f, one);
+  return pmul(pmul(pexp(x), w), f);
+}
+
+template <typename T, typename ScalarType>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_expi_interval_3(const T& x) {
+  /* 4 <= x <= 8
+     x exp(-x) Ei(x) - 1  =  1/x A5(1/x) / B5(1/x)
+     Theoretical absolute error = 2.20e-17  */
+  const ScalarType A5[] = {
+    ScalarType(-1.373215375871208729803E0),
+    ScalarType(-7.084559133740838761406E-1),
+    ScalarType( 1.580806855547941010501E0),
+    ScalarType(-2.601500427425622944234E-1),
+    ScalarType( 2.994674694113713763365E-2),
+    ScalarType(-1.038086040188744005513E-3),
+    ScalarType( 4.371064420753005429514E-5),
+    ScalarType( 2.141783679522602903795E-6),
+  };
+  const ScalarType B5[] = {
+    ScalarType(1.0),
+    ScalarType(8.585231423622028380768E-1),
+    ScalarType(4.483285822873995129957E-1),
+    ScalarType(7.687932158124475434091E-2),
+    ScalarType(2.449868241021887685904E-2),
+    ScalarType(8.832165941927796567926E-4),
+    ScalarType(4.590952299511353531215E-4),
+    ScalarType(-4.729848351866523044863E-6),
+    ScalarType(2.665195537390710170105E-6),
+  };
+
+  const T one = pset1<T>(1.0);
+  const T w = pdiv(one, x);
+  T f = pdiv(
+      internal::ppolevl<T, 7>::run(w, A5),
+      internal::ppolevl<T, 8>::run(w, B5));
+  f = pmadd(w, f, one);
+  return pmul(pmul(pexp(x), w), f);
+}
+
+template <typename T, typename ScalarType>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_expi_interval_4(const T& x) {
+  /* 8 <= x <= 16
+   x exp(-x) Ei(x) - 1 = 1/x R(1/x)
+   Theoretical peak absolute error = 1.07e-17  */
+  const ScalarType A2[] = {
+    ScalarType(-2.106934601691916512584E0),
+    ScalarType(1.732733869664688041885E0),
+    ScalarType(-2.423619178935841904839E-1),
+    ScalarType(2.322724180937565842585E-2),
+    ScalarType(2.372880440493179832059E-4),
+    ScalarType(-8.343219561192552752335E-5),
+    ScalarType(1.363408795605250394881E-5),
+    ScalarType(-3.655412321999253963714E-7),
+    ScalarType(1.464941733975961318456E-8),
+    ScalarType(6.176407863710360207074E-10),
+  };
+  const ScalarType B2[] = {
+    ScalarType(1.0),
+    ScalarType(-2.298062239901678075778E-1),
+    ScalarType(1.105077041474037862347E-1),
+    ScalarType(-1.566542966630792353556E-2),
+    ScalarType(2.761106850817352773874E-3),
+    ScalarType(-2.089148012284048449115E-4),
+    ScalarType(1.708528938807675304186E-5),
+    ScalarType(-4.459311796356686423199E-7),
+    ScalarType(1.394634930353847498145E-8),
+    ScalarType(6.150865933977338354138E-10),
+  };
+
+  const T one = pset1<T>(1.0);
+  const T w = pdiv(one, x);
+  T f = pdiv(
+      internal::ppolevl<T, 9>::run(w, A2),
+      internal::ppolevl<T, 9>::run(w, B2));
+  f = pmadd(w, f, one);
+  return pmul(pmul(pexp(x), w), f);
+}
+
+template <typename T, typename ScalarType>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_expi_interval_5(const T& x) {
+  /* 16 <= x <= 32
+   x exp(-x) Ei(x) - 1  =  1/x A4(1/x) / B4(1/x)
+   Theoretical absolute error = 1.22e-17  */
+  const ScalarType A4[] = {
+    ScalarType(-2.458119367674020323359E-1),
+    ScalarType(-1.483382253322077687183E-1),
+    ScalarType( 7.248291795735551591813E-2),
+    ScalarType(-1.348315687380940523823E-2),
+    ScalarType( 1.342775069788636972294E-3),
+    ScalarType(-7.942465637159712264564E-5),
+    ScalarType( 2.644179518984235952241E-6),
+    ScalarType(-4.239473659313765177195E-8),
+  };
+  const ScalarType B4[] = {
+    ScalarType(1.0),
+    ScalarType(-1.044225908443871106315E-1),
+    ScalarType(-2.676453128101402655055E-1),
+    ScalarType( 9.695000254621984627876E-2),
+    ScalarType(-1.601745692712991078208E-2),
+    ScalarType( 1.496414899205908021882E-3),
+    ScalarType(-8.462452563778485013756E-5),
+    ScalarType( 2.728938403476726394024E-6),
+    ScalarType(-4.239462431819542051337E-8),
+  };
+
+  const T one = pset1<T>(1.0);
+  const T w = pdiv(one, x);
+  T f = pdiv(
+      internal::ppolevl<T, 7>::run(w, A4),
+      internal::ppolevl<T, 8>::run(w, B4));
+  f = pmadd(w, f, one);
+  return pmul(pmul(pexp(x), w), f);
+
+}
+
+template <typename T, typename ScalarType>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_expi_interval_6(const T& x) {
+  /* 32 <= x <= 64
+   x exp(-x) Ei(x) - 1  =  1/x A7(1/x) / B7(1/x)
+   Theoretical absolute error = 7.71e-18  */
+  const ScalarType A7[] = {
+    ScalarType(1.212561118105456670844E-1),
+    ScalarType(-5.823133179043894485122E-1),
+    ScalarType(2.348887314557016779211E-1),
+    ScalarType(-3.040034318113248237280E-2),
+    ScalarType(1.510082146865190661777E-3),
+    ScalarType(-2.523137095499571377122E-5),
+  };
+  const ScalarType B7[] = {
+    ScalarType(1.0),
+    ScalarType(-1.002252150365854016662E0),
+    ScalarType(2.928709694872224144953E-1),
+    ScalarType(-3.337004338674007801307E-2),
+    ScalarType(1.560544881127388842819E-3),
+    ScalarType(-2.523137093603234562648E-5),
+  };
+
+  const T one = pset1<T>(1.0);
+  const T w = pdiv(one, x);
+  T f = pdiv(
+      internal::ppolevl<T, 5>::run(w, A7),
+      internal::ppolevl<T, 5>::run(w, B7));
+  f = pmadd(w, f, one);
+  return pmul(pmul(pexp(x), w), f);
+
+}
+
+template <typename T, typename ScalarType>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_expi_interval_7(const T& x) {
+  /* x > 64
+   x exp(-x) Ei(x) - 1  =  1/x A3(1/x)/B3(1/x)
+   Theoretical absolute error = 6.15e-17  */
+  const ScalarType A3[] = {
+    ScalarType(-7.657847078286127362028E-1),
+    ScalarType(6.886192415566705051750E-1),
+    ScalarType(-2.132598113545206124553E-1),
+    ScalarType(3.346107552384193813594E-2),
+    ScalarType(-3.076541477344756050249E-3),
+    ScalarType(1.747119316454907477380E-4),
+    ScalarType(-6.103711682274170530369E-6),
+    ScalarType(1.218032765428652199087E-7),
+    ScalarType(-1.086076102793290233007E-9),
+  };
+  const ScalarType B3[] = {
+    ScalarType(1.0),
+    ScalarType(-1.888802868662308731041E0),
+    ScalarType(1.066691687211408896850E0),
+    ScalarType(-2.751915982306380647738E-1),
+    ScalarType(3.930852688233823569726E-2),
+    ScalarType(-3.414684558602365085394E-3),
+    ScalarType(1.866844370703555398195E-4),
+    ScalarType(-6.345146083130515357861E-6),
+    ScalarType(1.239754287483206878024E-7),
+    ScalarType(-1.086076102793126632978E-9),
+  };
+
+  const T one = pset1<T>(1.0);
+  const T w = pdiv(one, x);
+  T f = pdiv(
+      internal::ppolevl<T, 8>::run(w, A3),
+      internal::ppolevl<T, 9>::run(w, B3));
+  f = pmadd(w, f, one);
+  return pmul(pmul(pexp(x), w), f);
+}
 
 template <typename T, typename ScalarType>
 EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_expi(const T& x) {
-  return x;
+
+  const T two = pset1<T>(2.0);
+  const T four = pset1<T>(4.0);
+  const T eight = pset1<T>(8.0);
+  const T sixteen = pset1<T>(16.0);
+  const T thirty_two = pset1<T>(32.0);
+  const T sixty_four = pset1<T>(64.0);
+  const T nan = pset1<T>(NumTraits<ScalarType>::quiet_NaN());
+
+  const T expi_lt_16 =
+      pselect(
+          pcmp_lt(x, four),
+          pselect(
+              pcmp_lt(x, two),
+              generic_expi_interval_1<T, ScalarType>(x),
+              generic_expi_interval_2<T, ScalarType>(x)),
+          pselect(
+              pcmp_lt(x, eight),
+              generic_expi_interval_3<T, ScalarType>(x),
+              generic_expi_interval_4<T, ScalarType>(x)));
+
+  const T expi_gt_16 =
+      pselect(
+          pcmp_lt(x, thirty_two),
+          generic_expi_interval_5<T, ScalarType>(x),
+          pselect(
+              pcmp_lt(x, sixty_four),
+              generic_expi_interval_6<T, ScalarType>(x),
+              generic_expi_interval_7<T, ScalarType>(x)));
+  T expi = pselect(pcmp_lt(x, sixteen), expi_lt_16, expi_gt_16);
+  return pselect(pcmp_lt(x, pset1<T>(0.)), nan, expi);
 }
 
 

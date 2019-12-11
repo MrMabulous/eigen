@@ -539,10 +539,14 @@ typedef CwiseUnaryOp<internal::scalar_erfc_op<Scalar>, const Derived> ErfcReturn
 typedef CwiseUnaryOp<internal::scalar_ndtri_op<Scalar>, const Derived> NdtriReturnType;
 typedef CwiseUnaryOp<internal::scalar_dawsn_op<Scalar>, const Derived>
 DawsnReturnType;
+typedef CwiseUnaryOp<internal::scalar_expi_op<Scalar>, const Derived>
+ExpiReturnType;
 typedef CwiseUnaryOp<internal::scalar_fresnel_cos_op<Scalar>, const Derived>
 FresnelCosReturnType;
 typedef CwiseUnaryOp<internal::scalar_fresnel_sin_op<Scalar>, const Derived>
 FresnelSinReturnType;
+typedef CwiseUnaryOp<internal::scalar_spence_op<Scalar>, const Derived>
+SpenceReturnType;
 
 /** \cpp11 \returns an expression of the coefficient-wise ln(|gamma(*this)|).
   *
@@ -634,18 +638,15 @@ ndtri() const
   return NdtriReturnType(derived());
 }
 
-/** \returns an expression of the coefficient-wise inverse of the CDF of the Normal distribution function
-  * function of *this.
+/** \returns an expression of the coefficient-wise evaluation of Dawson's
+  * integral of *this.
   *
   * \specialfunctions_module
   *
-  * In other words, considering `x = ndtri(y)`, it returns the argument, x, for which the area under the
-  * Gaussian probability density function (integrated from minus infinity to x) is equal to y.
-  *
   * \note This function supports only float and double scalar types. To support other scalar types,
-  * the user has to provide implementations of ndtri(T) for any scalar type T to be supported.
+  * the user has to provide implementations of dawsn(T) for any scalar type T to be supported.
   *
-  * \sa <a href="group__CoeffwiseMathFunctions.html#cwisetable_ndtri">Math functions</a>
+  * \sa <a href="group__CoeffwiseMathFunctions.html#cwisetable_dawsn">Math functions</a>
   */
 EIGEN_DEVICE_FUNC
 inline const DawsnReturnType
@@ -654,18 +655,32 @@ dawsn() const
   return DawsnReturnType(derived());
 }
 
-/** \returns an expression of the coefficient-wise inverse of the CDF of the Normal distribution function
-  * function of *this.
+/** \returns an expression of the coefficient-wise evaluation of Exponential
+  * integral of *this.
   *
   * \specialfunctions_module
   *
-  * In other words, considering `x = ndtri(y)`, it returns the argument, x, for which the area under the
-  * Gaussian probability density function (integrated from minus infinity to x) is equal to y.
+  * \note This function supports only float and double scalar types. To support other scalar types,
+  * the user has to provide implementations of expi(T) for any scalar type T to be supported.
+  *
+  * \sa <a href="group__CoeffwiseMathFunctions.html#cwisetable_expi">Math functions</a>
+  */
+EIGEN_DEVICE_FUNC
+inline const ExpiReturnType
+expi() const
+{
+  return ExpiReturnType(derived());
+}
+
+/** \returns an expression of the coefficient-wise evaluation of the Fresnel cosine
+  * integral of *this.
+  *
+  * \specialfunctions_module
   *
   * \note This function supports only float and double scalar types. To support other scalar types,
-  * the user has to provide implementations of ndtri(T) for any scalar type T to be supported.
+  * the user has to provide implementations of fresnel_cos(T) for any scalar type T to be supported.
   *
-  * \sa <a href="group__CoeffwiseMathFunctions.html#cwisetable_ndtri">Math functions</a>
+  * \sa <a href="group__CoeffwiseMathFunctions.html#cwisetable_fresnel_cos">Math functions</a>
   */
 EIGEN_DEVICE_FUNC
 inline const FresnelCosReturnType
@@ -674,22 +689,35 @@ fresnel_cos() const
   return FresnelCosReturnType(derived());
 }
 
-/** \returns an expression of the coefficient-wise inverse of the CDF of the Normal distribution function
-  * function of *this.
+/** \returns an expression of the coefficient-wise evaluation of the Fresnel sine
+  * integral of *this.
   *
   * \specialfunctions_module
   *
-  * In other words, considering `x = ndtri(y)`, it returns the argument, x, for which the area under the
-  * Gaussian probability density function (integrated from minus infinity to x) is equal to y.
-  *
   * \note This function supports only float and double scalar types. To support other scalar types,
-  * the user has to provide implementations of ndtri(T) for any scalar type T to be supported.
+  * the user has to provide implementations of fresnel_sin(T) for any scalar type T to be supported.
   *
-  * \sa <a href="group__CoeffwiseMathFunctions.html#cwisetable_ndtri">Math functions</a>
+  * \sa <a href="group__CoeffwiseMathFunctions.html#cwisetable_fresnel_sin">Math functions</a>
   */
 EIGEN_DEVICE_FUNC
 inline const FresnelSinReturnType
 fresnel_sin() const
 {
   return FresnelSinReturnType(derived());
+}
+
+/** \returns an expression of the coefficient-wise evaluation of Spence's integral of *this.
+  *
+  * \specialfunctions_module
+  *
+  * \note This function supports only float and double scalar types. To support other scalar types,
+  * the user has to provide implementations of spence(T) for any scalar type T to be supported.
+  *
+  * \sa <a href="group__CoeffwiseMathFunctions.html#cwisetable_spence">Math functions</a>
+  */
+EIGEN_DEVICE_FUNC
+inline const SpenceReturnType
+spence() const
+{
+  return SpenceReturnType(derived());
 }
