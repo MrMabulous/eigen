@@ -2042,7 +2042,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_dawsn_interval_2(const T& x) {
   const T inverse_x = pdiv(one, x);
   const T inverse_x2 = pmul(inverse_x, inverse_x);
   T z = pdiv(internal::ppolevl<T, 10>::run(inverse_x2, BN),
-             pmul(x, internal::ppolevl<T, 10>::run(x, BD)));
+             pmul(x, internal::ppolevl<T, 10>::run(inverse_x2, BD)));
   T y = pmadd(inverse_x2, z, inverse_x);
   return pmul(half, y);
 }
@@ -2071,7 +2071,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_dawsn_interval_3(const T& x) {
   const T inverse_x = pdiv(one, x);
   const T inverse_x2 = pmul(inverse_x, inverse_x);
   T z = pdiv(internal::ppolevl<T, 4>::run(inverse_x2, CN),
-             pmul(x, internal::ppolevl<T, 5>::run(x, CD)));
+             pmul(x, internal::ppolevl<T, 5>::run(inverse_x2, CD)));
   T y = pmadd(inverse_x2, z, inverse_x);
   return pmul(half, y);
 }
@@ -2294,12 +2294,12 @@ struct expi_impl {
 template <typename T, typename ScalarType>
 EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_fresnel_cos_interval_1(const T& x) {
   const ScalarType CN[] = {
-    ScalarType(2.81376268889994315696E2),
-    ScalarType(4.55847810806532581675E4),
-    ScalarType(5.17343888770096400730E6),
-    ScalarType(4.19320245898111231129E8),
-    ScalarType(2.24411795645340920940E10),
-    ScalarType(6.07366389490084639049E11),
+    ScalarType(-4.98843114573573548651E-8),
+    ScalarType(9.50428062829859605134E-6),
+    ScalarType(-6.45191435683965050962E-4),
+    ScalarType(1.88843319396703850064E-2),
+    ScalarType(-2.05525900955013891793E-1),
+    ScalarType(9.99999999999999998822E-1),
   };
   const ScalarType CD[] = {
     ScalarType(3.99982968972495980367E-12),
@@ -2362,6 +2362,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_fresnel_asymp(
     ScalarType(3.76329711269987889006E-20),
   };
   const ScalarType FD[] = {
+    ScalarType(1.0),
     ScalarType(7.51586398353378947175E-1),
     ScalarType(1.16888925859191382142E-1),
     ScalarType(6.44051526508858611005E-3),
@@ -2374,16 +2375,20 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_fresnel_asymp(
     ScalarType(1.25443237090011264384E-20),
   };
   const ScalarType GN[] = {
-    ScalarType(-1.903009855649792E+012),
-    ScalarType(1.355942388050252E+011),
-    ScalarType(-4.158143148511033E+009),
-    ScalarType(7.343848463587323E+007),
-    ScalarType(-8.732356681548485E+005),
-    ScalarType(8.560515466275470E+003),
-    ScalarType(-1.032877601091159E+002),
-    ScalarType(2.999401847870011E+000),
+    ScalarType(5.04442073643383265887E-1),
+    ScalarType(1.97102833525523411709E-1),
+    ScalarType(1.87648584092575249293E-2),
+    ScalarType(6.84079380915393090172E-4),
+    ScalarType(1.15138826111884280931E-5),
+    ScalarType(9.82852443688422223854E-8),
+    ScalarType(4.45344415861750144738E-10),
+    ScalarType(1.08268041139020870318E-12),
+    ScalarType(1.37555460633261799868E-15),
+    ScalarType(8.36354435630677421531E-19),
+    ScalarType(1.86958710162783235106E-22),
   };
   const ScalarType GD[] = {
+    ScalarType(1.0),
     ScalarType(1.47495759925128324529E0),
     ScalarType(3.37748989120019970451E-1),
     ScalarType(2.53603741420338795122E-2),
@@ -2401,6 +2406,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_fresnel_asymp(
   const T PI = pset1<T>(EIGEN_PI);
   const T one = pset1<T>(1);
   const T half = pset1<T>(0.5);
+
   const T x2 = pmul(x, x);
   const T t = pdiv(one, pmul(PI, x2));
   const T u = pmul(t, t);
@@ -2408,7 +2414,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_fresnel_asymp(
   T f = pmadd(pnegate(u), pdiv(
       internal::ppolevl<T, 9>::run(u, FN),
       internal::ppolevl<T, 10>::run(u, FD)), one);
-  T g = pmul(t, pmul(
+  T g = pmul(t, pdiv(
       internal::ppolevl<T, 10>::run(u, GN),
       internal::ppolevl<T, 11>::run(u, GD)));
 
@@ -2422,7 +2428,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_fresnel_asymp(
     return pmadd(pnegate(intermediate), y, half);
   }
   T intermediate = pmul(f, s);
-  intermediate = pmadd(pnegate(g), s, intermediate);
+  intermediate = pmadd(pnegate(g), c, intermediate);
   return pmadd(intermediate, y, half);
 }
 
@@ -2442,7 +2448,7 @@ T generic_fresnel_cos(const T& x) {
       generic_fresnel_cos_interval_1<T, ScalarType>(abs_x),
       generic_fresnel_asymp<T, ScalarType>(abs_x, false));
 
-  fresnel_cos = pselect(pcmp_lt(x, b), fresnel_cos, half);
+  fresnel_cos = pselect(pcmp_lt(abs_x, b), fresnel_cos, half);
 
   return pselect(pcmp_lt(x, pset1<T>(0.0)), pnegate(fresnel_cos), fresnel_cos);
 }
