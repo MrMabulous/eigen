@@ -20,6 +20,84 @@ namespace internal {
 #if defined(EIGEN_GPUCC) && defined(EIGEN_USE_GPU)
 
 template<> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
+float4 pdawsn<float4>(const float4& a)
+{
+  using numext::dawsn;
+  return make_float4(dawsn(a.x), dawsn(a.y), dawsn(a.z), dawsn(a.w));
+}
+
+template<> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
+double2 pdawsn<double2>(const double2& a)
+{
+  using numext::dawsn;
+  return make_double2(dawsn(a.x), dawsn(a.y));
+}
+
+template<> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
+float4 pexpi<float4>(const float4& a)
+{
+  using numext::expi;
+  return make_float4(expi(a.x), expi(a.y), expi(a.z), expi(a.w));
+}
+
+template<> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
+double2 pexpi<double2>(const double2& a)
+{
+  using numext::expi;
+  return make_double2(expi(a.x), expi(a.y));
+}
+
+template<> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
+float4 pfresnel_cos<float4>(const float4& a)
+{
+  using numext::fresnel_cos;
+  return make_float4(
+      fresnel_cos(a.x),
+      fresnel_cos(a.y),
+      fresnel_cos(a.z),
+      fresnel_cos(a.w));
+}
+
+template<> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
+double2 pfresnel_cos<double2>(const double2& a)
+{
+  using numext::fresnel_cos;
+  return make_double2(fresnel_cos(a.x), fresnel_cos(a.y));
+}
+
+template<> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
+float4 pfresnel_sin<float4>(const float4& a)
+{
+  using numext::fresnel_sin;
+  return make_float4(
+      fresnel_sin(a.x),
+      fresnel_sin(a.y),
+      fresnel_sin(a.z),
+      fresnel_sin(a.w));
+}
+
+template<> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
+double2 pfresnel_sin<double2>(const double2& a)
+{
+  using numext::fresnel_sin;
+  return make_double2(fresnel_sin(a.x), fresnel_sin(a.y));
+}
+
+template<> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
+float4 pspence<float4>(const float4& a)
+{
+  using numext::spence;
+  return make_float4(spence(a.x), spence(a.y), spence(a.z), spence(a.w));
+}
+
+template<> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
+double2 pspence<double2>(const double2& a)
+{
+  using numext::spence;
+  return make_double2(spence(a.x), spence(a.y));
+}
+
+template<> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
 float4 plgamma<float4>(const float4& a)
 {
   return make_float4(lgammaf(a.x), lgammaf(a.y), lgammaf(a.z), lgammaf(a.w));

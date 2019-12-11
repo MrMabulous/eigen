@@ -1914,6 +1914,681 @@ struct betainc_impl<double> {
 
 #endif  // EIGEN_HAS_C99_MATH
 
+
+/***************************************************************************
+* Implementation of Dawson's Integral.                                     *
+****************************************************************************/
+
+/*							dawsn.c
+ *
+ *	Dawson's Integral
+ *
+ *
+ *
+ * SYNOPSIS:
+ *
+ * double x, y, dawsn();
+ *
+ * y = dawsn( x );
+ *
+ *
+ *
+ * DESCRIPTION:
+ *
+ * Approximates the integral
+ *
+ *                             x
+ *                             -
+ *                      2     | |        2
+ *  dawsn(x)  =  exp( -x  )   |    exp( t  ) dt
+ *                          | |
+ *                           -
+ *                           0
+ *
+ * Three different rational approximations are employed, for
+ * the intervals 0 to 3.25; 3.25 to 6.25; and 6.25 up.
+ *
+ *
+ * ACCURACY:
+ *
+ *                      Relative error:
+ * arithmetic   domain     # trials      peak         rms
+ *    IEEE      0,10        10000       6.9e-16     1.0e-16
+ *    DEC       0,10         6000       7.4e-17     1.4e-17
+ *
+ *
+ */
+
+ /*
+   Cephes Math Library Release 2.2: June, 1992
+   Copyright 1985, 1987, 1992 by Stephen L. Moshier
+   Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+ */
+
+
+// TODO: Add a cheaper approximation for float.
+
+
+// We split this computation in to two so that in the scalar path
+// only one branch is evaluated (due to our template specialization of pselect
+// being an if statement.)
+
+template <typename T, typename ScalarType>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_dawsn_interval_1(const T& x) {
+  // Rational approximation on [0, 3.25)
+  const ScalarType AN[] = {
+    ScalarType(1.13681498971755972054E-11),
+    ScalarType(8.49262267667473811108E-10),
+    ScalarType(1.94434204175553054283E-8),
+    ScalarType(9.53151741254484363489E-7),
+    ScalarType(3.07828309874913200438E-6),
+    ScalarType(3.52513368520288738649E-4),
+    ScalarType(-8.50149846724410912031E-4),
+    ScalarType(4.22618223005546594270E-2),
+    ScalarType(-9.17480371773452345351E-2),
+    ScalarType(9.99999999999999994612E-1),
+  };
+  const ScalarType AD[] = {
+    ScalarType(2.40372073066762605484E-11),
+    ScalarType(1.48864681368493396752E-9),
+    ScalarType(5.21265281010541664570E-8),
+    ScalarType(1.27258478273186970203E-6),
+    ScalarType(2.32490249820789513991E-5),
+    ScalarType(3.25524741826057911661E-4),
+    ScalarType(3.48805814657162590916E-3),
+    ScalarType(2.79448531198828973716E-2),
+    ScalarType(1.58874241960120565368E-1),
+    ScalarType(5.74918629489320327824E-1),
+    ScalarType(1.00000000000000000539E0),
+  };
+  const T x2 = pmul(x, x);
+  T y = pmul(x, pdiv(internal::ppolevl<T, 9>::run(x2, AN),
+                      internal::ppolevl<T, 10>::run(x2, AD)));
+  return y;
+}
+
+template <typename T, typename ScalarType>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_dawsn_interval_2(const T& x, const T& sign) {
+  // Rational approximation on [3.25, 6.25)
+  const ScalarType BN[] = {
+    ScalarType(5.08955156417900903354E-1),
+    ScalarType(-2.44754418142697847934E-1),
+    ScalarType(9.41512335303534411857E-2),
+    ScalarType(-2.18711255142039025206E-2),
+    ScalarType(3.66207612329569181322E-3),
+    ScalarType(-4.23209114460388756528E-4),
+    ScalarType(3.59641304793896631888E-5),
+    ScalarType(-2.14640351719968974225E-6),
+    ScalarType(9.10010780076391431042E-8),
+    ScalarType(-2.40274520828250956942E-9),
+    ScalarType(3.59233385440928410398E-11),
+  };
+  const ScalarType BD[] = {
+    ScalarType(1.0),
+    ScalarType(-6.31839869873368190192E-1),
+    ScalarType(2.36706788228248691528E-1),
+    ScalarType(-5.31806367003223277662E-2),
+    ScalarType(8.48041718586295374409E-3),
+    ScalarType(-9.47996768486665330168E-4),
+    ScalarType(7.81025592944552338085E-5),
+    ScalarType(-4.55875153252442634831E-6),
+    ScalarType(1.89100358111421846170E-7),
+    ScalarType(-4.91324691331920606875E-9),
+    ScalarType(7.18466403235734541950E-11),
+  };
+  const T one = pset1<T>(ScalarType(1));
+  const T half = pset1<T>(ScalarType(0.5));
+
+  const T inverse_x = pdiv(one, x);
+  const T inverse_x2 = pmul(inverse_x, inverse_x);
+  T z = pdiv(internal::ppolevl<T, 10>::run(inverse_x2, BN),
+             pmul(x, internal::ppolevl<T, 10>::run(x, BD)));
+  T y = pmadd(inverse_x2, z, inverse_x);
+  return pmul(half, y);
+}
+
+template <typename T, typename ScalarType>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_dawsn_interval_3(const T& x, const T& sign) {
+  // Rational approximation on [6.25, 1.0e9)
+  const ScalarType CN[] = {
+    ScalarType(-5.90592860534773254987E-1),
+    ScalarType(6.29235242724368800674E-1),
+    ScalarType(-1.72858975380388136411E-1),
+    ScalarType(1.64837047825189632310E-2),
+    ScalarType(-4.86827613020462700845E-4),
+  };
+  const ScalarType CD[] = {
+    ScalarType(1.0),
+    ScalarType(-2.69820057197544900361E0),
+    ScalarType( 1.73270799045947845857E0),
+    ScalarType(-3.93708582281939493482E-1),
+    ScalarType( 3.44278924041233391079E-2),
+    ScalarType(-9.73655226040941223894E-4),
+  };
+  const T one = pset1<T>(ScalarType(1));
+  const T half = pset1<T>(ScalarType(0.5));
+
+  const T inverse_x = pdiv(one, x);
+  const T inverse_x2 = pmul(inverse_x, inverse_x);
+  T z = pdiv(internal::ppolevl<T, 4>::run(inverse_x2, CN),
+             pmul(x, internal::ppolevl<T, 5>::run(x, CD)));
+  T y = pmadd(inverse_x2, z, inverse_x);
+  return pmul(half, y);
+}
+
+template <typename T, typename ScalarType>
+EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
+T generic_dawsn(const T& a) {
+  const T half = pset1<T>(ScalarType(0.5));
+  const T a = pset1<T>(ScalarType(3.25))
+  const T b = pset1<T>(ScalarType(6.25))
+  const T c = pset1<T>(ScalarType(1.0e9))
+
+  T abs_x = pabs(x);
+
+  T dawsn_lt_b = pselect(
+      pcmp_lt(abs_x, a),
+      generic_dawsn_interval_1<T, ScalarType>(abs_x),
+      generic_dawsn_interval_2<T, ScalarType>(abs_x));
+
+  T dawsn_gt_b = pselect(
+      pcmp_lt(abs_x, c),
+      generic_dawsn_interval_3<T, ScalarType>(abs_x),
+      pdiv(half, x));
+
+  dawsn = pselect(pcmp_lt(abs_x, b), dawsn_lt_b, dawsn_gt_b);
+
+  return pselect(pcmp_lt(x, pset1<T>(0.0f)), pnegate(dawsn), dawsn);
+}
+
+template <typename Scalar>
+struct dawsn_retval {
+  typedef Scalar type;
+};
+
+#if !EIGEN_HAS_C99_MATH
+
+template <typename Scalar>
+struct dawsn_impl {
+  EIGEN_DEVICE_FUNC
+  static EIGEN_STRONG_INLINE Scalar run(const Scalar) {
+    EIGEN_STATIC_ASSERT((internal::is_same<Scalar, Scalar>::value == false),
+                        THIS_TYPE_IS_NOT_SUPPORTED);
+    return Scalar(0);
+  }
+};
+
+# else
+
+template <typename Scalar>
+struct dawsn_impl {
+  EIGEN_DEVICE_FUNC
+  static EIGEN_STRONG_INLINE Scalar run(const Scalar x) {
+    return generic_dawsn<Scalar, Scalar>(x);
+  }
+};
+
+#endif  // EIGEN_HAS_C99_MATH
+
+
+/***************************************************************************
+* Implementation of Exponential Integral.                                  *
+****************************************************************************/
+
+/*							ei.c
+ *
+ *	Exponential integral
+ *
+ *
+ * SYNOPSIS:
+ *
+ * double x, y, ei();
+ *
+ * y = ei( x );
+ *
+ *
+ *
+ * DESCRIPTION:
+ *
+ *               x
+ *                -     t
+ *               | |   e
+ *    Ei(x) =   -|-   ---  dt .
+ *             | |     t
+ *              -
+ *             -inf
+ *
+ * Not defined for x <= 0.
+ * See also expn.c.
+ *
+ *
+ *
+ * ACCURACY:
+ *
+ *                      Relative error:
+ * arithmetic   domain     # trials      peak         rms
+ *    IEEE       0,100       50000      8.6e-16     1.3e-16
+ *
+ */
+ /*
+   Cephes Math Library Release 2.2: June, 1992
+   Copyright 1985, 1987, 1992 by Stephen L. Moshier
+   Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+ */
+
+
+// TODO: Add a cheaper approximation for float.
+
+
+// We split this computation in to two so that in the scalar path
+// only one branch is evaluated (due to our template specialization of pselect
+// being an if statement.)
+
+template <typename T, typename ScalarType>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_expi(const T& x) {
+  return x;
+}
+
+
+template <typename Scalar>
+struct expi_retval {
+  typedef Scalar type;
+};
+
+#if !EIGEN_HAS_C99_MATH
+
+template <typename Scalar>
+struct expi_impl {
+  EIGEN_DEVICE_FUNC
+  static EIGEN_STRONG_INLINE Scalar run(const Scalar) {
+    EIGEN_STATIC_ASSERT((internal::is_same<Scalar, Scalar>::value == false),
+                        THIS_TYPE_IS_NOT_SUPPORTED);
+    return Scalar(0);
+  }
+};
+
+# else
+
+template <typename Scalar>
+struct expi_impl {
+  EIGEN_DEVICE_FUNC
+  static EIGEN_STRONG_INLINE Scalar run(const Scalar x) {
+    return generic_expi<Scalar, Scalar>(x);
+  }
+};
+
+#endif  // EIGEN_HAS_C99_MATH
+
+/***************************************************************************
+* Implementation of Fresnel Integrals.                                     *
+****************************************************************************/
+
+/*							fresnl.c
+ *
+ *	Fresnel integral
+ *
+ *
+ *
+ * SYNOPSIS:
+ *
+ * double x, S, C;
+ * void fresnl();
+ *
+ * fresnl( x, _&S, _&C );
+ *
+ *
+ * DESCRIPTION:
+ *
+ * Evaluates the Fresnel integrals
+ *
+ *           x
+ *           -
+ *          | |
+ * C(x) =   |   cos(pi/2 t**2) dt,
+ *        | |
+ *         -
+ *          0
+ *
+ *           x
+ *           -
+ *          | |
+ * S(x) =   |   sin(pi/2 t**2) dt.
+ *        | |
+ *         -
+ *          0
+ *
+ *
+ * The integrals are evaluated by a power series for x < 1.
+ * For x >= 1 auxiliary functions f(x) and g(x) are employed
+ * such that
+ *
+ * C(x) = 0.5 + f(x) sin( pi/2 x**2 ) - g(x) cos( pi/2 x**2 )
+ * S(x) = 0.5 - f(x) cos( pi/2 x**2 ) - g(x) sin( pi/2 x**2 )
+ *
+ *
+ *
+ * ACCURACY:
+ *
+ *  Relative error.
+ *
+ * Arithmetic  function   domain     # trials      peak         rms
+ *   IEEE       S(x)      0, 10       10000       2.0e-15     3.2e-16
+ *   IEEE       C(x)      0, 10       10000       1.8e-15     3.3e-16
+ *   DEC        S(x)      0, 10        6000       2.2e-16     3.9e-17
+ *   DEC        C(x)      0, 10        5000       2.3e-16     3.9e-17
+ */
+ /*
+   Cephes Math Library Release 2.2: June, 1992
+   Copyright 1985, 1987, 1992 by Stephen L. Moshier
+   Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+ */
+
+
+// TODO: Add a cheaper approximation for float.
+
+
+// We split this computation in to two so that in the scalar path
+// only one branch is evaluated (due to our template specialization of pselect
+// being an if statement.)
+
+template <typename T, typename ScalarType>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_fresnel_cos_interval_1(const T& x) {
+  const ScalarType CN[] = {
+    ScalarType(2.81376268889994315696E2),
+    ScalarType(4.55847810806532581675E4),
+    ScalarType(5.17343888770096400730E6),
+    ScalarType(4.19320245898111231129E8),
+    ScalarType(2.24411795645340920940E10),
+    ScalarType(6.07366389490084639049E11),
+  };
+  const ScalarType CD[] = {
+    ScalarType(3.99982968972495980367E-12),
+    ScalarType(9.15439215774657478799E-10),
+    ScalarType(1.25001862479598821474E-7),
+    ScalarType(1.22262789024179030997E-5),
+    ScalarType(8.68029542941784300606E-4),
+    ScalarType(4.12142090722199792936E-2),
+    ScalarType(1.00000000000000000118E0),
+  };
+
+  const T x2 = pmul(x, x);
+  const T x4 = pmul(x2, x2);
+  return pmul(x, pdiv(
+      internal::ppolevl<T, 5>::(x4, CN),
+      internal::ppolevl<T, 6>::(x4, CD)));
+}
+
+template <typename T, typename ScalarType>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_fresnel_sin_interval_1(const T& x) {
+  const ScalarType SN[] = {
+    ScalarType(-2.99181919401019853726E3),
+    ScalarType(7.08840045257738576863E5),
+    ScalarType(-6.29741486205862506537E7),
+    ScalarType(2.54890880573376359104E9),
+    ScalarType(-4.42979518059697779103E10),
+    ScalarType(3.18016297876567817986E11),
+  };
+  const ScalarType SD[] = {
+    ScalarType(1.0),
+    ScalarType(2.81376268889994315696E2),
+    ScalarType(4.55847810806532581675E4),
+    ScalarType(5.17343888770096400730E6),
+    ScalarType(4.19320245898111231129E8),
+    ScalarType(2.24411795645340920940E10),
+    ScalarType(6.07366389490084639049E11),
+  };
+
+  const T x2 = pmul(x, x);
+  const T x4 = pmul(x2, x2);
+  T z = pmul(x, x2);
+  return pmul(z, pdiv(
+      internal::ppolevl<T, 5>::(x4, SN),
+      internal::ppolevl<T, 6>::(x4, SD)));
+}
+
+template <typename T, typename ScalarType>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_fresnel_asymp(
+    const T& x, bool use_sin) {
+  const ScalarType FN[] = {
+    ScalarType(-1.903009855649792E12),
+    ScalarType(1.355942388050252E11),
+    ScalarType(-4.158143148511033E9),
+    ScalarType(7.343848463587323E7),
+    ScalarType(-8.732356681548485E5),
+    ScalarType(8.560515466275470E3),
+    ScalarType(-1.032877601091159E2),
+    ScalarType(2.999401847870011E0),
+  };
+  const ScalarType GN[] = {
+    ScalarType(-1.903009855649792E+012),
+    ScalarType(1.355942388050252E+011),
+    ScalarType(-4.158143148511033E+009),
+    ScalarType(7.343848463587323E+007),
+    ScalarType(-8.732356681548485E+005),
+    ScalarType(8.560515466275470E+003),
+    ScalarType(-1.032877601091159E+002),
+    ScalarType(2.999401847870011E+000),
+  };
+
+  const T one = pset1<T>(ScalarType(1));
+  const T x2 = pmul(x, x);
+  const T t = pdiv(one, pmul(pi, x2));
+  const T u = pmul(t, t);
+
+  T f = pmadd(pnegate(u), pdiv(
+      internal::ppolevl<T, 9>::(u, FN),
+      internal::ppolevl<T, 10>::(u, FD)), one);
+  T g = pmul(t, pmul(
+      internal::ppolevl<T, 10>::(u, GN),
+      internal::ppolevl<T, 11>::(u, GD)));
+
+  const T z = pmul(pio2, x2);
+  const T c = pcos(c);
+  const T s = psin(c);
+  const T y = pdiv(one, pmul(pi, x));
+  if use_sin:
+    T intermediate = pmul(f, c);
+    intermediate = pmadd(g, s, intermediate)
+    return pmadd(pnegate(intermediate), y, half);
+
+  T intermediate = pmul(f, s);
+  intermediate = pmadd(pnegate(g), s, intermediate)
+  return pmadd(intermediate, y, half);
+}
+
+template <typename T, typename ScalarType>
+EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
+T generic_fresnel_cos(const T& x) {
+
+  const T one = pset1<T>(ScalarType(1));
+  const T half = pset1<T>(ScalarType(0.5));
+  const T a = pset1<T>(ScalarType(2.5625));
+  const T b = pset1<T>(ScalarType(36974.0));
+
+  const T abs_x = pabs(x);
+  const T x2 = pmul(x, x);
+
+  fresnel_cos = pselect(
+      pcmp_lt(x2, a)
+      generic_fresnel_cos_interval_1<T, ScalarType>(abs_x),
+      generic_fresnel_asymp<T, ScalarType>(abs_x, false));
+
+  fresnel_cos = pselect(pcmp_lt(x, b), fresnel_cos, half)
+
+  return pselect(pcmp_lt(x, pset1<T>(0.0f)), pnegate(fresnel_cos), fresnel_cos);
+}
+
+template <typename T, typename ScalarType>
+EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE
+T generic_fresnel_sin(const T& x) {
+
+  const T one = pset1<T>(ScalarType(1));
+  const T half = pset1<T>(ScalarType(0.5));
+  const T a = pset1<T>(ScalarType(2.5625));
+  const T b = pset1<T>(ScalarType(36974.0));
+
+  const T abs_x = pabs(x);
+  const T x2 = pmul(x, x);
+
+  fresnel_sin = pselect(
+      pcmp_lt(x2, a)
+      generic_fresnel_sin_interval_1<T, ScalarType>(abs_x),
+      generic_fresnel_asymp<T, ScalarType>(abs_x, true));
+
+  fresnel_sin = pselect(pcmp_lt(x, b), fresnel_sin, half)
+
+  return pselect(pcmp_lt(x, pset1<T>(0.0f)), pnegate(fresnel_sin), fresnel_sin);
+}
+
+template <typename Scalar>
+struct fresnel_cos_retval {
+  typedef Scalar type;
+};
+
+template <typename Scalar>
+struct fresnel_sin_retval {
+  typedef Scalar type;
+};
+
+#if !EIGEN_HAS_C99_MATH
+
+template <typename Scalar>
+struct fresnel_cos_impl {
+  EIGEN_DEVICE_FUNC
+  static EIGEN_STRONG_INLINE Scalar run(const Scalar) {
+    EIGEN_STATIC_ASSERT((internal::is_same<Scalar, Scalar>::value == false),
+                        THIS_TYPE_IS_NOT_SUPPORTED);
+    return Scalar(0);
+  }
+};
+
+template <typename Scalar>
+struct fresnel_sin_impl {
+  EIGEN_DEVICE_FUNC
+  static EIGEN_STRONG_INLINE Scalar run(const Scalar) {
+    EIGEN_STATIC_ASSERT((internal::is_same<Scalar, Scalar>::value == false),
+                        THIS_TYPE_IS_NOT_SUPPORTED);
+    return Scalar(0);
+  }
+};
+
+
+# else
+
+template <typename Scalar>
+struct fresnel_cos_impl {
+  EIGEN_DEVICE_FUNC
+  static EIGEN_STRONG_INLINE Scalar run(const Scalar x) {
+    return generic_fresnel_cos<Scalar, Scalar>(x);
+  }
+};
+
+template <typename Scalar>
+struct fresnel_sin_impl {
+  EIGEN_DEVICE_FUNC
+  static EIGEN_STRONG_INLINE Scalar run(const Scalar x) {
+    return generic_fresnel_sin<Scalar, Scalar>(x);
+  }
+};
+
+#endif  // EIGEN_HAS_C99_MATH
+
+
+/***************************************************************************
+* Implementation of Spence's Integral.                                     *
+****************************************************************************/
+
+/*							spence.c
+ *
+ *	Dilogarithm
+ *
+ *
+ *
+ * SYNOPSIS:
+ *
+ * double x, y, spence();
+ *
+ * y = spence( x );
+ *
+ *
+ *
+ * DESCRIPTION:
+ *
+ * Computes the integral
+ *
+ *                    x
+ *                    -
+ *                   | | log t
+ * spence(x)  =  -   |   ----- dt
+ *                 | |   t - 1
+ *                  -
+ *                  1
+ *
+ * for x >= 0.  A rational approximation gives the integral in
+ * the interval (0.5, 1.5).  Transformation formulas for 1/x
+ * and 1-x are employed outside the basic expansion range.
+ *
+ *
+ *
+ * ACCURACY:
+ *
+ *                      Relative error:
+ * arithmetic   domain     # trials      peak         rms
+ *    IEEE      0,4         30000       3.9e-15     5.4e-16
+ *    DEC       0,4          3000       2.5e-16     4.5e-17
+ *
+ *
+ */
+ /*
+   Cephes Math Library Release 2.2: June, 1992
+   Copyright 1985, 1987, 1992 by Stephen L. Moshier
+   Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+ */
+
+
+// TODO: Add a cheaper approximation for float.
+
+
+// We split this computation in to two so that in the scalar path
+// only one branch is evaluated (due to our template specialization of pselect
+// being an if statement.)
+
+template <typename T, typename ScalarType>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_spence(const T& x) {
+  return x;
+}
+
+template <typename Scalar>
+struct spence_retval {
+  typedef Scalar type;
+};
+
+#if !EIGEN_HAS_C99_MATH
+
+template <typename Scalar>
+struct spence_impl {
+  EIGEN_DEVICE_FUNC
+  static EIGEN_STRONG_INLINE Scalar run(const Scalar) {
+    EIGEN_STATIC_ASSERT((internal::is_same<Scalar, Scalar>::value == false),
+                        THIS_TYPE_IS_NOT_SUPPORTED);
+    return Scalar(0);
+  }
+};
+
+# else
+
+template <typename Scalar>
+struct spence_impl {
+  EIGEN_DEVICE_FUNC
+  static EIGEN_STRONG_INLINE Scalar run(const Scalar x) {
+    return generic_spence<Scalar, Scalar>(x);
+  }
+};
+
+#endif  // EIGEN_HAS_C99_MATH
+
+
+
 }  // end namespace internal
 
 namespace numext {
@@ -1988,6 +2663,36 @@ template <typename Scalar>
 EIGEN_DEVICE_FUNC inline EIGEN_MATHFUNC_RETVAL(betainc, Scalar)
     betainc(const Scalar& a, const Scalar& b, const Scalar& x) {
   return EIGEN_MATHFUNC_IMPL(betainc, Scalar)::run(a, b, x);
+}
+
+template <typename Scalar>
+EIGEN_DEVICE_FUNC inline EIGEN_MATHFUNC_RETVAL(dawsn, Scalar)
+    dawsn(const Scalar& x) {
+  return EIGEN_MATHFUNC_IMPL(dawsn, Scalar)::run(x);
+}
+
+template <typename Scalar>
+EIGEN_DEVICE_FUNC inline EIGEN_MATHFUNC_RETVAL(expi, Scalar)
+    expi(const Scalar& x) {
+  return EIGEN_MATHFUNC_IMPL(expi, Scalar)::run(x);
+}
+
+template <typename Scalar>
+EIGEN_DEVICE_FUNC inline EIGEN_MATHFUNC_RETVAL(fresnel_cos, Scalar)
+    fresnel_cos(const Scalar& x) {
+  return EIGEN_MATHFUNC_IMPL(fresnel_cos, Scalar)::run(x);
+}
+
+template <typename Scalar>
+EIGEN_DEVICE_FUNC inline EIGEN_MATHFUNC_RETVAL(fresnel_sin, Scalar)
+    fresnel_sin(const Scalar& x) {
+  return EIGEN_MATHFUNC_IMPL(fresnel_sin, Scalar)::run(x);
+}
+
+template <typename Scalar>
+EIGEN_DEVICE_FUNC inline EIGEN_MATHFUNC_RETVAL(spence, Scalar)
+    spence(const Scalar& x) {
+  return EIGEN_MATHFUNC_IMPL(spence, Scalar)::run(x);
 }
 
 }  // end namespace numext

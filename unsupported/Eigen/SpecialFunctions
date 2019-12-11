@@ -37,6 +37,13 @@ namespace Eigen {
   * - polygamma
   * - zeta
   * - betainc
+
+  * Special Integrals
+  * - dawsn
+  * - expi
+  * - fresnel_cos
+  * - fresnel_sin
+  * - spence
   *
   * Bessel Functions
   * - bessel_i0

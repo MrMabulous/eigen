@@ -220,6 +220,12 @@ template<typename Scalar> struct scalar_igammac_op;
 template<typename Scalar> struct scalar_zeta_op;
 template<typename Scalar> struct scalar_betainc_op;
 
+template<typename Scalar> struct scalar_dawsn_op;
+template<typename Scalar> struct scalar_expi_op;
+template<typename Scalar> struct scalar_fresnel_cos_op;
+template<typename Scalar> struct scalar_fresnel_sin_op;
+template<typename Scalar> struct scalar_spence_op;
+
 // Bessel functions in SpecialFunctions module
 template<typename Scalar> struct scalar_bessel_i0_op;
 template<typename Scalar> struct scalar_bessel_i0e_op;

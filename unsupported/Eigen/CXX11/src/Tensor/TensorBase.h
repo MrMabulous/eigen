@@ -136,6 +136,36 @@ class TensorBase<Derived, ReadOnlyAccessors>
     }
 
     EIGEN_DEVICE_FUNC
+    EIGEN_STRONG_INLINE const TensorCwiseUnaryOp<internal::scalar_dawsn_op<Scalar>, const Derived>
+    dawsn() const {
+      return unaryExpr(internal::scalar_dawsn_op<Scalar>());
+    }
+
+    EIGEN_DEVICE_FUNC
+    EIGEN_STRONG_INLINE const TensorCwiseUnaryOp<internal::scalar_expi_op<Scalar>, const Derived>
+    expi() const {
+      return unaryExpr(internal::scalar_expi_op<Scalar>());
+    }
+
+    EIGEN_DEVICE_FUNC
+    EIGEN_STRONG_INLINE const TensorCwiseUnaryOp<internal::scalar_fresnel_cos_op<Scalar>, const Derived>
+    fresnel_cos() const {
+      return unaryExpr(internal::scalar_fresnel_cos_op<Scalar>());
+    }
+
+    EIGEN_DEVICE_FUNC
+    EIGEN_STRONG_INLINE const TensorCwiseUnaryOp<internal::scalar_fresnel_sin_op<Scalar>, const Derived>
+    fresnel_sin() const {
+      return unaryExpr(internal::scalar_fresnel_sin_op<Scalar>());
+    }
+
+    EIGEN_DEVICE_FUNC
+    EIGEN_STRONG_INLINE const TensorCwiseUnaryOp<internal::scalar_spence_op<Scalar>, const Derived>
+    spence() const {
+      return unaryExpr(internal::scalar_spence_op<Scalar>());
+    }
+
+    EIGEN_DEVICE_FUNC
     EIGEN_STRONG_INLINE const TensorCwiseUnaryOp<internal::scalar_bessel_i0_op<Scalar>, const Derived>
     bessel_i0() const {
       return unaryExpr(internal::scalar_bessel_i0_op<Scalar>());
