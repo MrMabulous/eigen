@@ -561,7 +561,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_ndtri_lt_exp_neg_two(
   /* Approximation for interval z = sqrt(-2 log a ) between 8 and 64
    * i.e., a between exp(-32) = 1.27e-14 and exp(-2048) = 3.67e-890.
    */
-  const ScalarType p2[] = {
+   const ScalarType p2[] = {
     ScalarType(3.23774891776946035970e0),
     ScalarType(6.91522889068984211695e0),
     ScalarType(3.93881025292474443415e0),
@@ -2069,7 +2069,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_dawsn_interval_3(const T& x) {
   const T half = pset1<T>(0.5);
 
   const T inverse_x = pdiv(one, x);
-  const T inverse_x2 = pmul(inverse_x, inverse_x);
+  T inverse_x2 = pmul(inverse_x, inverse_x);
   T z = pdiv(internal::ppolevl<T, 4>::run(inverse_x2, CN),
              pmul(x, internal::ppolevl<T, 5>::run(inverse_x2, CD)));
   T y = pmadd(inverse_x2, z, inverse_x);
@@ -2243,7 +2243,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_expi_interval_2(const T& x) {
   };
 
   const T one = pset1<T>(1.0);
-  const T w = pdiv(one, x);
+  T w = pdiv(one, x);
   T f = pdiv(
       internal::ppolevl<T, 7>::run(w, A6),
       internal::ppolevl<T, 7>::run(w, B6));
@@ -2279,7 +2279,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_expi_interval_3(const T& x) {
   };
 
   const T one = pset1<T>(1.0);
-  const T w = pdiv(one, x);
+  T w = pdiv(one, x);
   T f = pdiv(
       internal::ppolevl<T, 7>::run(w, A5),
       internal::ppolevl<T, 8>::run(w, B5));
@@ -2318,7 +2318,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_expi_interval_4(const T& x) {
   };
 
   const T one = pset1<T>(1.0);
-  const T w = pdiv(one, x);
+  T w = pdiv(one, x);
   T f = pdiv(
       internal::ppolevl<T, 9>::run(w, A2),
       internal::ppolevl<T, 9>::run(w, B2));
@@ -2354,7 +2354,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_expi_interval_5(const T& x) {
   };
 
   const T one = pset1<T>(1.0);
-  const T w = pdiv(one, x);
+  T w = pdiv(one, x);
   T f = pdiv(
       internal::ppolevl<T, 7>::run(w, A4),
       internal::ppolevl<T, 8>::run(w, B4));
@@ -2386,7 +2386,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_expi_interval_6(const T& x) {
   };
 
   const T one = pset1<T>(1.0);
-  const T w = pdiv(one, x);
+  T w = pdiv(one, x);
   T f = pdiv(
       internal::ppolevl<T, 5>::run(w, A7),
       internal::ppolevl<T, 5>::run(w, B7));
@@ -2425,7 +2425,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_expi_interval_7(const T& x) {
   };
 
   const T one = pset1<T>(1.0);
-  const T w = pdiv(one, x);
+  T w = pdiv(one, x);
   T f = pdiv(
       internal::ppolevl<T, 8>::run(w, A3),
       internal::ppolevl<T, 9>::run(w, B3));
@@ -2591,7 +2591,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_fresnel_cos_interval_1(const T& 
   };
 
   const T x2 = pmul(x, x);
-  const T x4 = pmul(x2, x2);
+  T x4 = pmul(x2, x2);
   return pmul(x, pdiv(
       internal::ppolevl<T, 5>::run(x4, CN),
       internal::ppolevl<T, 6>::run(x4, CD)));
@@ -2618,7 +2618,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_fresnel_sin_interval_1(const T& 
   };
 
   const T x2 = pmul(x, x);
-  const T x4 = pmul(x2, x2);
+  T x4 = pmul(x2, x2);
   T z = pmul(x, x2);
   return pmul(z, pdiv(
       internal::ppolevl<T, 5>::run(x4, SN),
@@ -2688,7 +2688,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T generic_fresnel_asymp(
 
   const T x2 = pmul(x, x);
   const T t = pdiv(one, pmul(PI, x2));
-  const T u = pmul(t, t);
+  T u = pmul(t, t);
 
   T f = pmadd(pnegate(u), pdiv(
       internal::ppolevl<T, 9>::run(u, FN),

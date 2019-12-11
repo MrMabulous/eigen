@@ -335,10 +335,7 @@ template<typename Scalar> struct scalar_dawsn_op
     using numext::dawsn; return dawsn(a);
   }
   template<typename Packet>
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const {
-    typedef typename unpacket_traits<Packet>::type ScalarType;
-    return internal::generic_dawsn<Packet, ScalarType>(a);
-  }
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const { return internal::pdawsn(a); }
 };
 template<typename Scalar>
 struct functor_traits<scalar_dawsn_op<Scalar> > {
@@ -365,10 +362,7 @@ template<typename Scalar> struct scalar_expi_op
     using numext::expi; return expi(a);
   }
   template<typename Packet>
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const {
-    typedef typename unpacket_traits<Packet>::type ScalarType;
-    return internal::generic_expi<Packet, ScalarType>(a);
-  }
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const { return internal::pexpi(a); }
 };
 template<typename Scalar>
 struct functor_traits<scalar_expi_op<Scalar> > {
@@ -396,8 +390,7 @@ template<typename Scalar> struct scalar_fresnel_cos_op
   }
   template<typename Packet>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const {
-    typedef typename unpacket_traits<Packet>::type ScalarType;
-    return internal::generic_fresnel_cos<Packet, ScalarType>(a);
+    return internal::pfresnel_cos(a);
   }
 };
 template<typename Scalar>
@@ -425,9 +418,8 @@ template<typename Scalar> struct scalar_fresnel_sin_op
     using numext::fresnel_sin; return fresnel_sin(a);
   }
   template<typename Packet>
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const {
-    typedef typename unpacket_traits<Packet>::type ScalarType;
-    return internal::generic_fresnel_sin<Packet, ScalarType>(a);
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet packetOp(const Packet& a) const {
+    return internal::pfresnel_sin(a);
   }
 };
 template<typename Scalar>
@@ -455,10 +447,7 @@ template<typename Scalar> struct scalar_spence_op
     using numext::spence; return spence(a);
   }
   template<typename Packet>
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const {
-    typedef typename unpacket_traits<Packet>::type ScalarType;
-    return internal::generic_spence<Packet, ScalarType>(a);
-  }
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet packetOp(const Packet& a) const { return internal::pspence(a); }
 };
 template<typename Scalar>
 struct functor_traits<scalar_spence_op<Scalar> > {
