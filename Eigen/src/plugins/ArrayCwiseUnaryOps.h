@@ -537,6 +537,12 @@ typedef CwiseUnaryOp<internal::scalar_digamma_op<Scalar>, const Derived> Digamma
 typedef CwiseUnaryOp<internal::scalar_erf_op<Scalar>, const Derived> ErfReturnType;
 typedef CwiseUnaryOp<internal::scalar_erfc_op<Scalar>, const Derived> ErfcReturnType;
 typedef CwiseUnaryOp<internal::scalar_ndtri_op<Scalar>, const Derived> NdtriReturnType;
+typedef CwiseUnaryOp<internal::scalar_dawsn_op<Scalar>, const Derived>
+DawsnReturnType;
+typedef CwiseUnaryOp<internal::scalar_fresnel_cos_op<Scalar>, const Derived>
+FresnelCosReturnType;
+typedef CwiseUnaryOp<internal::scalar_fresnel_sin_op<Scalar>, const Derived>
+FresnelSinReturnType;
 
 /** \cpp11 \returns an expression of the coefficient-wise ln(|gamma(*this)|).
   *
@@ -626,4 +632,64 @@ inline const NdtriReturnType
 ndtri() const
 {
   return NdtriReturnType(derived());
+}
+
+/** \returns an expression of the coefficient-wise inverse of the CDF of the Normal distribution function
+  * function of *this.
+  *
+  * \specialfunctions_module
+  *
+  * In other words, considering `x = ndtri(y)`, it returns the argument, x, for which the area under the
+  * Gaussian probability density function (integrated from minus infinity to x) is equal to y.
+  *
+  * \note This function supports only float and double scalar types. To support other scalar types,
+  * the user has to provide implementations of ndtri(T) for any scalar type T to be supported.
+  *
+  * \sa <a href="group__CoeffwiseMathFunctions.html#cwisetable_ndtri">Math functions</a>
+  */
+EIGEN_DEVICE_FUNC
+inline const DawsnReturnType
+dawsn() const
+{
+  return DawsnReturnType(derived());
+}
+
+/** \returns an expression of the coefficient-wise inverse of the CDF of the Normal distribution function
+  * function of *this.
+  *
+  * \specialfunctions_module
+  *
+  * In other words, considering `x = ndtri(y)`, it returns the argument, x, for which the area under the
+  * Gaussian probability density function (integrated from minus infinity to x) is equal to y.
+  *
+  * \note This function supports only float and double scalar types. To support other scalar types,
+  * the user has to provide implementations of ndtri(T) for any scalar type T to be supported.
+  *
+  * \sa <a href="group__CoeffwiseMathFunctions.html#cwisetable_ndtri">Math functions</a>
+  */
+EIGEN_DEVICE_FUNC
+inline const FresnelCosReturnType
+fresnel_cos() const
+{
+  return FresnelCosReturnType(derived());
+}
+
+/** \returns an expression of the coefficient-wise inverse of the CDF of the Normal distribution function
+  * function of *this.
+  *
+  * \specialfunctions_module
+  *
+  * In other words, considering `x = ndtri(y)`, it returns the argument, x, for which the area under the
+  * Gaussian probability density function (integrated from minus infinity to x) is equal to y.
+  *
+  * \note This function supports only float and double scalar types. To support other scalar types,
+  * the user has to provide implementations of ndtri(T) for any scalar type T to be supported.
+  *
+  * \sa <a href="group__CoeffwiseMathFunctions.html#cwisetable_ndtri">Math functions</a>
+  */
+EIGEN_DEVICE_FUNC
+inline const FresnelSinReturnType
+fresnel_sin() const
+{
+  return FresnelSinReturnType(derived());
 }

@@ -454,6 +454,7 @@ template<typename ArrayType> void array_special_functions()
   {
     ArrayType x(60);
     ArrayType v(60);
+    ArrayType res(60);
 
     x << -30.        , -28.98305085, -27.96610169, -26.94915254,
        -25.93220339, -24.91525424, -23.89830508, -22.88135593,
@@ -482,6 +483,8 @@ template<typename ArrayType> void array_special_functions()
        0.03178465,  0.02985118,  0.0281398 ,  0.02661428,  0.02524586,
        0.02401143,  0.02289221,  0.02187278,  0.02094035,  0.02008423,
        0.01929541,  0.01856626,  0.01789024,  0.01726175,  0.01667594;
+    CALL_SUBTEST(res = x.dawsn();
+                 verify_component_wise(res, v););
     CALL_SUBTEST(res = dawsn(x);
                  verify_component_wise(res, v););
   }
@@ -490,6 +493,7 @@ template<typename ArrayType> void array_special_functions()
   {
     ArrayType x(120);
     ArrayType v(120);
+    ArrayType res(120);
 
     x << 0.        ,   0.84033613,   1.68067227,   2.5210084 ,
          3.36134454,   4.20168067,   5.04201681,   5.88235294,
@@ -546,6 +550,8 @@ template<typename ArrayType> void array_special_functions()
        0.50241573, 0.50265105, 0.49934204, 0.49843933, 0.50346178,
        0.49795101, 0.49824773, 0.50331019, 0.50009766, 0.50159141,
        0.49984635, 0.50317061, 0.5015141 , 0.49827535, 0.4968169;
+    CALL_SUBTEST(res = x.fresnel_cos();
+                 verify_component_wise(res, v););
     CALL_SUBTEST(res = fresnel_cos(x);
                  verify_component_wise(res, v););
   }
@@ -554,6 +560,7 @@ template<typename ArrayType> void array_special_functions()
   {
     ArrayType x(120);
     ArrayType v(120);
+    ArrayType res(120);
 
     x << 0.        ,   0.84033613,   1.68067227,   2.5210084 ,
          3.36134454,   4.20168067,   5.04201681,   5.88235294,
@@ -610,6 +617,8 @@ template<typename ArrayType> void array_special_functions()
        0.50267925, 0.49760382, 0.5034784 , 0.50314093, 0.50030427,
        0.50276759, 0.50292828, 0.49930655, 0.50335069, 0.50291682,
        0.49670977, 0.49921886, 0.49713836, 0.50270743, 0.4999999;
+    CALL_SUBTEST(res = x.fresnel_sin();
+                 verify_component_wise(res, v););
     CALL_SUBTEST(res = fresnel_sin(x);
                  verify_component_wise(res, v););
   }

@@ -336,7 +336,8 @@ template<typename Scalar> struct scalar_dawsn_op
   }
   template<typename Packet>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const {
-    return internal::pdawsn(a);
+    typedef typename unpacket_traits<Packet>::type ScalarType;
+    return internal::generic_dawsn<Packet, ScalarType>(a);
   }
 };
 template<typename Scalar>
@@ -365,7 +366,8 @@ template<typename Scalar> struct scalar_expi_op
   }
   template<typename Packet>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const {
-    return internal::pexpi(a);
+    typedef typename unpacket_traits<Packet>::type ScalarType;
+    return internal::generic_expi<Packet, ScalarType>(a);
   }
 };
 template<typename Scalar>
@@ -394,7 +396,8 @@ template<typename Scalar> struct scalar_fresnel_cos_op
   }
   template<typename Packet>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const {
-    return internal::pfresnel_cos(a);
+    typedef typename unpacket_traits<Packet>::type ScalarType;
+    return internal::generic_fresnel_cos<Packet, ScalarType>(a);
   }
 };
 template<typename Scalar>
@@ -423,7 +426,8 @@ template<typename Scalar> struct scalar_fresnel_sin_op
   }
   template<typename Packet>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const {
-    return internal::pfresnel_sin(a);
+    typedef typename unpacket_traits<Packet>::type ScalarType;
+    return internal::generic_fresnel_sin<Packet, ScalarType>(a);
   }
 };
 template<typename Scalar>
@@ -452,7 +456,8 @@ template<typename Scalar> struct scalar_spence_op
   }
   template<typename Packet>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const {
-    return internal::pspence(a);
+    typedef typename unpacket_traits<Packet>::type ScalarType;
+    return internal::generic_spence<Packet, ScalarType>(a);
   }
 };
 template<typename Scalar>
