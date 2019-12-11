@@ -337,13 +337,12 @@ template<typename Scalar> struct scalar_dawsn_op
   template<typename Packet>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const { return internal::pdawsn(a); }
 };
+
 template<typename Scalar>
 struct functor_traits<scalar_dawsn_op<Scalar> > {
   enum {
     // Guesstimate
-    // TODO
-    Cost = 20 * NumTraits<Scalar>::MulCost + 10 * NumTraits<Scalar>::AddCost,
-    // TODO
+    Cost = 15 * NumTraits<Scalar>::MulCost + 15 * NumTraits<Scalar>::AddCost,
     PacketAccess = (packet_traits<Scalar>::HasMul &&
                     packet_traits<Scalar>::HasAdd)
   };
@@ -368,9 +367,9 @@ template<typename Scalar>
 struct functor_traits<scalar_expi_op<Scalar> > {
   enum {
     // Guesstimate
-    // TODO
-    Cost = 20 * NumTraits<Scalar>::MulCost + 10 * NumTraits<Scalar>::AddCost,
-    // TODO
+    Cost = (30 * NumTraits<Scalar>::MulCost + 30 * NumTraits<Scalar>::AddCost +
+            functor_traits<scalar_log_op<Scalar> >::Cost +
+            functor_traits<scalar_exp_op<Scalar> >::Cost),
     PacketAccess = (packet_traits<Scalar>::HasLog &&
                     packet_traits<Scalar>::HasExp)
   };
@@ -397,9 +396,9 @@ template<typename Scalar>
 struct functor_traits<scalar_fresnel_cos_op<Scalar> > {
   enum {
     // Guesstimate
-    // TODO
-    Cost = 20 * NumTraits<Scalar>::MulCost + 10 * NumTraits<Scalar>::AddCost,
-    // TODO
+    Cost = (30 * NumTraits<Scalar>::MulCost + 30 * NumTraits<Scalar>::AddCost +
+            functor_traits<scalar_cos_op<Scalar> >::Cost +
+            functor_traits<scalar_sin_op<Scalar> >::Cost),
     PacketAccess = (packet_traits<Scalar>::HasCos &&
                     packet_traits<Scalar>::HasSin)
   };
@@ -426,9 +425,9 @@ template<typename Scalar>
 struct functor_traits<scalar_fresnel_sin_op<Scalar> > {
   enum {
     // Guesstimate
-    // TODO
-    Cost = 20 * NumTraits<Scalar>::MulCost + 10 * NumTraits<Scalar>::AddCost,
-    // TODO
+    Cost = (30 * NumTraits<Scalar>::MulCost + 30 * NumTraits<Scalar>::AddCost +
+            functor_traits<scalar_cos_op<Scalar> >::Cost +
+            functor_traits<scalar_sin_op<Scalar> >::Cost),
     PacketAccess = (packet_traits<Scalar>::HasCos &&
                     packet_traits<Scalar>::HasSin)
   };
@@ -453,9 +452,9 @@ template<typename Scalar>
 struct functor_traits<scalar_spence_op<Scalar> > {
   enum {
     // Guesstimate
-    // TODO
-    Cost = 20 * NumTraits<Scalar>::MulCost + 10 * NumTraits<Scalar>::AddCost,
-    // TODO
+    Cost = (11 * NumTraits<Scalar>::MulCost + 11 * NumTraits<Scalar>::AddCost +
+            functor_traits<scalar_log_op<Scalar> >::Cost + 
+            functor_traits<scalar_log1p_op<Scalar> >::Cost),
     PacketAccess = (packet_traits<Scalar>::HasLog &&
                     packet_traits<Scalar>::HasLog1p)
   };
