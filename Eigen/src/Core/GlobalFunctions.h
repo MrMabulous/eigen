@@ -81,7 +81,7 @@ namespace Eigen
   EIGEN_ARRAY_DECLARE_GLOBAL_UNARY(expi,scalar_expi_op,exponential integral,\sa ArrayBase::expi)
   EIGEN_ARRAY_DECLARE_GLOBAL_UNARY(fresnel_cos,scalar_fresnel_cos_op,fresnel cosine integral,\sa ArrayBase::fresnel_cos)
   EIGEN_ARRAY_DECLARE_GLOBAL_UNARY(fresnel_sin,scalar_fresnel_sin_op,fresnel sine integral,\sa ArrayBase::fresnel_sin)
-  EIGEN_ARRAY_DECLARE_GLOBAL_UNARY(spence,scalar_spence_op,spence integral,\sa ArrayBase::spence)
+  EIGEN_ARRAY_DECLARE_GLOBAL_UNARY(spence,scalar_spence_op,spences integral,\sa ArrayBase::spence)
   EIGEN_ARRAY_DECLARE_GLOBAL_UNARY(exp,scalar_exp_op,exponential,\sa ArrayBase::exp)
   EIGEN_ARRAY_DECLARE_GLOBAL_UNARY(expm1,scalar_expm1_op,exponential of a value minus 1,\sa ArrayBase::expm1)
   EIGEN_ARRAY_DECLARE_GLOBAL_UNARY(log,scalar_log_op,natural logarithm,\sa Eigen::log10 DOXCOMMA ArrayBase::log)
