@@ -529,7 +529,19 @@ struct expm1_impl<std::complex<RealScalar> > {
   EIGEN_DEVICE_FUNC static inline std::complex<RealScalar> run(
       const std::complex<RealScalar>& x) {
     EIGEN_STATIC_ASSERT_NON_INTEGER(RealScalar)
-    return std_fallback::expm1(x);
+    RealScalar r = x.real();
+    RealScalar i = x.imag();
+    // Real(expm1(z)) = exp(r) * cos(i) - 1
+    //          = exp(r) * cos(i) - 1.
+    //          = expm1(r) + exp(r) * (cos(i) - 1)
+    //          = expm1(r) + exp(r) * (2 * sin(i / 2) ** 2)
+    RealScalar erm1 = std_fallback::expm1(r);
+    RealScalar er = erm1 + RealScalar(1.);
+    RealScalar sin2 = sin(i / RealScalar(2.));
+    sin2 = sin2 * sin2;
+    RealScalar s = sin(i);
+    RealScalar real_part = erm1 - RealScalar(2.) * er * sin2;
+    return std::complex<RealScalar>(real_part, er * s);
   }
 };
 
