@@ -108,6 +108,7 @@ struct PacketConverter<TensorEvaluator, SrcPacket, TgtPacket, 4, 1> {
   const TensorEvaluator& m_impl;
 };
 
+
 template <typename TensorEvaluator, typename SrcPacket, typename TgtPacket>
 struct PacketConverter<TensorEvaluator, SrcPacket, TgtPacket, 1, 2> {
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
@@ -128,6 +129,43 @@ struct PacketConverter<TensorEvaluator, SrcPacket, TgtPacket, 1, 2> {
       typedef typename internal::unpacket_traits<SrcPacket>::type SrcType;
       typedef typename internal::unpacket_traits<TgtPacket>::type TgtType;
       internal::scalar_cast_op<SrcType, TgtType> converter;
+      EIGEN_ALIGN_MAX typename internal::unpacket_traits<TgtPacket>::type values[TgtPacketSize];
+      EIGEN_UNROLL_LOOP
+      for (int i = 0; i < TgtPacketSize; ++i) {
+        values[i] = converter(m_impl.coeff(index+i));
+      }
+      TgtPacket rslt = internal::pload<TgtPacket>(values);
+      return rslt;
+    }
+  }
+
+ private:
+  const TensorEvaluator& m_impl;
+  const typename TensorEvaluator::Index m_maxIndex;
+};
+template <typename TensorEvaluator, typename SrcPacket, typename TgtPacket>
+struct PacketConverter<TensorEvaluator, SrcPacket, TgtPacket, 1, 8> {
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
+  PacketConverter(const TensorEvaluator& impl)
+      : m_impl(impl), m_maxIndex(impl.dimensions().TotalSize()) {}
+
+  template<int LoadMode, typename Index>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TgtPacket packet(Index index) const {
+    const int SrcPacketSize = internal::unpacket_traits<SrcPacket>::size;
+    // Only call m_impl.packet() when we have direct access to the underlying data. This
+    // ensures that we don't compute the subexpression twice. We may however load some
+    // coefficients twice, but in practice this doesn't negatively impact performance.
+    if (m_impl.data() && (index + SrcPacketSize*2 < m_maxIndex)) {
+      // Force unaligned memory loads since we can't ensure alignment anymore
+
+      return internal::pcast<SrcPacket, TgtPacket>(m_impl.template packet<Unaligned>(index),
+        m_impl.template packet<Unaligned>(index+SrcPacketSize));
+    } else {
+      const int TgtPacketSize = internal::unpacket_traits<TgtPacket>::size;
+      typedef typename internal::unpacket_traits<SrcPacket>::type SrcType;
+      typedef typename internal::unpacket_traits<TgtPacket>::type TgtType;
+      internal::scalar_cast_op<SrcType, TgtType> converter;
+      // values is Eigen half
       EIGEN_ALIGN_MAX typename internal::unpacket_traits<TgtPacket>::type values[TgtPacketSize];
       EIGEN_UNROLL_LOOP
       for (int i = 0; i < TgtPacketSize; ++i) {

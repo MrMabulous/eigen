@@ -483,9 +483,12 @@ ptranspose(PacketBlock<double2,2>& kernel) {
 #if (defined(EIGEN_HAS_CUDA_FP16) && defined(EIGEN_CUDACC) && defined(EIGEN_CUDA_ARCH) && EIGEN_CUDA_ARCH >= 300) || \
   (defined(EIGEN_HAS_HIP_FP16) && defined(EIGEN_HIPCC) && defined(EIGEN_HIP_DEVICE_COMPILE)) || \
   (defined(EIGEN_HAS_CUDA_FP16) && defined(__clang__) && defined(__CUDA__))
-
+typedef ulonglong2 Packet4h2;
+template<> struct unpacket_traits<half2> { typedef Eigen::half type; enum {size=2, alignment=Aligned16, vectorizable=true, masked_load_available=false, masked_store_available=false}; typedef half2 half; };
 template<> struct is_arithmetic<half2> { enum { value = true }; };
-
+template<> struct unpacket_traits<Packet4h2> { typedef Eigen::half type; enum {size=8, alignment=Aligned16, vectorizable=true, masked_load_available=false, masked_store_available=false}; typedef Packet4h2 half; };
+template<> struct is_arithmetic<Packet4h2> { enum { value = true }; };
+#if !defined(EIGEN_WIDE_FP16)
 template<> struct packet_traits<Eigen::half> : default_packet_traits
 {
   typedef half2 type;
@@ -508,7 +511,32 @@ template<> struct packet_traits<Eigen::half> : default_packet_traits
   };
 };
 
-template<> struct unpacket_traits<half2> { typedef Eigen::half type; enum {size=2, alignment=Aligned16, vectorizable=true, masked_load_available=false, masked_store_available=false}; typedef half2 half; };
+#else
+
+template<> struct packet_traits<Eigen::half> : default_packet_traits
+{
+  typedef Packet4h2 type;
+  typedef Packet4h2 half;
+  enum {
+    Vectorizable = 1,
+    AlignedOnScalar = 1,
+    size=8,
+    HasHalfPacket = 0,
+    HasAdd    = 1,
+    HasSub    = 1,
+    HasMul    = 1,
+    HasDiv    = 1,
+    HasSqrt   = 1,
+    HasRsqrt  = 1,
+    HasExp    = 1,
+    HasExpm1  = 1,
+    HasLog    = 1,
+    HasLog1p  = 1
+  };
+};
+
+#endif
+
 
 template<> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE half2 pset1<half2>(const Eigen::half& from) {
 #if !defined(EIGEN_CUDA_ARCH) && !defined(EIGEN_HIP_DEVICE_COMPILE)
@@ -1029,6 +1057,548 @@ template<> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE half2 prsqrt<half2>(const half2
   return __floats2half2_rn(r1, r2);
 }
 #endif
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2
+pset1<Packet4h2>(const Eigen::half& from) {
+  Packet4h2 r;
+  half2* p_alias = reinterpret_cast<half2*>(&r);
+  p_alias[0] = pset1<half2>(from);
+  p_alias[1] = pset1<half2>(from);
+  p_alias[2] = pset1<half2>(from);
+  p_alias[3] = pset1<half2>(from);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2
+pload<Packet4h2>(const Eigen::half* from) {
+  return *reinterpret_cast<const Packet4h2*>(from);
+}
+// unaligned load;
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2
+ploadu<Packet4h2>(const Eigen::half* from) {
+  Packet4h2 r;
+  half2* p_alias = reinterpret_cast<half2*>(&r);
+  p_alias[0] = ploadu<half2>(from+0);
+  p_alias[1] = ploadu<half2>(from+2);
+  p_alias[2] = ploadu<half2>(from+4);
+  p_alias[3] = ploadu<half2>(from+6);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2
+ploaddup<Packet4h2>(const Eigen::half* from) {
+  Packet4h2 r;
+  half2* p_alias = reinterpret_cast<half2*>(&r);
+  p_alias[0] = ploaddup<half2>(from);
+  p_alias[1] = ploaddup<half2>(from);
+  p_alias[2] = ploaddup<half2>(from);
+  p_alias[3] = ploaddup<half2>(from);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void pstore<Eigen::half>(
+    Eigen::half* to, const Packet4h2& from) {
+  *reinterpret_cast<Packet4h2*>(to) = from;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void pstoreu<Eigen::half>(
+    Eigen::half* to, const Packet4h2& from) {
+#if !defined(EIGEN_CUDA_ARCH) && !defined(EIGEN_HIP_DEVICE_COMPILE)
+  to[0] = from.x;
+  to[1] = from.y;
+#else
+  const half2* from_alias = reinterpret_cast<const half2*>(&from);
+  pstoreu<Eigen::half>(to,from_alias[0]);
+  pstoreu<Eigen::half>(to+2,from_alias[1]);
+  pstoreu<Eigen::half>(to+4,from_alias[2]);
+  pstoreu<Eigen::half>(to+6,from_alias[3]);
+#endif
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE Packet4h2
+ploadt_ro<Packet4h2, Aligned>(const Eigen::half* from) {
+#if defined(EIGEN_HIP_DEVICE_COMPILE)
+
+  Packet4h2 r;
+  r = __ldg((const Packet4h2*)from);
+  return r;
+#else  // EIGEN_CUDA_ARCH
+
+#if EIGEN_CUDA_ARCH >= 350
+  Packet4h2 r;
+  r = __ldg((const Packet4h2*)from);
+  return r;
+#else
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  r_alias[0] = ploadt_ro<half2,Aligned>(from+0);
+  r_alias[1] = ploadt_ro<half2,Aligned>(from+2);
+  r_alias[2] = ploadt_ro<half2,Aligned>(from+4);
+  r_alias[3] = ploadt_ro<half2,Aligned>(from+6);
+  return r;
+#endif
+
+#endif
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE Packet4h2
+ploadt_ro<Packet4h2, Unaligned>(const Eigen::half* from) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  r_alias[0] = ploadt_ro<half2,Unaligned>(from + 0);
+  r_alias[1] = ploadt_ro<half2,Unaligned>(from + 2);
+  r_alias[2] = ploadt_ro<half2,Unaligned>(from + 4);
+  r_alias[3] = ploadt_ro<half2,Unaligned>(from + 6);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2
+pgather<Eigen::half, Packet4h2>(const Eigen::half* from, Index stride) {
+  Packet4h2 r;
+  half2* p_alias = reinterpret_cast<half2*>(&r);
+  p_alias[0] = __halves2half2(from[0 * stride], from[1 * stride]);
+  p_alias[1] = __halves2half2(from[2 * stride], from[3 * stride]);
+  p_alias[2] = __halves2half2(from[4 * stride], from[5 * stride]);
+  p_alias[3] = __halves2half2(from[6 * stride], from[7 * stride]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void pscatter<Eigen::half, Packet4h2>(
+    Eigen::half* to, const Packet4h2& from, Index stride) {
+  const half2* from_alias = reinterpret_cast<const half2*>(&from);
+  pscatter<Eigen::half,half2>(to,from_alias[0],stride);
+  pscatter<Eigen::half,half2>(to+stride*2,from_alias[1],stride);
+  pscatter<Eigen::half,half2>(to+stride*4,from_alias[2],stride);
+  pscatter<Eigen::half,half2>(to+stride*6,from_alias[3],stride);
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Eigen::half pfirst<Packet4h2>(
+    const Packet4h2& a) {
+  return pfirst<half2>(*(reinterpret_cast<const half2*>(&a)));
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 pabs<Packet4h2>(const Packet4h2& a) {
+  Packet4h2 r;
+  half2* p_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  p_alias[0] = pabs<half2>(a_alias[0]);
+  p_alias[1] = pabs<half2>(a_alias[1]);
+  p_alias[2] = pabs<half2>(a_alias[2]);
+  p_alias[3] = pabs<half2>(a_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 ptrue<Packet4h2>(const Packet4h2& a) {
+  half true_half = half_impl::raw_uint16_to_half(0xffffu);
+  return pset1<Packet4h2>(true_half);
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 pzero<Packet4h2>(const Packet4h2& a) {
+  half false_half = half_impl::raw_uint16_to_half(0x0000u);
+  return pset1<Packet4h2>(false_half);
+}
+
+// TODO SAMI
+// EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void
+// ptranspose(PacketBlock<Packet4h2,4>& kernel) {
+//   __half a1 = __low2half(kernel.packet[0]);
+//   __half a2 = __high2half(kernel.packet[0]);
+//   __half b1 = __low2half(kernel.packet[1]);
+//   __half b2 = __high2half(kernel.packet[1]);
+//   kernel.packet[0] = __halves2half2(a1, b1);
+//   kernel.packet[1] = __halves2half2(a2, b2);
+// }
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2
+plset<Packet4h2>(const Eigen::half& a) {
+#if defined(EIGEN_HIP_DEVICE_COMPILE)
+
+  Packet4h2 r;
+  half2* p_alias = reinterpret_cast<half2*>(&r);
+  p_alias[0] = __halves2half2(a, __hadd(a, __float2half(1.0f)));
+  p_alias[1] = __halves2half2(__hadd(a, __float2half(2.0f)),
+                              __hadd(a, __float2half(3.0f)));
+  p_alias[2] = __halves2half2(__hadd(a, __float2half(4.0f)),
+                              __hadd(a, __float2half(5.0f)));
+  p_alias[3] = __halves2half2(__hadd(a, __float2half(6.0f)),
+                              __hadd(a, __float2half(7.0f)));
+  return r;
+#else  // EIGEN_CUDA_ARCH
+
+#if EIGEN_CUDA_ARCH >= 530
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  half2 half_2pack=__halves2half2(__float2half(2.0f),__float2half(4.0f));
+  half2 b=pset1<half2>(a);
+  r_alias[0] = plset<half2>(__low2half(b));
+  r_alias[1] = plset<half2>(__high2half(b));
+  b=__hadd2(b,half_2pack);
+  r_alias[2] = plset<half2>(__low2half(b));
+  r_alias[3] = plset<half2>(__high2half(b));
+  return r;
+
+#else
+  float f = __half2float(a);
+  Packet4h2 r;
+  half2* p_alias = reinterpret_cast<half2*>(&r);
+  p_alias[0] = __halves2half2(a, __float2half(f + 1.0f));
+  p_alias[1] = __halves2half2(__float2half(f + 2.0f), __float2half(f + 3.0f));
+  p_alias[2] = __halves2half2(__float2half(f + 4.0f), __float2half(f + 5.0f));
+  p_alias[3] = __halves2half2(__float2half(f + 6.0f), __float2half(f + 7.0f));
+  return r;
+#endif
+
+#endif
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2
+pselect<Packet4h2>(const Packet4h2& mask, const Packet4h2& a, const Packet4h2& b) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* mask_alias = reinterpret_cast<const half2*>(&mask);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  const half2* b_alias = reinterpret_cast<const half2*>(&b);
+  r_alias[0] = pselect<half2>(mask_alias[0], a_alias[0], b_alias[0]);
+  r_alias[1] = pselect<half2>(mask_alias[1], a_alias[1], b_alias[1]);
+  r_alias[2] = pselect<half2>(mask_alias[2], a_alias[2], b_alias[2]);
+  r_alias[3] = pselect<half2>(mask_alias[3], a_alias[3], b_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2
+pcmp_eq<Packet4h2>(const Packet4h2& a, const Packet4h2& b) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  const half2* b_alias = reinterpret_cast<const half2*>(&b);
+  r_alias[0] = pcmp_eq<half2>(a_alias[0], b_alias[0]);
+  r_alias[1] = pcmp_eq<half2>(a_alias[1], b_alias[1]);
+  r_alias[2] = pcmp_eq<half2>(a_alias[2], b_alias[2]);
+  r_alias[3] = pcmp_eq<half2>(a_alias[3], b_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 pand<Packet4h2>(const Packet4h2& a,
+                                                            const Packet4h2& b) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  const half2* b_alias = reinterpret_cast<const half2*>(&b);
+  r_alias[0] = pand<half2>(a_alias[0], b_alias[0]);
+  r_alias[1] = pand<half2>(a_alias[1], b_alias[1]);
+  r_alias[2] = pand<half2>(a_alias[2], b_alias[2]);
+  r_alias[3] = pand<half2>(a_alias[3], b_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 por<Packet4h2>(const Packet4h2& a,
+                                                           const Packet4h2& b) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  const half2* b_alias = reinterpret_cast<const half2*>(&b);
+  r_alias[0] = por<half2>(a_alias[0], b_alias[0]);
+  r_alias[1] = por<half2>(a_alias[1], b_alias[1]);
+  r_alias[2] = por<half2>(a_alias[2], b_alias[2]);
+  r_alias[3] = por<half2>(a_alias[3], b_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 pxor<Packet4h2>(const Packet4h2& a,
+                                                            const Packet4h2& b) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  const half2* b_alias = reinterpret_cast<const half2*>(&b);
+  r_alias[0] = pxor<half2>(a_alias[0], b_alias[0]);
+  r_alias[1] = pxor<half2>(a_alias[1], b_alias[1]);
+  r_alias[2] = pxor<half2>(a_alias[2], b_alias[2]);
+  r_alias[3] = pxor<half2>(a_alias[3], b_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2
+pandnot<Packet4h2>(const Packet4h2& a, const Packet4h2& b) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  const half2* b_alias = reinterpret_cast<const half2*>(&b);
+  r_alias[0] = pandnot<half2>(a_alias[0], b_alias[0]);
+  r_alias[1] = pandnot<half2>(a_alias[1], b_alias[1]);
+  r_alias[2] = pandnot<half2>(a_alias[2], b_alias[2]);
+  r_alias[3] = pandnot<half2>(a_alias[3], b_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 padd<Packet4h2>(const Packet4h2& a,
+                                                            const Packet4h2& b) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  const half2* b_alias = reinterpret_cast<const half2*>(&b);
+  r_alias[0] = padd<half2>(a_alias[0], b_alias[0]);
+  r_alias[1] = padd<half2>(a_alias[1], b_alias[1]);
+  r_alias[2] = padd<half2>(a_alias[2], b_alias[2]);
+  r_alias[3] = padd<half2>(a_alias[3], b_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 psub<Packet4h2>(const Packet4h2& a,
+                                                            const Packet4h2& b) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  const half2* b_alias = reinterpret_cast<const half2*>(&b);
+  r_alias[0] = psub<half2>(a_alias[0], b_alias[0]);
+  r_alias[1] = psub<half2>(a_alias[1], b_alias[1]);
+  r_alias[2] = psub<half2>(a_alias[2], b_alias[2]);
+  r_alias[3] = psub<half2>(a_alias[3], b_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 pnegate(const Packet4h2& a) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  r_alias[0] = pnegate<half2>(a_alias[0]);
+  r_alias[1] = pnegate<half2>(a_alias[1]);
+  r_alias[2] = pnegate<half2>(a_alias[2]);
+  r_alias[3] = pnegate<half2>(a_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 pconj(const Packet4h2& a) {
+  return a;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 pmul<Packet4h2>(const Packet4h2& a,
+                                                            const Packet4h2& b) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  const half2* b_alias = reinterpret_cast<const half2*>(&b);
+  r_alias[0] = pmul<half2>(a_alias[0], b_alias[0]);
+  r_alias[1] = pmul<half2>(a_alias[1], b_alias[1]);
+  r_alias[2] = pmul<half2>(a_alias[2], b_alias[2]);
+  r_alias[3] = pmul<half2>(a_alias[3], b_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 pmadd<Packet4h2>(const Packet4h2& a,
+                                                             const Packet4h2& b,
+                                                             const Packet4h2& c) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  const half2* b_alias = reinterpret_cast<const half2*>(&b);
+  const half2* c_alias = reinterpret_cast<const half2*>(&c);
+  r_alias[0] = pmadd<half2>(a_alias[0], b_alias[0], c_alias[0]);
+  r_alias[1] = pmadd<half2>(a_alias[1], b_alias[1], c_alias[1]);
+  r_alias[2] = pmadd<half2>(a_alias[2], b_alias[2], c_alias[2]);
+  r_alias[3] = pmadd<half2>(a_alias[3], b_alias[3], c_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 pdiv<Packet4h2>(const Packet4h2& a,
+                                                            const Packet4h2& b) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  const half2* b_alias = reinterpret_cast<const half2*>(&b);
+  r_alias[0] = pdiv<half2>(a_alias[0], b_alias[0]);
+  r_alias[1] = pdiv<half2>(a_alias[1], b_alias[1]);
+  r_alias[2] = pdiv<half2>(a_alias[2], b_alias[2]);
+  r_alias[3] = pdiv<half2>(a_alias[3], b_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 pmin<Packet4h2>(const Packet4h2& a,
+                                                            const Packet4h2& b) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  const half2* b_alias = reinterpret_cast<const half2*>(&b);
+  r_alias[0] = pmin<half2>(a_alias[0], b_alias[0]);
+  r_alias[1] = pmin<half2>(a_alias[1], b_alias[1]);
+  r_alias[2] = pmin<half2>(a_alias[2], b_alias[2]);
+  r_alias[3] = pmin<half2>(a_alias[3], b_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 pmax<Packet4h2>(const Packet4h2& a,
+                                                            const Packet4h2& b) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  const half2* b_alias = reinterpret_cast<const half2*>(&b);
+  r_alias[0] = pmax<half2>(a_alias[0], b_alias[0]);
+  r_alias[1] = pmax<half2>(a_alias[1], b_alias[1]);
+  r_alias[2] = pmax<half2>(a_alias[2], b_alias[2]);
+  r_alias[3] = pmax<half2>(a_alias[3], b_alias[3]);
+  return r;
+}
+// might overflow easier
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Eigen::half predux<Packet4h2>(
+    const Packet4h2& a) {
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+
+  return predux<half2>(a_alias[0]) + predux<half2>(a_alias[1]) +
+         predux<half2>(a_alias[2]) + predux<half2>(a_alias[3]);
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Eigen::half predux_max<Packet4h2>(
+    const Packet4h2& a) {
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  half2 m0 = __halves2half2(predux_max<half2>(a_alias[0]),
+                          predux_max<half2>(a_alias[1]));
+  half2 m1 = __halves2half2(predux_max<half2>(a_alias[2]),
+                          predux_max<half2>(a_alias[3]));
+  __half first=predux_max<half2>(m0);
+  __half second=predux_max<half2>(m1);
+#if EIGEN_CUDA_ARCH < 530
+  float ffirst=__half2float(first);
+  float fsecond=__half2float(second);
+  return (ffirst>fsecond)?first:second;
+#else
+  return (__hgt(first, second) ? first : second);
+#endif
+
+
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Eigen::half predux_min<Packet4h2>(
+    const Packet4h2& a) {
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  half2 m0 = __halves2half2(predux_min<half2>(a_alias[0]),
+                          predux_min<half2>(a_alias[1]));
+  half2 m1 = __halves2half2(predux_min<half2>(a_alias[2]),
+                          predux_min<half2>(a_alias[3]));
+  __half first = predux_min<half2>(m0);
+  __half second = predux_min<half2>(m1);
+#if EIGEN_CUDA_ARCH < 530
+  float ffirst=__half2float(first);
+  float fsecond=__half2float(second);
+  return (ffirst<fsecond)?first:second;
+#else
+  return (__hlt(first, second) ? first : second);
+#endif
+
+}
+// likely overflow/underflow
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Eigen::half predux_mul<Packet4h2>(
+    const Packet4h2& a) {
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  return predux_mul<half2>(pmul<half2>(pmul<half2>(a_alias[0], a_alias[1]), pmul<half2>(a_alias[2], a_alias[3])));
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2
+plog1p<Packet4h2>(const Packet4h2& a) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  r_alias[0] = plog1p<half2>(a_alias[0]);
+  r_alias[1] = plog1p<half2>(a_alias[1]);
+  r_alias[2] = plog1p<half2>(a_alias[2]);
+  r_alias[3] = plog1p<half2>(a_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2
+pexpm1<Packet4h2>(const Packet4h2& a) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  r_alias[0] = pexpm1<half2>(a_alias[0]);
+  r_alias[1] = pexpm1<half2>(a_alias[1]);
+  r_alias[2] = pexpm1<half2>(a_alias[2]);
+  r_alias[3] = pexpm1<half2>(a_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 plog<Packet4h2>(const Packet4h2& a) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  r_alias[0] = plog<half2>(a_alias[0]);
+  r_alias[1] = plog<half2>(a_alias[1]);
+  r_alias[2] = plog<half2>(a_alias[2]);
+  r_alias[3] = plog<half2>(a_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 pexp<Packet4h2>(const Packet4h2& a) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  r_alias[0] = pexp<half2>(a_alias[0]);
+  r_alias[1] = pexp<half2>(a_alias[1]);
+  r_alias[2] = pexp<half2>(a_alias[2]);
+  r_alias[3] = pexp<half2>(a_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 psqrt<Packet4h2>(const Packet4h2& a) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  r_alias[0] = psqrt<half2>(a_alias[0]);
+  r_alias[1] = psqrt<half2>(a_alias[1]);
+  r_alias[2] = psqrt<half2>(a_alias[2]);
+  r_alias[3] = psqrt<half2>(a_alias[3]);
+  return r;
+}
+
+template <>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2
+prsqrt<Packet4h2>(const Packet4h2& a) {
+  Packet4h2 r;
+  half2* r_alias = reinterpret_cast<half2*>(&r);
+  const half2* a_alias = reinterpret_cast<const half2*>(&a);
+  r_alias[0] = prsqrt<half2>(a_alias[0]);
+  r_alias[1] = prsqrt<half2>(a_alias[1]);
+  r_alias[2] = prsqrt<half2>(a_alias[2]);
+  r_alias[3] = prsqrt<half2>(a_alias[3]);
+  return r;
+}
 
 #endif
 
