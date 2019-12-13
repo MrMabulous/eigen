@@ -17,10 +17,8 @@ namespace internal {
 
 /** \internal \returns the hyperbolic tan of \a a (coeff-wise)
     Doesn't do anything fancy, just a 13/6-degree rational interpolant which
-    is accurate up to a couple of ulps in the (approximate) range [-8, 8], 
-    outside of which tanh(x) = +/-1 in single precision. This is done by
-    Clamp the inputs to the range [-c, c]. The value c is chosen as the smallest
-    value where the approximation evaluates to exactly 1.
+    is accurate up to a couple of ulp in the range [-9, 9], outside of which
+    the tanh(x) = +/-1.
 
     This implementation works on both scalars and packets.
 */
@@ -35,7 +33,9 @@ T generic_fast_tanh_float(const T& a_x)
   const T plus_clamp = pset1<T>(7.90531110763549805);
   const T minus_clamp = pset1<T>(-7.90531110763549805);
 #endif
+  const T tiny = pset1<T>(0.0004);
   const T x = pmax(pmin(a_x, plus_clamp), minus_clamp);
+  const T tiny_mask = pcmp_lt(pabs(a_x), tiny);
   // The monomial coefficients of the numerator polynomial (odd).
   const T alpha_1 = pset1<T>(4.89352455891786e-03f);
   const T alpha_3 = pset1<T>(6.37261928875436e-04f);
@@ -69,7 +69,7 @@ T generic_fast_tanh_float(const T& a_x)
   q = pmadd(x2, q, beta_0);
 
   // Divide the numerator by the denominator.
-  return pdiv(p, q);
+  return pselect(tiny_mask, x, pdiv(p, q));
 }
 
 template<typename RealScalar>

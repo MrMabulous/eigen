@@ -51,7 +51,11 @@
 
 #ifndef EIGEN_STACK_ALLOCATION_LIMIT
 // 131072 == 128 KB
-#define EIGEN_STACK_ALLOCATION_LIMIT 131072
+#if defined(__AVX512F__)
+  #define EIGEN_STACK_ALLOCATION_LIMIT 0
+#else
+  #define EIGEN_STACK_ALLOCATION_LIMIT 16384
+#endif
 #endif
 
 //------------------------------------------------------------------------------------------
@@ -1111,6 +1115,11 @@ namespace Eigen {
 #define EIGEN_LOGICAL_XOR(a,b) (((a) || (b)) && !((a) && (b)))
 
 #define EIGEN_IMPLIES(a,b) (!(a) || (b))
+
+#if EIGEN_HAS_BUILTIN(__builtin_expect) || EIGEN_COMP_GNUC
+#define EIGEN_PREDICT_FALSE(x) (__builtin_expect(x, false))
+#define EIGEN_PREDICT_TRUE(x) (__builtin_expect(false || (x), true))
+#endif
 
 // the expression type of a standard coefficient wise binary operation
 #define EIGEN_CWISE_BINARY_RETURN_TYPE(LHS,RHS,OPNAME) \
