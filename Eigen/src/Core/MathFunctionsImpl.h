@@ -17,8 +17,11 @@ namespace internal {
 
 /** \internal \returns the hyperbolic tan of \a a (coeff-wise)
     Doesn't do anything fancy, just a 13/6-degree rational interpolant which
-    is accurate up to a couple of ulp in the range [-9, 9], outside of which
-    the tanh(x) = +/-1.
+    is accurate up to a couple of ulps in the (approximate) range [-8, 8],
+    outside of which tanh(x) = +/-1 in single precision. The input is clamped
+    to the range [-c, c]. The value c is chosen as the smallest value where
+    the approximation evaluates to exactly 1. In the reange [-0.0004, 0.0004]
+    the approxmation tanh(x) != x is used for better accuracy as x tends to zero.
 
     This implementation works on both scalars and packets.
 */
