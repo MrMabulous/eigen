@@ -50,7 +50,8 @@
 #endif
 
 #ifndef EIGEN_STACK_ALLOCATION_LIMIT
-  #define EIGEN_STACK_ALLOCATION_LIMIT 131072
+// 131072 == 128 KB
+#define EIGEN_STACK_ALLOCATION_LIMIT 131072
 #endif
 
 //------------------------------------------------------------------------------------------
