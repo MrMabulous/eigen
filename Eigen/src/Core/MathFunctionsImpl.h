@@ -30,13 +30,13 @@ T generic_fast_tanh_float(const T& a_x)
 {
   // Clamp the inputs to the range [-c, c]
 #ifdef EIGEN_VECTORIZE_FMA
-  const T plus_clamp = pset1<T>(7.99881172180175781);
-  const T minus_clamp = pset1<T>(-7.99881172180175781);
+  const T plus_clamp = pset1<T>(7.99881172180175781f);
+  const T minus_clamp = pset1<T>(-7.99881172180175781f);
 #else
-  const T plus_clamp = pset1<T>(7.90531110763549805);
-  const T minus_clamp = pset1<T>(-7.90531110763549805);
+  const T plus_clamp = pset1<T>(7.90531110763549805f);
+  const T minus_clamp = pset1<T>(-7.90531110763549805f);
 #endif
-  const T tiny = pset1<T>(0.0004);
+  const T tiny = pset1<T>(0.0004f);
   const T x = pmax(pmin(a_x, plus_clamp), minus_clamp);
   const T tiny_mask = pcmp_lt(pabs(a_x), tiny);
   // The monomial coefficients of the numerator polynomial (odd).
