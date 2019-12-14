@@ -972,7 +972,7 @@ struct scalar_logistic_op<float> {
     p = pmadd(x2, p, alpha_1);
     p = pmul(x, p);
 
-    // Evaluate the denominator polynomial p.
+    // Evaluate the denominator polynomial q.
     Packet q = pmadd(x2, beta_10, beta_8);
     q = pmadd(x2, q, beta_6);
     q = pmadd(x2, q, beta_4);

@@ -66,7 +66,7 @@ T generic_fast_tanh_float(const T& a_x)
   p = pmadd(x2, p, alpha_1);
   p = pmul(x, p);
 
-  // Evaluate the denominator polynomial p.
+  // Evaluate the denominator polynomial q.
   T q = pmadd(x2, beta_6, beta_4);
   q = pmadd(x2, q, beta_2);
   q = pmadd(x2, q, beta_0);
