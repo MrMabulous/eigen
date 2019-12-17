@@ -137,6 +137,7 @@ struct packet_traits<float> : default_packet_traits
     size = 4,
     HasHalfPacket = 1,
 
+    HasCast      = 1,
     HasAdd       = 1,
     HasSub       = 1,
     HasShift     = 1,
@@ -179,6 +180,7 @@ struct packet_traits<int8_t> : default_packet_traits
     size = 16,
     HasHalfPacket = 1,
 
+    HasCast      = 1,
     HasAdd       = 1,
     HasSub       = 1,
     HasShift     = 1,
@@ -210,6 +212,7 @@ struct packet_traits<uint8_t> : default_packet_traits
     size = 16,
     HasHalfPacket = 1,
 
+    HasCast      = 1,
     HasAdd       = 1,
     HasSub       = 1,
     HasShift     = 1,
@@ -243,6 +246,7 @@ struct packet_traits<int16_t> : default_packet_traits
     size = 8,
     HasHalfPacket = 1,
 
+    HasCast      = 1,
     HasAdd       = 1,
     HasSub       = 1,
     HasShift     = 1,
@@ -274,6 +278,7 @@ struct packet_traits<uint16_t> : default_packet_traits
     size = 8,
     HasHalfPacket = 1,
 
+    HasCast      = 1,
     HasAdd       = 1,
     HasSub       = 1,
     HasShift     = 1,
@@ -307,6 +312,7 @@ struct packet_traits<int32_t> : default_packet_traits
     size = 4,
     HasHalfPacket = 1,
 
+    HasCast      = 1,
     HasAdd       = 1,
     HasSub       = 1,
     HasShift     = 1,
@@ -338,6 +344,7 @@ struct packet_traits<uint32_t> : default_packet_traits
     size = 4,
     HasHalfPacket = 1,
 
+    HasCast      = 1,
     HasAdd       = 1,
     HasSub       = 1,
     HasShift     = 1,
