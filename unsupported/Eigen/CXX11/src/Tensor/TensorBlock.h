@@ -78,7 +78,7 @@ struct TensorBlockResourceRequirements {
   TensorOpCost cost_per_coeff;      // cost of computing a single block element
 
   template <typename Scalar>
-  static TensorBlockResourceRequirements withShapeAndSize(
+  EIGEN_DEVICE_FUNC static TensorBlockResourceRequirements withShapeAndSize(
       TensorBlockShapeType shape_type, size_t size_in_bytes,
       TensorOpCost cost) {
     const size_t size = numext::maxi(size_t(1), size_in_bytes / sizeof(Scalar));
@@ -86,7 +86,7 @@ struct TensorBlockResourceRequirements {
   }
 
   template <typename Scalar>
-  static TensorBlockResourceRequirements withShapeAndSize(
+  EIGEN_DEVICE_FUNC static TensorBlockResourceRequirements withShapeAndSize(
       TensorBlockShapeType shape_type, size_t size_in_bytes) {
     // This default cost per coefficient is valid for most materialized tensor
     // block evaluation implementations, because they typically just read
@@ -109,13 +109,15 @@ struct TensorBlockResourceRequirements {
   }
 
   template <typename Scalar>
-  static TensorBlockResourceRequirements skewed(size_t size_in_bytes) {
+  EIGEN_DEVICE_FUNC static TensorBlockResourceRequirements skewed(
+      size_t size_in_bytes) {
     return withShapeAndSize<Scalar>(TensorBlockShapeType::kSkewedInnerDims,
                                     size_in_bytes);
   }
 
   template <typename Scalar>
-  static TensorBlockResourceRequirements uniform(size_t size_in_bytes) {
+  EIGEN_DEVICE_FUNC static TensorBlockResourceRequirements uniform(
+      size_t size_in_bytes) {
     return withShapeAndSize<Scalar>(TensorBlockShapeType::kUniformAllDims,
                                     size_in_bytes);
   }
@@ -129,7 +131,8 @@ struct TensorBlockResourceRequirements {
             merge(lhs.cost_per_coeff, rhs.cost_per_coeff)};  // cost_per_coeff
   }
 
-  TensorBlockResourceRequirements& addCostPerCoeff(TensorOpCost cost) {
+  EIGEN_DEVICE_FUNC TensorBlockResourceRequirements& addCostPerCoeff(
+      TensorOpCost cost) {
     cost_per_coeff += cost;
     return *this;
   }
@@ -189,8 +192,7 @@ class TensorBlockDescriptor {
    public:
     enum DestinationBufferKind : int {
       // The above explicit specification of "int" as the enum basetype is
-      // needed
-      // to get around a HIPCC link error ("the field type is not
+      // needed to get around a HIPCC link error ("the field type is not
       // amp-compatible")
       // which is issued for class members with the enum type.
       // TODO(rocm):
