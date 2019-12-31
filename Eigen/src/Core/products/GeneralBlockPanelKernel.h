@@ -522,7 +522,7 @@ public:
 
   template<typename LhsPacketType, typename RhsPacketType, typename AccPacketType>
   EIGEN_STRONG_INLINE typename internal::enable_if<!internal::is_convertible<AccPacketType,RhsPacketType>::value, void>::type
-  madd_no_fma_helper(const LhsPacketType& a, const RhsPacketType& b, AccPacketType& c, RhsPacketType const&) const
+  madd_no_fma_helper(const LhsPacketType& a, const RhsPacketType& b, AccPacketType& c, const RhsPacketType&) const
   {
     conj_helper<LhsPacketType,AccPacketType,ConjLhs,ConjRhs> cj;
     AccPacketType tmp;
