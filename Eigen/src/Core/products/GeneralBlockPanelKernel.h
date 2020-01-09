@@ -1076,7 +1076,7 @@ struct gebp_traits <float, float, false, false,Architecture::NEON,GEBPPacketFull
     dest = *b;
   }
 
-  EIGEN_STRONG_INLINE void updateRhs(const RhsScalar* b, RhsPacketx4& dest) const
+  EIGEN_STRONG_INLINE void updateRhs(const RhsScalar* /*b*/, RhsPacketx4& /*dest*/) const
   {}
 
   EIGEN_STRONG_INLINE void loadRhsQuad(const RhsScalar* b, RhsPacket& dest) const
@@ -1145,7 +1145,7 @@ struct gebp_traits <double, double, false, false,Architecture::NEON>
     loadRhs(b,dest);
   }
 
-  EIGEN_STRONG_INLINE void updateRhs(const RhsScalar* b, RhsPacketx4& dest) const
+  EIGEN_STRONG_INLINE void updateRhs(const RhsScalar* /*b*/, RhsPacketx4& /*dest*/) const
   {}
 
   EIGEN_STRONG_INLINE void loadRhsQuad(const RhsScalar* b, RhsPacket& dest) const
