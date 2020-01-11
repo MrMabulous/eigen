@@ -736,6 +736,25 @@ struct functor_traits<scalar_floor_op<Scalar> >
 };
 
 /** \internal
+  * \brief Template functor to compute the rounded (with current rounding mode)  value of a scalar
+  * \sa class CwiseUnaryOp, ArrayBase::rint()
+  */
+template<typename Scalar> struct scalar_rint_op {
+  EIGEN_EMPTY_STRUCT_CTOR(scalar_rint_op)
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Scalar operator() (const Scalar& a) const { return numext::rint(a); }
+  template <typename Packet>
+  EIGEN_DEVICE_FUNC inline Packet packetOp(const Packet& a) const { return internal::print(a); }
+};
+template<typename Scalar>
+struct functor_traits<scalar_rint_op<Scalar> >
+{
+  enum {
+    Cost = NumTraits<Scalar>::MulCost,
+    PacketAccess = packet_traits<Scalar>::HasRint
+  };
+};
+
+/** \internal
   * \brief Template functor to compute the ceil of a scalar
   * \sa class CwiseUnaryOp, ArrayBase::ceil()
   */
@@ -905,6 +924,7 @@ struct scalar_logistic_op {
   }
 };
 
+#ifndef EIGEN_GPU_COMPILE_PHASE
 /** \internal
   * \brief Template specialization of the logistic function for float.
   *
@@ -923,9 +943,9 @@ struct scalar_logistic_op<float> {
     // The upper cut-off is the smallest x for which the rational approximation evaluates to 1.
     // Choosing this value saves us a few instructions clamping the results at the end.
 #ifdef EIGEN_VECTORIZE_FMA
-    const float cutoff_upper = 16.285715103149414062f;
+    const float cutoff_upper = 15.7243833541870117f;
 #else
-    const float cutoff_upper = 16.619047164916992188f;
+    const float cutoff_upper = 15.6437711715698242f;
 #endif
     const float cutoff_lower = -9.f;
     if (x > cutoff_upper) return 1.0f;
@@ -941,9 +961,9 @@ struct scalar_logistic_op<float> {
 
     // Clamp the input to be at most 'cutoff_upper'.
 #ifdef EIGEN_VECTORIZE_FMA
-    const Packet cutoff_upper = pset1<Packet>(16.285715103149414062f);
+    const Packet cutoff_upper = pset1<Packet>(15.7243833541870117f);
 #else
-    const Packet cutoff_upper = pset1<Packet>(16.619047164916992188f);
+    const Packet cutoff_upper = pset1<Packet>(15.6437711715698242f);
 #endif
     const Packet x = pmin(_x, cutoff_upper);
 
@@ -988,6 +1008,7 @@ struct scalar_logistic_op<float> {
     }
   }
 };
+#endif  // #ifndef EIGEN_GPU_COMPILE_PHASE
 
 template <typename T>
 struct functor_traits<scalar_logistic_op<T> > {
