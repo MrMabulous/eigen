@@ -3579,7 +3579,7 @@ template<> struct packet_traits<double>  : default_packet_traits
     HasReduxp    = 1,
 
     HasDiv   = 1,
-    HasFloor = 0,
+    HasFloor = 1,
 
     HasSin  = 0,
     HasCos  = 0,
@@ -3638,6 +3638,18 @@ template<> EIGEN_STRONG_INLINE Packet2d pmadd(const Packet2d& a, const Packet2d&
 template<> EIGEN_STRONG_INLINE Packet2d pmin<Packet2d>(const Packet2d& a, const Packet2d& b) { return vminq_f64(a,b); }
 
 template<> EIGEN_STRONG_INLINE Packet2d pmax<Packet2d>(const Packet2d& a, const Packet2d& b) { return vmaxq_f64(a,b); }
+
+template<> EIGEN_STRONG_INLINE Packet2d pfloor<Packet2d>(const Packet2d& a)
+{
+  const Packet2d cst_1 = pset1<Packet2d>(1.0);
+  /* perform a floorf */
+  const Packet2d tmp = vcvtq_f64_s64(vcvtq_s64_f64(a));
+
+  /* if greater, substract 1 */
+  uint64x2_t mask = vcgtq_f64(tmp, a);
+  mask = vandq_u64(mask, vreinterpretq_u64_f64(cst_1));
+  return vsubq_f64(tmp, vreinterpretq_f64_u64(mask));
+}
 
 // Logical Operations are not supported for float, so we have to reinterpret casts using NEON intrinsics
 template<> EIGEN_STRONG_INLINE Packet2d pand<Packet2d>(const Packet2d& a, const Packet2d& b)
