@@ -43,7 +43,8 @@ T apply_bit_op(Bits a, Bits b, Func f) {
   T res;
   for(Index i = 0; i < data.size(); ++i)
     data[i] = f(a[i], b[i]);
-  std::memcpy(&res, &data, sizeof(T));
+  // Note: The reinterpret_cast works around GCC's class-memaccess warnings:
+  std::memcpy(reinterpret_cast<unsigned char*>(&res), &data, sizeof(T));
   return res;
 }
 
@@ -518,6 +519,14 @@ template<typename Scalar,typename Packet> void packetmath_real()
   CHECK_CWISE1_IF(PacketTraits::HasCeil, numext::ceil, internal::pceil);
   CHECK_CWISE1_IF(PacketTraits::HasFloor, numext::floor, internal::pfloor);
 
+  // See bug 1785.
+  for (int i=0; i<size; ++i)
+   {
+     data1[i] = -1.5 + i;
+     data2[i] = -1.5 + i;
+   }
+  CHECK_CWISE1_IF(PacketTraits::HasRound, numext::round, internal::pround);
+
   for (int i=0; i<size; ++i)
   {
     data1[i] = internal::random<Scalar>(-1,1);
@@ -537,6 +546,7 @@ template<typename Scalar,typename Packet> void packetmath_real()
     data1[i] = internal::random<Scalar>(-1,1) * std::pow(Scalar(10), internal::random<Scalar>(-6,6));
     data2[i] = internal::random<Scalar>(-1,1) * std::pow(Scalar(10), internal::random<Scalar>(-6,6));
   }
+  data1[0] = 1e-20;
   CHECK_CWISE1_IF(PacketTraits::HasTanh, std::tanh, internal::ptanh);
   if(PacketTraits::HasExp && PacketSize>=2)
   {

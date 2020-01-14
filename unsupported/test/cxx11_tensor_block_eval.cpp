@@ -64,7 +64,8 @@ static TensorBlockParams<NumDims> SkewedInnerBlock(
   using BlockMapper = internal::TensorBlockMapper<NumDims, Layout, Index>;
   BlockMapper block_mapper(dims,
                            {internal::TensorBlockShapeType::kSkewedInnerDims,
-                            internal::random<size_t>(1, dims.TotalSize())});
+                            internal::random<size_t>(1, dims.TotalSize()),
+                            {0, 0, 0}});
 
   Index total_blocks = block_mapper.blockCount();
   Index block_index = internal::random<Index>(0, total_blocks - 1);
@@ -547,7 +548,7 @@ static void test_eval_tensor_chipping_of_bcast() {
   Tensor<T, 3, Layout> input(1, dim1, dim2);
   input.setRandom();
 
-  Eigen::array<Index, 3> bcast({dim0, 1, 1});
+  Eigen::array<Index, 3> bcast = {{dim0, 1, 1}};
   DSizes<Index, 2> chipped_dims(dim0, dim2);
 
   VerifyBlockEvaluator<T, 2, Layout>(

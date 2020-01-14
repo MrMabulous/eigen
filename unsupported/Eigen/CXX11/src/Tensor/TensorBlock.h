@@ -73,14 +73,79 @@ EIGEN_STRONG_INLINE DSizes<std::ptrdiff_t, sizeof...(Indices)> strides(
 enum class TensorBlockShapeType { kUniformAllDims, kSkewedInnerDims };
 
 struct TensorBlockResourceRequirements {
-  TensorBlockShapeType shape_type;
-  size_t size;
+  TensorBlockShapeType shape_type;  // target block shape
+  size_t size;                      // target block size
+  TensorOpCost cost_per_coeff;      // cost of computing a single block element
+
+#ifdef EIGEN_HIPCC
+  // For HIPCC, we need to explicitly declare as a "device fun", the constructor
+  // which is implicitly invoked in the "merge" / "any" routines. else HIPCC
+  // errors out complaining about the lack of a matching constructor
+  EIGEN_DEVICE_FUNC
+  TensorBlockResourceRequirements(TensorBlockShapeType shape_type_, size_t size_,
+				  TensorOpCost cost_)
+    : shape_type(shape_type_), size(size_), cost_per_coeff(cost_)
+  {}
+#endif
+
+  template <typename Scalar>
+  EIGEN_DEVICE_FUNC static TensorBlockResourceRequirements withShapeAndSize(
+      TensorBlockShapeType shape_type, size_t size_in_bytes,
+      TensorOpCost cost) {
+    const size_t size = numext::maxi(size_t(1), size_in_bytes / sizeof(Scalar));
+    return {shape_type, size, cost};
+  }
+
+  template <typename Scalar>
+  EIGEN_DEVICE_FUNC static TensorBlockResourceRequirements withShapeAndSize(
+      TensorBlockShapeType shape_type, size_t size_in_bytes) {
+    // This default cost per coefficient is valid for most materialized tensor
+    // block evaluation implementations, because they typically just read
+    // coefficients from the underlying tensor storage, and write to the tensor
+    // block buffer (scratch or destination memory, reads and writes have linear
+    // access pattern). We ignore the fixed cost of block evaluation, because in
+    // practice it should negligible.
+    //
+    // Lazy block evaluation adds the cost of calling a functor for each
+    // coefficient.
+    //
+    // All non-trivial block evaluation implementations must provide their own
+    // cost approximation (e.g. shuffling inner dimension has a much higher cost
+    // because it reads memory randomly, although the total number of moved
+    // bytes is the same).
+    return withShapeAndSize<Scalar>(shape_type, size_in_bytes,
+                                    {/*bytes_loaded=*/sizeof(Scalar),
+                                     /*bytes_stored=*/sizeof(Scalar),
+                                     /*compute_cycles=*/0});
+  }
+
+  template <typename Scalar>
+  EIGEN_DEVICE_FUNC static TensorBlockResourceRequirements skewed(
+      size_t size_in_bytes) {
+    return withShapeAndSize<Scalar>(TensorBlockShapeType::kSkewedInnerDims,
+                                    size_in_bytes);
+  }
+
+  template <typename Scalar>
+  EIGEN_DEVICE_FUNC static TensorBlockResourceRequirements uniform(
+      size_t size_in_bytes) {
+    return withShapeAndSize<Scalar>(TensorBlockShapeType::kUniformAllDims,
+                                    size_in_bytes);
+  }
 
   EIGEN_DEVICE_FUNC
   static EIGEN_STRONG_INLINE TensorBlockResourceRequirements
-  merge(const TensorBlockResourceRequirements &lhs,
-        const TensorBlockResourceRequirements &rhs) {
-    return {merge(lhs.shape_type, rhs.shape_type), merge(rhs.size, lhs.size)};
+  merge(const TensorBlockResourceRequirements& lhs,
+        const TensorBlockResourceRequirements& rhs) {
+    return {merge(lhs.shape_type, rhs.shape_type),           // shape_type
+            merge(lhs.size, rhs.size),                       // size
+            merge(lhs.cost_per_coeff, rhs.cost_per_coeff)};  // cost_per_coeff
+  }
+
+  EIGEN_DEVICE_FUNC TensorBlockResourceRequirements& addCostPerCoeff(
+      TensorOpCost cost) {
+    cost_per_coeff += cost;
+    return *this;
   }
 
   // This is a resource requirement that should be returned from expressions
@@ -88,10 +153,10 @@ struct TensorBlockResourceRequirements {
   // expression with raw buffer access).
   EIGEN_DEVICE_FUNC
   static EIGEN_STRONG_INLINE TensorBlockResourceRequirements any() {
-    return {TensorBlockShapeType::kUniformAllDims, 1};
+    return {TensorBlockShapeType::kUniformAllDims, 1, {0, 0, 0}};
   }
 
-private:
+ private:
   using Requirements = TensorBlockResourceRequirements;
 
   EIGEN_DEVICE_FUNC
@@ -100,12 +165,18 @@ private:
   }
 
   EIGEN_DEVICE_FUNC
-  static EIGEN_STRONG_INLINE TensorBlockShapeType merge(TensorBlockShapeType lhs,
-							  TensorBlockShapeType rhs) {
+  static EIGEN_STRONG_INLINE TensorBlockShapeType
+  merge(TensorBlockShapeType lhs, TensorBlockShapeType rhs) {
     return (lhs == TensorBlockShapeType::kSkewedInnerDims ||
             rhs == TensorBlockShapeType::kSkewedInnerDims)
                ? TensorBlockShapeType::kSkewedInnerDims
                : TensorBlockShapeType::kUniformAllDims;
+  }
+
+  EIGEN_DEVICE_FUNC
+  static EIGEN_STRONG_INLINE TensorOpCost merge(TensorOpCost lhs_cost,
+                                                TensorOpCost rhs_cost) {
+    return lhs_cost + rhs_cost;
   }
 };
 
@@ -131,8 +202,9 @@ class TensorBlockDescriptor {
   class DestinationBuffer {
    public:
     enum DestinationBufferKind : int {
-      // The above explicit specification of "int" as the enum basetype is needed
-      // to get around a HIPCC link error ("the field type is not amp-compatible")
+      // The above explicit specification of "int" as the enum basetype is
+      // needed to get around a HIPCC link error ("the field type is not
+      // amp-compatible")
       // which is issued for class members with the enum type.
       // TODO(rocm):
       // remove the "int" basetype once HIPCC has been fixed to not error out
@@ -280,21 +352,10 @@ class TensorBlockMapper {
 
   TensorBlockMapper() = default;
   TensorBlockMapper(const DSizes<IndexType, NumDims>& dimensions,
-                      const TensorBlockResourceRequirements& requirements)
+                    const TensorBlockResourceRequirements& requirements)
       : m_tensor_dimensions(dimensions), m_requirements(requirements) {
-    // Initialize `m_block_dimensions`.
+    // Compute block dimensions and the total number of blocks.
     InitializeBlockDimensions();
-
-    // Calculate block counts by dimension and total block count.
-    DSizes<IndexType, NumDims> block_count;
-    for (int i = 0; i < NumDims; ++i) {
-      block_count[i] = divup(m_tensor_dimensions[i], m_block_dimensions[i]);
-    }
-    m_total_block_count = array_prod(block_count);
-
-    // Calculate block strides (used for enumerating blocks).
-    m_tensor_strides = strides<Layout>(m_tensor_dimensions);
-    m_block_strides = strides<Layout>(block_count);
   }
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE IndexType blockCount() const {
@@ -310,8 +371,8 @@ class TensorBlockMapper {
     return m_block_dimensions;
   }
 
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
-  BlockDescriptor blockDescriptor(IndexType block_index) const {
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE BlockDescriptor
+  blockDescriptor(IndexType block_index) const {
     static const bool isColMajor = Layout == static_cast<int>(ColMajor);
 
     IndexType offset = 0;
@@ -339,23 +400,33 @@ class TensorBlockMapper {
   void InitializeBlockDimensions() {
     // Requested block shape and size.
     const TensorBlockShapeType shape_type = m_requirements.shape_type;
-    const IndexType target_block_size =
+    IndexType target_block_size =
         numext::maxi<IndexType>(1, static_cast<IndexType>(m_requirements.size));
+
+    IndexType tensor_size = m_tensor_dimensions.TotalSize();
 
     // Corner case: one of the dimensions is zero. Logic below is too complex
     // to handle this case on a general basis, just use unit block size.
     // Note: we must not yield blocks with zero dimensions (recipe for
     // overflows/underflows, divisions by zero and NaNs later).
-    if (m_tensor_dimensions.TotalSize() == 0) {
+    if (tensor_size == 0) {
       for (int i = 0; i < NumDims; ++i) {
         m_block_dimensions[i] = 1;
       }
+      m_total_block_count = 0;
       return;
     }
 
     // If tensor fits into a target block size, evaluate it as a single block.
-    if (m_tensor_dimensions.TotalSize() <= target_block_size) {
+    if (tensor_size <= target_block_size) {
       m_block_dimensions = m_tensor_dimensions;
+      m_total_block_count = 1;
+      // The only valid block index is `0`, and in this case we do not need
+      // to compute real strides for tensor or blocks (see blockDescriptor).
+      for (int i = 0; i < NumDims; ++i) {
+        m_tensor_strides[i] = 0;
+        m_block_strides[i] = 1;
+      }
       return;
     }
 
@@ -417,7 +488,18 @@ class TensorBlockMapper {
 
     eigen_assert(m_block_dimensions.TotalSize() >=
                  numext::mini<IndexType>(target_block_size,
-                                     m_tensor_dimensions.TotalSize()));
+                                         m_tensor_dimensions.TotalSize()));
+
+    // Calculate block counts by dimension and total block count.
+    DSizes<IndexType, NumDims> block_count;
+    for (int i = 0; i < NumDims; ++i) {
+      block_count[i] = divup(m_tensor_dimensions[i], m_block_dimensions[i]);
+    }
+    m_total_block_count = array_prod(block_count);
+
+    // Calculate block strides (used for enumerating blocks).
+    m_tensor_strides = strides<Layout>(m_tensor_dimensions);
+    m_block_strides = strides<Layout>(block_count);
   }
 
   DSizes<IndexType, NumDims> m_tensor_dimensions;
@@ -751,7 +833,6 @@ class TensorMaterializedBlock {
 
 template <typename UnaryOp, typename ArgTensorBlock>
 class TensorCwiseUnaryBlock {
-
   static const bool NoArgBlockAccess =
       internal::is_void<typename ArgTensorBlock::XprType>::value;
 
@@ -783,7 +864,6 @@ class TensorCwiseUnaryBlock {
 
 template <typename BinaryOp, typename LhsTensorBlock, typename RhsTensorBlock>
 class TensorCwiseBinaryBlock {
-
   static const bool NoArgBlockAccess =
       internal::is_void<typename LhsTensorBlock::XprType>::value ||
       internal::is_void<typename RhsTensorBlock::XprType>::value;
@@ -830,7 +910,6 @@ class TensorCwiseBinaryBlock {
 
 template <typename BlockFactory, typename ArgTensorBlock>
 class TensorUnaryExprBlock {
-
   typedef typename ArgTensorBlock::XprType ArgXprType;
   static const bool NoArgBlockAccess = internal::is_void<ArgXprType>::value;
 
@@ -862,7 +941,6 @@ class TensorUnaryExprBlock {
 template <typename BlockFactory, typename Arg1TensorBlock,
           typename Arg2TensorBlock, typename Arg3TensorBlock>
 class TensorTernaryExprBlock {
-
   typedef typename Arg1TensorBlock::XprType Arg1XprType;
   typedef typename Arg2TensorBlock::XprType Arg2XprType;
   typedef typename Arg3TensorBlock::XprType Arg3XprType;
