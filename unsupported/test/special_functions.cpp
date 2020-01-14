@@ -95,7 +95,7 @@ template<typename ArrayType> void array_special_functions()
       Scalar max_exponent = std::numeric_limits<Scalar>::max_exponent10;
       ArrayType a = m1.abs() *  pow(10., max_exponent - 1);
       ArrayType x = m2.abs() *  pow(10., max_exponent - 1);
-      for (int i =0 ; i < a.size(); ++i) {
+      for (int i = 0; i < a.size(); ++i) {
         Scalar igam = numext::igamma(a(i), x(i));
         VERIFY(0 <= igam);
         VERIFY(igam <= 1);
