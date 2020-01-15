@@ -61,21 +61,22 @@ static TensorBlockParams<NumDims> RandomBlock(DSizes<Index, NumDims> dims,
 template <int Layout, int NumDims>
 static TensorBlockParams<NumDims> SkewedInnerBlock(
     DSizes<Index, NumDims> dims) {
-  using BlockMapper = internal::TensorBlockMapper<int, Index, NumDims, Layout>;
+  using BlockMapper = internal::TensorBlockMapper<NumDims, Layout, Index>;
   BlockMapper block_mapper(dims,
-                           internal::TensorBlockShapeType::kSkewedInnerDims,
-                           internal::random<Index>(1, dims.TotalSize()));
+                           {internal::TensorBlockShapeType::kSkewedInnerDims,
+                            internal::random<size_t>(1, dims.TotalSize()),
+                            {0, 0, 0}});
 
-  Index total_blocks = block_mapper.total_block_count();
+  Index total_blocks = block_mapper.blockCount();
   Index block_index = internal::random<Index>(0, total_blocks - 1);
-  auto block = block_mapper.GetBlockForIndex(block_index, nullptr);
-  DSizes<Index, NumDims> sizes = block.block_sizes();
+  auto block = block_mapper.blockDescriptor(block_index);
+  DSizes<Index, NumDims> sizes = block.dimensions();
 
   auto strides = internal::strides<Layout>(dims);
   DSizes<Index, NumDims> offsets;
 
   // Compute offsets for the first block coefficient.
-  Index index = block.first_coeff_index();
+  Index index = block.offset();
   if (static_cast<int>(Layout) == static_cast<int>(ColMajor)) {
     for (int i = NumDims - 1; i > 0; --i) {
       const Index idx = index / strides[i];
@@ -92,8 +93,7 @@ static TensorBlockParams<NumDims> SkewedInnerBlock(
     if (NumDims > 0) offsets[NumDims - 1] = index;
   }
 
-  auto desc = TensorBlockDescriptor<NumDims>(block.first_coeff_index(), sizes);
-  return {offsets, sizes, desc};
+  return {offsets, sizes, block};
 }
 
 template <int NumDims>
@@ -159,7 +159,7 @@ static void VerifyBlockEvaluator(Expression expr, GenBlockParams gen_block) {
   }
 
   const bool root_of_expr = internal::random<bool>();
-  auto tensor_block = eval.blockV2(block_params.desc, scratch, root_of_expr);
+  auto tensor_block = eval.block(block_params.desc, scratch, root_of_expr);
 
   if (tensor_block.kind() == internal::TensorBlockKind::kMaterializedInOutput) {
     // Copy data from destination buffer.
@@ -548,7 +548,7 @@ static void test_eval_tensor_chipping_of_bcast() {
   Tensor<T, 3, Layout> input(1, dim1, dim2);
   input.setRandom();
 
-  Eigen::array<Index, 3> bcast({dim0, 1, 1});
+  Eigen::array<Index, 3> bcast = {{dim0, 1, 1}};
   DSizes<Index, 2> chipped_dims(dim0, dim2);
 
   VerifyBlockEvaluator<T, 2, Layout>(
@@ -597,7 +597,7 @@ static void VerifyBlockAssignment(Tensor<T, NumDims, Layout>& tensor,
   tensor.setZero();
 
   // Use evaluator to write block into a tensor.
-  eval.writeBlockV2(block_params.desc, blk);
+  eval.writeBlock(block_params.desc, blk);
 
   // Make a copy of the result after assignment.
   Tensor<T, NumDims, Layout> block_assigned = tensor;
