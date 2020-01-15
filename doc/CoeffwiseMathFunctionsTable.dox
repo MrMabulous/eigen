@@ -565,6 +565,58 @@ This also means that, unless specified, if the function \c std::foo is available
   </td>
   <td></td>
 </tr>
+<tr>
+  <td class="code">
+  \anchor cwisetable_dawsn
+  a.\link ArrayBase::dawsn dawsn\endlink(); \n
+  \link Eigen::dawsn dawsn\endlink(a);
+  </td>
+  <td><a href="https://en.wikipedia.org/wiki/Dawson_function">Dawson integral</a>
+  \n \f$ D(x)=e^{-x^2}\int_{0}^{x}e^{t^2} dt \f$</td>
+  <td>
+  built-in for float and double
+  </td>
+  <td></td>
+</tr>
+<tr>
+  <td class="code">
+  \anchor cwisetable_expint
+  a.\link ArrayBase::expint expint\endlink(); \n
+  \link Eigen::expint expint\endlink(a);
+  </td>
+  <td><a href="https://en.cppreference.com/w/cpp/numeric/special_functions/expint">Exponential integral</a>
+  \n \f$ Ei(x)=-\int_{-x}^{\inf}\frac{e^{-t}}{t} dt \f$</td>
+  <td>
+  built-in for float and double
+  </td>
+  <td></td>
+</tr>
+<tr>
+  <td class="code">
+  \anchor cwisetable_fresnel_cos
+  a.\link ArrayBase::fresnel_cos fresnel_cos\endlink(); \n
+  \link Eigen::fresnel_cos fresnel_cos\endlink(a);
+  </td>
+  <td><a href="https://en.wikipedia.org/wiki/Fresnel_integral">Fresnel cosine integral</a>
+  \n \f$ C(x)=\int_{0}^{x}cos(t^2) dt \f$</td>
+  <td>
+  built-in for float and double
+  </td>
+  <td></td>
+</tr>
+<tr>
+  <td class="code">
+  \anchor cwisetable_fresnel_sin
+  a.\link ArrayBase::fresnel_sin fresnel_sin\endlink(); \n
+  \link Eigen::fresnel_sin fresnel_sin\endlink(a);
+  </td>
+  <td><a href="https://en.wikipedia.org/wiki/Fresnel_integral">Fresnel sine integral</a>
+  \n \f$ S(x)=\int_{0}^{x}sin(t^2) dt \f$</td>
+  <td>
+  built-in for float and double
+  </td>
+  <td></td>
+</tr>
 <tr><td colspan="4"></td></tr>
 </table>
 

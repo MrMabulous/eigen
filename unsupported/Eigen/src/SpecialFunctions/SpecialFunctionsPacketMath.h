@@ -76,36 +76,31 @@ Packet pbetainc(const Packet& a, const Packet& b,const Packet& x) { using numext
 /** \internal \returns Dawson's integral (coeff-wise) */
 template<typename Packet> EIGEN_DECLARE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS
 Packet pdawsn(const Packet& a) {
-  typedef typename unpacket_traits<Packet>::type ScalarType;
-  using internal::generic_dawsn; return generic_dawsn<Packet, ScalarType>(a);
+  using numext::dawsn; return dawsn(a);
 }
 
 /** \internal \returns the Exponential integral (coeff-wise) */
 template<typename Packet> EIGEN_DECLARE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS
 Packet pexpi(const Packet& a) {
-  typedef typename unpacket_traits<Packet>::type ScalarType;
-  using internal::generic_expi; return generic_expi<Packet, ScalarType>(a);
+  using numext::expi; return expi(a);
 }
 
 /** \internal \returns the Fresnel cosine integral (coeff-wise) */
 template<typename Packet> EIGEN_DECLARE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS
 Packet pfresnel_cos(const Packet& a) {
-  typedef typename unpacket_traits<Packet>::type ScalarType;
-  using internal::generic_fresnel_cos; return generic_fresnel_cos<Packet, ScalarType>(a);
+  using numext::fresnel_cos; return fresnel_cos(a);
 }
 
 /** \internal \returns the Fresnel sine integral (coeff-wise) */
 template<typename Packet> EIGEN_DECLARE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS
 Packet pfresnel_sin(const Packet& a) {
-  typedef typename unpacket_traits<Packet>::type ScalarType;
-  using internal::generic_fresnel_sin; return generic_fresnel_sin<Packet, ScalarType>(a);
+  using numext::fresnel_sin; return fresnel_sin(a);
 }
 
 /** \internal \returns Spence's integral (coeff-wise) */
 template<typename Packet> EIGEN_DECLARE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS
 Packet pspence(const Packet& a) {
-  typedef typename unpacket_traits<Packet>::type ScalarType;
-  using internal::generic_spence; return generic_spence<Packet, ScalarType>(a);
+  using numext::spence; return spence(a);
 }
 
 
