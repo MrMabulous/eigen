@@ -72,6 +72,38 @@ Packet pigammac(const Packet& a, const Packet& x) { using numext::igammac; retur
 template<typename Packet> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
 Packet pbetainc(const Packet& a, const Packet& b,const Packet& x) { using numext::betainc; return betainc(a, b, x); }
 
+
+/** \internal \returns Dawson's integral (coeff-wise) */
+template<typename Packet> EIGEN_DECLARE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS
+Packet pdawsn(const Packet& a) {
+  using numext::dawsn; return dawsn(a);
+}
+
+/** \internal \returns the Exponential integral (coeff-wise) */
+template<typename Packet> EIGEN_DECLARE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS
+Packet pexpi(const Packet& a) {
+  using numext::expi; return expi(a);
+}
+
+/** \internal \returns the Fresnel cosine integral (coeff-wise) */
+template<typename Packet> EIGEN_DECLARE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS
+Packet pfresnel_cos(const Packet& a) {
+  using numext::fresnel_cos; return fresnel_cos(a);
+}
+
+/** \internal \returns the Fresnel sine integral (coeff-wise) */
+template<typename Packet> EIGEN_DECLARE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS
+Packet pfresnel_sin(const Packet& a) {
+  using numext::fresnel_sin; return fresnel_sin(a);
+}
+
+/** \internal \returns Spence's integral (coeff-wise) */
+template<typename Packet> EIGEN_DECLARE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS
+Packet pspence(const Packet& a) {
+  using numext::spence; return spence(a);
+}
+
+
 } // end namespace internal
 
 } // end namespace Eigen

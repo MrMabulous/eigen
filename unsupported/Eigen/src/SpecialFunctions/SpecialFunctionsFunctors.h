@@ -323,6 +323,139 @@ struct functor_traits<scalar_ndtri_op<Scalar> >
   };
 };
 
+/** \internal
+  * \brief Template functor to compute Dawson's integral
+  *
+  * \sa class CwiseBinaryOp, Cwise::dawsn
+  */
+template<typename Scalar> struct scalar_dawsn_op
+{
+  EIGEN_EMPTY_STRUCT_CTOR(scalar_dawsn_op)
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Scalar operator() (const Scalar& a) const {
+    using numext::dawsn; return dawsn(a);
+  }
+  template<typename Packet>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const { return internal::pdawsn(a); }
+};
+
+template<typename Scalar>
+struct functor_traits<scalar_dawsn_op<Scalar> > {
+  enum {
+    Cost = (25 * NumTraits<Scalar>::MulCost + 22 * NumTraits<Scalar>::AddCost +
+            2 * NumTraits<Scalar>::DivCost)
+
+    PacketAccess = 0
+  };
+};
+
+
+/** \internal
+  * \brief Template functor to compute the Exponential integral
+  *
+  * \sa class CwiseBinaryOp, Cwise::expi
+  */
+template<typename Scalar> struct scalar_expi_op
+{
+  EIGEN_EMPTY_STRUCT_CTOR(scalar_expi_op)
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Scalar operator() (const Scalar& a) const {
+    using numext::expi; return expi(a);
+  }
+  template<typename Packet>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const { return internal::pexpi(a); }
+};
+template<typename Scalar>
+struct functor_traits<scalar_expi_op<Scalar> > {
+  enum {
+    Cost = (22 * NumTraits<Scalar>::MulCost + 19 * NumTraits<Scalar>::AddCost +
+            2 * NumTraits<Scalar>::DivCost +
+            functor_traits<scalar_log_op<Scalar> >::Cost +
+            functor_traits<scalar_exp_op<Scalar> >::Cost),
+    PacketAccess = 0
+  };
+};
+
+
+/** \internal
+  * \brief Template functor to compute the Fresnel cosine integral
+  *
+  * \sa class CwiseBinaryOp, Cwise::fresnel_cos
+  */
+template<typename Scalar> struct scalar_fresnel_cos_op
+{
+  EIGEN_EMPTY_STRUCT_CTOR(scalar_fresnel_cos_op)
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Scalar operator() (const Scalar& a) const {
+    using numext::fresnel_cos; return fresnel_cos(a);
+  }
+  template<typename Packet>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const {
+    return internal::pfresnel_cos(a);
+  }
+};
+template<typename Scalar>
+struct functor_traits<scalar_fresnel_cos_op<Scalar> > {
+  enum {
+    Cost = (52 * NumTraits<Scalar>::MulCost + 46 * NumTraits<Scalar>::AddCost +
+            5 * NumTraits<Scalar>::DivCost + 
+            functor_traits<scalar_cos_op<Scalar> >::Cost +
+            functor_traits<scalar_sin_op<Scalar> >::Cost),
+    PacketAccess = 0
+  };
+};
+
+
+/** \internal
+  * \brief Template functor to compute the Fresnel sine integral
+  *
+  * \sa class CwiseBinaryOp, Cwise::fresnel_sin
+  */
+template<typename Scalar> struct scalar_fresnel_sin_op
+{
+  EIGEN_EMPTY_STRUCT_CTOR(scalar_fresnel_sin_op)
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Scalar operator() (const Scalar& a) const {
+    using numext::fresnel_sin; return fresnel_sin(a);
+  }
+  template<typename Packet>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet packetOp(const Packet& a) const {
+    return internal::pfresnel_sin(a);
+  }
+};
+template<typename Scalar>
+struct functor_traits<scalar_fresnel_sin_op<Scalar> > {
+  enum {
+    Cost = (52 * NumTraits<Scalar>::MulCost + 46 * NumTraits<Scalar>::AddCost +
+            5 * NumTraits<Scalar>::DivCost +
+            functor_traits<scalar_cos_op<Scalar> >::Cost +
+            functor_traits<scalar_sin_op<Scalar> >::Cost),
+    PacketAccess = 0
+  };
+};
+
+
+/** \internal
+  * \brief Template functor to compute the Spence integral (Dilogarithm)
+  *
+  * \sa class CwiseBinaryOp, Cwise::spence
+  */
+template<typename Scalar> struct scalar_spence_op
+{
+  EIGEN_EMPTY_STRUCT_CTOR(scalar_spence_op)
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Scalar operator() (const Scalar& a) const {
+    using numext::spence; return spence(a);
+  }
+  template<typename Packet>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet packetOp(const Packet& a) const { return internal::pspence(a); }
+};
+template<typename Scalar>
+struct functor_traits<scalar_spence_op<Scalar> > {
+  enum {
+    Cost = (17 * NumTraits<Scalar>::MulCost + 16 * NumTraits<Scalar>::AddCost +
+            3 * NumTraits<Scalar>::DivCost +
+            functor_traits<scalar_log_op<Scalar> >::Cost +
+            functor_traits<scalar_log1p_op<Scalar> >::Cost),
+    PacketAccess = 0
+  };
+};
+
 } // end namespace internal
 
 } // end namespace Eigen

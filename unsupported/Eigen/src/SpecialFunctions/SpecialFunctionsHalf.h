@@ -50,6 +50,22 @@ template<> EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC Eigen::half igammac(const Eigen
 template<> EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC Eigen::half betainc(const Eigen::half& a, const Eigen::half& b, const Eigen::half& x) {
   return Eigen::half(Eigen::numext::betainc(static_cast<float>(a), static_cast<float>(b), static_cast<float>(x)));
 }
+
+template<> EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC Eigen::half dawsn(const Eigen::half& a) {
+  return Eigen::half(Eigen::numext::dawsn(static_cast<float>(a)));
+}
+template<> EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC Eigen::half expi(const Eigen::half& a) {
+  return Eigen::half(Eigen::numext::expi(static_cast<float>(a)));
+}
+template<> EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC Eigen::half fresnel_cos(const Eigen::half& a) {
+  return Eigen::half(Eigen::numext::fresnel_cos(static_cast<float>(a)));
+}
+template<> EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC Eigen::half fresnel_sin(const Eigen::half& a) {
+  return Eigen::half(Eigen::numext::fresnel_sin(static_cast<float>(a)));
+}
+template<> EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC Eigen::half spence(const Eigen::half& a) {
+  return Eigen::half(Eigen::numext::spence(static_cast<float>(a)));
+}
 #endif
 
 }  // end namespace numext
