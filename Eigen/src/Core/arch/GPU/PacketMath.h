@@ -483,11 +483,13 @@ ptranspose(PacketBlock<double2,2>& kernel) {
 #if (defined(EIGEN_HAS_CUDA_FP16) && defined(EIGEN_CUDACC) && defined(EIGEN_CUDA_ARCH) && EIGEN_CUDA_ARCH >= 300) || \
   (defined(EIGEN_HAS_HIP_FP16) && defined(EIGEN_HIPCC) && defined(EIGEN_HIP_DEVICE_COMPILE)) || \
   (defined(EIGEN_HAS_CUDA_FP16) && defined(__clang__) && defined(__CUDA__))
+
 typedef ulonglong2 Packet4h2;
 template<> struct unpacket_traits<half2> { typedef Eigen::half type; enum {size=2, alignment=Aligned16, vectorizable=true, masked_load_available=false, masked_store_available=false}; typedef half2 half; };
 template<> struct is_arithmetic<half2> { enum { value = true }; };
 template<> struct unpacket_traits<Packet4h2> { typedef Eigen::half type; enum {size=8, alignment=Aligned16, vectorizable=true, masked_load_available=false, masked_store_available=false}; typedef Packet4h2 half; };
 template<> struct is_arithmetic<Packet4h2> { enum { value = true }; };
+
 #if !defined(EIGEN_WIDE_FP16)
 template<> struct packet_traits<Eigen::half> : default_packet_traits
 {
@@ -536,7 +538,6 @@ template<> struct packet_traits<Eigen::half> : default_packet_traits
 };
 
 #endif
-
 
 template<> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE half2 pset1<half2>(const Eigen::half& from) {
 #if !defined(EIGEN_CUDA_ARCH) && !defined(EIGEN_HIP_DEVICE_COMPILE)

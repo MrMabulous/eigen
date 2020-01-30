@@ -419,13 +419,13 @@ __global__ void FullReductionKernel(R, const S, I_, typename S::CoeffReturnType*
 
 
 #if defined(EIGEN_HAS_GPU_FP16)
-
 template <typename S, typename R, typename I_>
 __global__ void ReductionInitFullReduxKernelHalfFloat(R, const S, I_, packet_traits<half>::type*);
 template <int B, int N, typename S, typename R, typename I_>
 __global__ void FullReductionKernelHalfFloat(R, const S, I_, half*, packet_traits<half>::type*);
 template <int NPT, typename S, typename R, typename I_>
 __global__ void InnerReductionKernelHalfFloat(R, const S, I_, I_, half*);
+
 #endif
 
 template <int NPT, typename S, typename R, typename I_>

@@ -16,6 +16,7 @@ namespace internal {
 
 #if (defined(EIGEN_HAS_CUDA_FP16) && defined(EIGEN_CUDA_ARCH) && EIGEN_CUDA_ARCH >= 300) || \
   (defined(EIGEN_HAS_HIP_FP16) && defined(EIGEN_HIP_DEVICE_COMPILE))
+
 #if !defined(EIGEN_WIDE_FP16)
 template <>
 struct type_casting_traits<Eigen::half, float> {
@@ -35,6 +36,7 @@ struct type_casting_traits<Eigen::half, float> {
   };
 };
 #endif
+
 template<> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE float4 pcast<half2, float4>(const half2& a, const half2& b) {
   float2 r1 = __half22float2(a);
   float2 r2 = __half22float2(b);
