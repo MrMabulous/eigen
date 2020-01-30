@@ -164,7 +164,6 @@ struct PacketConverter<TensorEvaluator, SrcPacket, TgtPacket, 1, 8> {
       typedef typename internal::unpacket_traits<SrcPacket>::type SrcType;
       typedef typename internal::unpacket_traits<TgtPacket>::type TgtType;
       internal::scalar_cast_op<SrcType, TgtType> converter;
-      // values is Eigen half
       EIGEN_ALIGN_MAX typename internal::unpacket_traits<TgtPacket>::type values[TgtPacketSize];
       EIGEN_UNROLL_LOOP
       for (int i = 0; i < TgtPacketSize; ++i) {
