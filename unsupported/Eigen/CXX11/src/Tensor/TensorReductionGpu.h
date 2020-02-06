@@ -702,11 +702,6 @@ __global__ void InnerReductionKernelHalfFloat(Reducer reducer, const Self input,
         reducer.reducePacket(r1, &reduced_val1);
         reducer.reducePacket(r2, &reduced_val2);
 
-        // int temp1 = __shfl_down_sync(0xFFFFFFFF, *(int*)(&reduced_val1),
-        // (unsigned)offset, warpSize); int temp2 = __shfl_down_sync(0xFFFFFFFF,
-        // *(int*)(&reduced_val2), (unsigned)offset, warpSize);
-        // reducer.reducePacket(*(half2*)(&temp1), &reduced_val1);
-        // reducer.reducePacket(*(half2*)(&temp2), &reduced_val2);
       #endif
       }
       half2* rv1 = reinterpret_cast<half2*>(&reduced_val1);

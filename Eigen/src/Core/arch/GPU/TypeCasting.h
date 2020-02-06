@@ -31,8 +31,8 @@ template <>
 struct type_casting_traits<Eigen::half, float> {
   enum {
     VectorizedCast = 1,
-    SrcCoeffRatio = 8,
-    TgtCoeffRatio = 1
+    SrcCoeffRatio = 1,
+    TgtCoeffRatio = 2
   };
 };
 #endif
@@ -67,8 +67,8 @@ template <>
 struct type_casting_traits<float, Eigen::half> {
   enum {
     VectorizedCast = 1,
-    SrcCoeffRatio = 1,
-    TgtCoeffRatio = 8
+    SrcCoeffRatio = 2,
+    TgtCoeffRatio = 1
   };
 };
 #endif

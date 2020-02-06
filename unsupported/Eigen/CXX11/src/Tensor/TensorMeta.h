@@ -84,9 +84,35 @@ struct PacketType<half, GpuDevice> {
   };
 };
 #else
-template<typename Scalar>
-struct PacketType<Scalar,GpuDevice>:internal::packet_traits<Scalar>{
+typedef ulonglong2 Packet4h2;
+template<>
+struct PacketType<half, GpuDevice> {
+  typedef Packet4h2 type;
+  static const int size = 8;
+  enum {
+    HasAdd    = 1,
+    HasSub    = 1,
+    HasMul    = 1,
+    HasNegate = 1,
+    HasAbs    = 1,
+    HasArg    = 0,
+    HasAbs2   = 0,
+    HasMin    = 1,
+    HasMax    = 1,
+    HasConj   = 0,
+    HasSetLinear = 0,
+    HasBlend  = 0,
 
+    HasDiv    = 1,
+    HasSqrt   = 1,
+    HasRsqrt  = 1,
+    HasExp    = 1,
+    HasExpm1  = 0,
+    HasLog    = 1,
+    HasLog1p  = 0,
+    HasLog10  = 0,
+    HasPow    = 1,
+  };
 };
 #endif
 #endif
