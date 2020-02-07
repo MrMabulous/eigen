@@ -1080,7 +1080,7 @@ struct gebp_traits <float, float, false, false,Architecture::NEON,GEBPPacketFull
     dest = *b;
   }
 
-  EIGEN_STRONG_INLINE void updateRhs(const RhsScalar* b, RhsPacketx4& dest) const
+  EIGEN_STRONG_INLINE void updateRhs(const RhsScalar* /*b*/, RhsPacketx4& /*dest*/) const
   {}
 
   EIGEN_STRONG_INLINE void loadRhsQuad(const RhsScalar* b, RhsPacket& dest) const
@@ -1149,7 +1149,7 @@ struct gebp_traits <double, double, false, false,Architecture::NEON>
     loadRhs(b,dest);
   }
 
-  EIGEN_STRONG_INLINE void updateRhs(const RhsScalar* b, RhsPacketx4& dest) const
+  EIGEN_STRONG_INLINE void updateRhs(const RhsScalar* /*b*/, RhsPacketx4& /*dest*/) const
   {}
 
   EIGEN_STRONG_INLINE void loadRhsQuad(const RhsScalar* b, RhsPacket& dest) const
@@ -1562,7 +1562,7 @@ void gebp_kernel<LhsScalar,RhsScalar,Index,DataMapper,mr,nr,ConjugateLhs,Conjuga
     if(strideA==-1) strideA = depth;
     if(strideB==-1) strideB = depth;
     conj_helper<LhsScalar,RhsScalar,ConjugateLhs,ConjugateRhs> cj;
-    Index packet_cols4 = nr>=4 ? (cols/4) * 4 : 0;
+    Index packet_cols4 = (cols/4) * 4;
     const Index peeled_mc3 = mr>=3*Traits::LhsProgress ? (rows/(3*LhsProgress))*(3*LhsProgress) : 0;
     const Index peeled_mc2 = mr>=2*Traits::LhsProgress ? peeled_mc3+((rows-peeled_mc3)/(2*LhsProgress))*(2*LhsProgress) : 0;
     const Index peeled_mc1 = mr>=1*Traits::LhsProgress ? peeled_mc2+((rows-peeled_mc2)/(1*LhsProgress))*(1*LhsProgress) : 0;
@@ -2528,9 +2528,9 @@ EIGEN_DONT_INLINE void gemm_pack_lhs<Scalar, Index, DataMapper, Pack1, Pack2, Pa
 template<typename Scalar, typename Index, typename DataMapper, int nr, bool Conjugate, bool PanelMode>
 struct gemm_pack_rhs<Scalar, Index, DataMapper, nr, ColMajor, Conjugate, PanelMode>
 {
-  typedef typename packet_traits<Scalar>::type Packet;
+  typedef typename find_packet_full<Scalar, 4, typename packet_traits<Scalar>::type>::type Packet;
+  enum { PacketSize = unpacket_traits<Packet>::size };
   typedef typename DataMapper::LinearMapper LinearMapper;
-  enum { PacketSize = packet_traits<Scalar>::size };
   EIGEN_DONT_INLINE void operator()(Scalar* blockB, const DataMapper& rhs, Index depth, Index cols, Index stride=0, Index offset=0);
 };
 
@@ -2543,59 +2543,13 @@ EIGEN_DONT_INLINE void gemm_pack_rhs<Scalar, Index, DataMapper, nr, ColMajor, Co
   EIGEN_UNUSED_VARIABLE(offset);
   eigen_assert(((!PanelMode) && stride==0 && offset==0) || (PanelMode && stride>=depth && offset<=stride));
   conj_if<NumTraits<Scalar>::IsComplex && Conjugate> cj;
-  Index packet_cols8 = nr>=8 ? (cols/8) * 8 : 0;
-  Index packet_cols4 = nr>=4 ? (cols/4) * 4 : 0;
+  Index packet_cols4 = (cols/4) * 4;
   Index count = 0;
   const Index peeled_k = (depth/PacketSize)*PacketSize;
-//   if(nr>=8)
-//   {
-//     for(Index j2=0; j2<packet_cols8; j2+=8)
-//     {
-//       // skip what we have before
-//       if(PanelMode) count += 8 * offset;
-//       const Scalar* b0 = &rhs[(j2+0)*rhsStride];
-//       const Scalar* b1 = &rhs[(j2+1)*rhsStride];
-//       const Scalar* b2 = &rhs[(j2+2)*rhsStride];
-//       const Scalar* b3 = &rhs[(j2+3)*rhsStride];
-//       const Scalar* b4 = &rhs[(j2+4)*rhsStride];
-//       const Scalar* b5 = &rhs[(j2+5)*rhsStride];
-//       const Scalar* b6 = &rhs[(j2+6)*rhsStride];
-//       const Scalar* b7 = &rhs[(j2+7)*rhsStride];
-//       Index k=0;
-//       if(PacketSize==8) // TODO enable vectorized transposition for PacketSize==4
-//       {
-//         for(; k<peeled_k; k+=PacketSize) {
-//           PacketBlock<Packet> kernel;
-//           for (int p = 0; p < PacketSize; ++p) {
-//             kernel.packet[p] = ploadu<Packet>(&rhs[(j2+p)*rhsStride+k]);
-//           }
-//           ptranspose(kernel);
-//           for (int p = 0; p < PacketSize; ++p) {
-//             pstoreu(blockB+count, cj.pconj(kernel.packet[p]));
-//             count+=PacketSize;
-//           }
-//         }
-//       }
-//       for(; k<depth; k++)
-//       {
-//         blockB[count+0] = cj(b0[k]);
-//         blockB[count+1] = cj(b1[k]);
-//         blockB[count+2] = cj(b2[k]);
-//         blockB[count+3] = cj(b3[k]);
-//         blockB[count+4] = cj(b4[k]);
-//         blockB[count+5] = cj(b5[k]);
-//         blockB[count+6] = cj(b6[k]);
-//         blockB[count+7] = cj(b7[k]);
-//         count += 8;
-//       }
-//       // skip what we have after
-//       if(PanelMode) count += 8 * (stride-offset-depth);
-//     }
-//   }
 
   if(nr>=4)
   {
-    for(Index j2=packet_cols8; j2<packet_cols4; j2+=4)
+    for(Index j2=0; j2<packet_cols4; j2+=4)
     {
       // skip what we have before
       if(PanelMode) count += 4 * offset;
@@ -2667,46 +2621,12 @@ EIGEN_DONT_INLINE void gemm_pack_rhs<Scalar, Index, DataMapper, nr, RowMajor, Co
   EIGEN_UNUSED_VARIABLE(offset);
   eigen_assert(((!PanelMode) && stride==0 && offset==0) || (PanelMode && stride>=depth && offset<=stride));
   conj_if<NumTraits<Scalar>::IsComplex && Conjugate> cj;
-  Index packet_cols8 = nr>=8 ? (cols/8) * 8 : 0;
-  Index packet_cols4 = nr>=4 ? (cols/4) * 4 : 0;
+  Index packet_cols4 = (cols/4) * 4;
   Index count = 0;
 
-//   if(nr>=8)
-//   {
-//     for(Index j2=0; j2<packet_cols8; j2+=8)
-//     {
-//       // skip what we have before
-//       if(PanelMode) count += 8 * offset;
-//       for(Index k=0; k<depth; k++)
-//       {
-//         if (PacketSize==8) {
-//           Packet A = ploadu<Packet>(&rhs[k*rhsStride + j2]);
-//           pstoreu(blockB+count, cj.pconj(A));
-//         } else if (PacketSize==4) {
-//           Packet A = ploadu<Packet>(&rhs[k*rhsStride + j2]);
-//           Packet B = ploadu<Packet>(&rhs[k*rhsStride + j2 + PacketSize]);
-//           pstoreu(blockB+count, cj.pconj(A));
-//           pstoreu(blockB+count+PacketSize, cj.pconj(B));
-//         } else {
-//           const Scalar* b0 = &rhs[k*rhsStride + j2];
-//           blockB[count+0] = cj(b0[0]);
-//           blockB[count+1] = cj(b0[1]);
-//           blockB[count+2] = cj(b0[2]);
-//           blockB[count+3] = cj(b0[3]);
-//           blockB[count+4] = cj(b0[4]);
-//           blockB[count+5] = cj(b0[5]);
-//           blockB[count+6] = cj(b0[6]);
-//           blockB[count+7] = cj(b0[7]);
-//         }
-//         count += 8;
-//       }
-//       // skip what we have after
-//       if(PanelMode) count += 8 * (stride-offset-depth);
-//     }
-//   }
   if(nr>=4)
   {
-    for(Index j2=packet_cols8; j2<packet_cols4; j2+=4)
+    for(Index j2=0; j2<packet_cols4; j2+=4)
     {
       // skip what we have before
       if(PanelMode) count += 4 * offset;

@@ -240,6 +240,28 @@ struct find_best_packet
   typedef typename find_best_packet_helper<Size,typename packet_traits<T>::type>::type type;
 };
 
+template<typename Scalar, int Size, typename NoPacketType>
+struct find_packet_full
+{
+  typedef typename packet_traits<Scalar>::type Full;
+  typedef typename unpacket_traits<Full>::half Half;
+  typedef typename unpacket_traits<Half>::half Quarter;
+  typedef typename unpacket_traits<Quarter>::half Eigth;
+
+  typedef typename conditional<Size == unpacket_traits<Full>::size, Full,
+      typename conditional<Size == unpacket_traits<Half>::size, Half,
+      typename conditional<Size == unpacket_traits<Quarter>::size, Quarter,
+      typename conditional<Size == unpacket_traits<Eigth>::size, Eigth,
+      typename conditional<Size == 1, Scalar,
+      NoPacketType>::type>::type>::type>::type>::type type;
+};
+
+template<typename Scalar, int Size>
+struct find_packet
+{
+  typedef typename find_packet_full<Scalar, Size, void>::type type;
+};
+
 #if EIGEN_MAX_STATIC_ALIGN_BYTES>0
 template<int ArrayBytes, int AlignmentBytes,
          bool Match     =  bool((ArrayBytes%AlignmentBytes)==0),
