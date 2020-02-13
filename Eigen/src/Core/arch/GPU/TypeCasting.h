@@ -17,16 +17,7 @@ namespace internal {
 #if (defined(EIGEN_HAS_CUDA_FP16) && defined(EIGEN_CUDA_ARCH) && EIGEN_CUDA_ARCH >= 300) || \
   (defined(EIGEN_HAS_HIP_FP16) && defined(EIGEN_HIP_DEVICE_COMPILE))
 
-#if !defined(EIGEN_WIDE_FP16)
-template <>
-struct type_casting_traits<Eigen::half, float> {
-  enum {
-    VectorizedCast = 1,
-    SrcCoeffRatio = 2,
-    TgtCoeffRatio = 1
-  };
-};
-#else
+
 template <>
 struct type_casting_traits<Eigen::half, float> {
   enum {
@@ -35,7 +26,6 @@ struct type_casting_traits<Eigen::half, float> {
     TgtCoeffRatio = 2
   };
 };
-#endif
 
 template<> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE float4 pcast<half2, float4>(const half2& a, const half2& b) {
   float2 r1 = __half22float2(a);
@@ -53,16 +43,7 @@ template<> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2 pcast<float4, Packet4
   r_alias[3]=__floats2half2_rn(b.z,b.w);
   return r;
 }
-#if !defined(EIGEN_WIDE_FP16)
-template <>
-struct type_casting_traits<float, Eigen::half> {
-  enum {
-    VectorizedCast = 1,
-    SrcCoeffRatio = 1,
-    TgtCoeffRatio = 2
-  };
-};
-#else
+
 template <>
 struct type_casting_traits<float, Eigen::half> {
   enum {
@@ -71,7 +52,7 @@ struct type_casting_traits<float, Eigen::half> {
     TgtCoeffRatio = 1
   };
 };
-#endif
+
 template<> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE float4 pcast<Packet4h2, float4>(const Packet4h2& a) {
   // Simply discard the second half of the input
   float4 r;

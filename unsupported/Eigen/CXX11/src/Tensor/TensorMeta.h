@@ -53,37 +53,7 @@ struct PacketType : internal::packet_traits<Scalar> {
 
 // For CUDA packet types when using a GpuDevice
 #if defined(EIGEN_USE_GPU) && defined(EIGEN_HAS_GPU_FP16)
-#if !defined(EIGEN_WIDE_FP16)
-template <>
-struct PacketType<half, GpuDevice> {
-  typedef half2 type;
-  static const int size = 2;
-  enum {
-    HasAdd    = 1,
-    HasSub    = 1,
-    HasMul    = 1,
-    HasNegate = 1,
-    HasAbs    = 1,
-    HasArg    = 0,
-    HasAbs2   = 0,
-    HasMin    = 1,
-    HasMax    = 1,
-    HasConj   = 0,
-    HasSetLinear = 0,
-    HasBlend  = 0,
 
-    HasDiv    = 1,
-    HasSqrt   = 1,
-    HasRsqrt  = 1,
-    HasExp    = 1,
-    HasExpm1  = 0,
-    HasLog    = 1,
-    HasLog1p  = 0,
-    HasLog10  = 0,
-    HasPow    = 1,
-  };
-};
-#else
 typedef ulonglong2 Packet4h2;
 template<>
 struct PacketType<half, GpuDevice> {
@@ -114,7 +84,6 @@ struct PacketType<half, GpuDevice> {
     HasPow    = 1,
   };
 };
-#endif
 #endif
 
 #if defined(EIGEN_USE_SYCL)
