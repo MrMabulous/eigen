@@ -225,7 +225,7 @@ __global__ void ReductionInitFullReduxKernelHalfFloat(Reducer reducer, const Sel
       num_coeffs % Index(unpacket_traits<packet_type>::size);
   if (packet_remainder != 0) {
     half2* h2scratch = reinterpret_cast<half2*>(scratch);
-    for (Index i = num_coeffs - packet_remainder; i < num_coeffs; i += 2) {
+    for (Index i = num_coeffs - packet_remainder; i + 2 <= num_coeffs; i += 2) {
       *h2scratch =
           __halves2half2(input.m_impl.coeff(i), input.m_impl.coeff(i + 1));
       h2scratch++;
@@ -283,7 +283,7 @@ __global__ void FullReductionKernelHalfFloat(Reducer reducer, const Self input, 
               input.m_impl.coeff(num_coeffs - packet_width + 2 * i + 1));
           p_scratch++;
         }
-        if (num_coeffs & 1 != 0) {
+        if ((num_coeffs & 1) != 0) {
           half last = input.m_impl.coeff(num_coeffs - 1);
           *p_scratch = __halves2half2(last, reducer.initialize());
         }

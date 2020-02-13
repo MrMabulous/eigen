@@ -1110,16 +1110,11 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void pstore<Eigen::half>(
 template <>
 EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void pstoreu<Eigen::half>(
     Eigen::half* to, const Packet4h2& from) {
-#if !defined(EIGEN_CUDA_ARCH) && !defined(EIGEN_HIP_DEVICE_COMPILE)
-  to[0] = from.x;
-  to[1] = from.y;
-#else
   const half2* from_alias = reinterpret_cast<const half2*>(&from);
   pstoreu<Eigen::half>(to + 0,from_alias[0]);
   pstoreu<Eigen::half>(to + 2,from_alias[1]);
   pstoreu<Eigen::half>(to + 4,from_alias[2]);
   pstoreu<Eigen::half>(to + 6,from_alias[3]);
-#endif
 }
 
 template <>
