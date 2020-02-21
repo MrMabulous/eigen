@@ -616,8 +616,9 @@ template<typename SolverType> struct direct_selfadjoint_eigenvalues<SolverType,3
     VectorType c0, c1;
     n0 = (c0 = representative.cross(mat.col((i0+1)%3))).squaredNorm();
     n1 = (c1 = representative.cross(mat.col((i0+2)%3))).squaredNorm();
-    if(n0>n1) res = c0/std::sqrt(n0);
-    else      res = c1/std::sqrt(n1);
+    using std::sqrt;
+    if(n0>n1) res = c0/sqrt(n0);
+    else      res = c1/sqrt(n1);
 
     return true;
   }
