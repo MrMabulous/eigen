@@ -513,8 +513,8 @@ template<> struct packet_traits<Eigen::half> : default_packet_traits
   };
 };
 
-namespace {
-EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE half2 pset1(const Eigen::half& from) {
+template<>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE half2 pset1<half2>(const Eigen::half& from) {
 #if !defined(EIGEN_CUDA_ARCH) && !defined(EIGEN_HIP_DEVICE_COMPILE)
   half2 r;
   r.x = from;
@@ -524,17 +524,16 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE half2 pset1(const Eigen::half& from) {
   return __half2half2(from);
 #endif
 }
-} // namespace
 
 template <>
 EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE Packet4h2
 pset1<Packet4h2>(const Eigen::half& from) {
   Packet4h2 r;
   half2* p_alias = reinterpret_cast<half2*>(&r);
-  p_alias[0] = pset1(from);
-  p_alias[1] = pset1(from);
-  p_alias[2] = pset1(from);
-  p_alias[3] = pset1(from);
+  p_alias[0] = pset1<half2>(from);
+  p_alias[1] = pset1<half2>(from);
+  p_alias[2] = pset1<half2>(from);
+  p_alias[3] = pset1<half2>(from);
   return r;
 }
 
@@ -631,12 +630,12 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE half2 pabs(const half2& a) {
 
 EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE half2 ptrue(const half2& a) {
   half true_half = half_impl::raw_uint16_to_half(0xffffu);
-  return pset1(true_half);
+  return pset1<half2>(true_half);
 }
 
 EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE half2 pzero(const half2& a) {
   half false_half = half_impl::raw_uint16_to_half(0x0000u);
-  return pset1(false_half);
+  return pset1<half2>(false_half);
 }
 
 EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void
@@ -1318,7 +1317,7 @@ plset<Packet4h2>(const Eigen::half& a) {
   Packet4h2 r;
   half2* r_alias = reinterpret_cast<half2*>(&r);
 
-  half2 b = pset1(a);
+  half2 b = pset1<half2>(a);
   half2 c;
   half2 half_offset0 = __halves2half2(__float2half(0.0f),__float2half(2.0f));
   half2 half_offset1 = __halves2half2(__float2half(4.0f),__float2half(6.0f));
@@ -1680,6 +1679,8 @@ prsqrt<Packet4h2>(const Packet4h2& a) {
   return r;
 }
 
+// The following specialized padd, pmul, pdiv, pmin, pmax, pset1 are needed for
+// the implementation of GPU half reduction.
 template<>
 EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE half2 padd<half2>(const half2& a,
                                                         const half2& b) {
@@ -1770,18 +1771,6 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE half2 pmax<half2>(const half2& a,
   __half r1 = a1 > b1 ? __low2half(a) : __low2half(b);
   __half r2 = a2 > b2 ? __high2half(a) : __high2half(b);
   return __halves2half2(r1, r2);
-}
-
-template<>
-EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE half2 pset1<half2>(const Eigen::half& from) {
-#if !defined(EIGEN_CUDA_ARCH) && !defined(EIGEN_HIP_DEVICE_COMPILE)
-  half2 r;
-  r.x = from;
-  r.y = from;
-  return r;
-#else
-  return __half2half2(from);
-#endif
 }
 
 #endif // defined(EIGEN_CUDA_ARCH)
