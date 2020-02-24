@@ -488,6 +488,8 @@ typedef ulonglong2 Packet4h2;
 template<> struct unpacket_traits<Packet4h2> { typedef Eigen::half type; enum {size=8, alignment=Aligned16, vectorizable=true, masked_load_available=false, masked_store_available=false}; typedef Packet4h2 half; };
 template<> struct is_arithmetic<Packet4h2> { enum { value = true }; };
 
+template<> struct unpacket_traits<half2> { typedef Eigen::half type; enum {size=2, alignment=Aligned16, vectorizable=true, masked_load_available=false, masked_store_available=false}; typedef half2 half; };
+template<> struct is_arithmetic<half2> { enum { value = true }; };
 
 template<> struct packet_traits<Eigen::half> : default_packet_traits
 {
@@ -1677,6 +1679,111 @@ prsqrt<Packet4h2>(const Packet4h2& a) {
   r_alias[3] = prsqrt(a_alias[3]);
   return r;
 }
+
+template<>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE half2 padd<half2>(const half2& a,
+                                                        const half2& b) {
+#if defined(EIGEN_HIP_DEVICE_COMPILE)
+
+  return __hadd2(a, b);
+
+#else  // EIGEN_CUDA_ARCH
+
+#if EIGEN_CUDA_ARCH >= 530
+  return __hadd2(a, b);
+#else
+  float a1 = __low2float(a);
+  float a2 = __high2float(a);
+  float b1 = __low2float(b);
+  float b2 = __high2float(b);
+  float r1 = a1 + b1;
+  float r2 = a2 + b2;
+  return __floats2half2_rn(r1, r2);
+#endif
+
+#endif
+}
+
+template<>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE half2 pmul<half2>(const half2& a,
+                                                        const half2& b) {
+#if defined(EIGEN_HIP_DEVICE_COMPILE)
+
+  return __hmul2(a, b);
+
+#else  // EIGEN_CUDA_ARCH
+
+#if EIGEN_CUDA_ARCH >= 530
+  return __hmul2(a, b);
+#else
+  float a1 = __low2float(a);
+  float a2 = __high2float(a);
+  float b1 = __low2float(b);
+  float b2 = __high2float(b);
+  float r1 = a1 * b1;
+  float r2 = a2 * b2;
+  return __floats2half2_rn(r1, r2);
+#endif
+
+#endif
+}
+
+template<>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE half2 pdiv<half2>(const half2& a,
+                                                        const half2& b) {
+#if defined(EIGEN_HIP_DEVICE_COMPILE)
+
+  return __h2div(a, b);
+
+#else // EIGEN_CUDA_ARCH
+
+  float a1 = __low2float(a);
+  float a2 = __high2float(a);
+  float b1 = __low2float(b);
+  float b2 = __high2float(b);
+  float r1 = a1 / b1;
+  float r2 = a2 / b2;
+  return __floats2half2_rn(r1, r2);
+
+#endif
+}
+
+template<>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE half2 pmin<half2>(const half2& a,
+                                                        const half2& b) {
+  float a1 = __low2float(a);
+  float a2 = __high2float(a);
+  float b1 = __low2float(b);
+  float b2 = __high2float(b);
+  __half r1 = a1 < b1 ? __low2half(a) : __low2half(b);
+  __half r2 = a2 < b2 ? __high2half(a) : __high2half(b);
+  return __halves2half2(r1, r2);
+}
+
+template<>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE half2 pmax<half2>(const half2& a,
+                                                        const half2& b) {
+  float a1 = __low2float(a);
+  float a2 = __high2float(a);
+  float b1 = __low2float(b);
+  float b2 = __high2float(b);
+  __half r1 = a1 > b1 ? __low2half(a) : __low2half(b);
+  __half r2 = a2 > b2 ? __high2half(a) : __high2half(b);
+  return __halves2half2(r1, r2);
+}
+
+template<>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE half2 pset1<half2>(const Eigen::half& from) {
+#if !defined(EIGEN_CUDA_ARCH) && !defined(EIGEN_HIP_DEVICE_COMPILE)
+  half2 r;
+  r.x = from;
+  r.y = from;
+  return r;
+#else
+  return __half2half2(from);
+#endif
+}
+
 #endif // defined(EIGEN_CUDA_ARCH)
 
 #endif // defined(EIGEN_HAS_CUDA_FP16) && defined(EIGEN_CUDACC)

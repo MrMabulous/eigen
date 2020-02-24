@@ -80,36 +80,11 @@ __device__ inline double atomicExchCustom(double* address, double val) {
 }
 
 #ifdef EIGEN_HAS_GPU_FP16
-
-__device__ inline half2 _paddh2(const half2& a, const half2& b) {
-#if defined(EIGEN_HIP_DEVICE_COMPILE)
-
-  return __hadd2(a, b);
-
-#else  // EIGEN_CUDA_ARCH
-
-#if EIGEN_CUDA_ARCH >= 530
-  return __hadd2(a, b);
-#else
-  float a1 = __low2float(a);
-  float a2 = __high2float(a);
-  float b1 = __low2float(b);
-  float b2 = __high2float(b);
-  float r1 = a1 + b1;
-  float r2 = a2 + b2;
-  return __floats2half2_rn(r1, r2);
-#endif
-
-#endif
-}
-
-
 template <template <typename T> class R>
 __device__ inline void atomicReduce(half2* output, half2 accum, R<half>& reducer) {
   unsigned int oldval = *reinterpret_cast<unsigned int*>(output);
   unsigned int newval = oldval;
-  half2 x = _paddh2(*reinterpret_cast<half2*>(&newval), accum);
-  newval = *reinterpret_cast<unsigned int*>(&x);
+  reducer.reducePacket(accum, reinterpret_cast<half2*>(&newval));
   if (newval == oldval) {
     return;
   }
@@ -117,8 +92,7 @@ __device__ inline void atomicReduce(half2* output, half2 accum, R<half>& reducer
   while ((readback = atomicCAS((unsigned int*)output, oldval, newval)) != oldval) {
     oldval = readback;
     newval = oldval;
-    half2 x = _paddh2(*reinterpret_cast<half2*>(&newval), accum);
-    newval = *reinterpret_cast<unsigned int*>(&x);
+    reducer.reducePacket(accum, reinterpret_cast<half2*>(&newval));
     if (newval == oldval) {
       return;
     }
@@ -126,7 +100,7 @@ __device__ inline void atomicReduce(half2* output, half2 accum, R<half>& reducer
 }
 // reduction should be associative since reduction is not atomic in wide vector but atomic in half2 operations
 template <template <typename T> class R>
-__device__ inline void atomicReduce(packet_traits<half>::type* output, packet_traits<half>::type accum,
+__device__ inline void atomicReduce(Packet4h2* output, Packet4h2 accum,
                                     R<half>& reducer) {
   half2* houtput=reinterpret_cast<half2*>(output);
   half2* haccum=reinterpret_cast<half2*>(&accum);
@@ -364,9 +338,9 @@ __global__ void FullReductionKernelHalfFloat(Reducer reducer, const Self input, 
   __syncthreads();
   half2* rv1 = reinterpret_cast<half2*>(scratch);
   if (packet_width > 2) {
-    rv1[0] = _paddh2(rv1[2], rv1[0]);
-    rv1[1] = _paddh2(rv1[3], rv1[1]);
-    rv1[0] = _paddh2(rv1[1], rv1[0]);
+    reducer.reducePacket(rv1[2], rv1);
+    reducer.reducePacket(rv1[3], rv1 + 1);
+    reducer.reducePacket(rv1[1], rv1);
   }
   if (gridDim.x == 1) {
     if (first_index == 0) {
@@ -732,12 +706,12 @@ __global__ void InnerReductionKernelHalfFloat(Reducer reducer, const Self input,
       half2* rv2 = reinterpret_cast<half2*>(&reduced_val2);
       half2 val;
       if (packet_width > 2) {
-        rv1[0] = _paddh2(rv1[2], rv1[0]);
-        rv1[1] = _paddh2(rv1[3], rv1[1]);
-        rv1[0] = _paddh2(rv1[1], rv1[0]);
-        rv2[0] = _paddh2(rv2[2], rv2[0]);
-        rv2[1] = _paddh2(rv2[3], rv2[1]);
-        rv2[0] = _paddh2(rv2[1], rv2[0]);
+        reducer.reducePacket(rv1[2], rv1);
+        reducer.reducePacket(rv1[3], rv1 + 1);
+        reducer.reducePacket(rv1[1], rv1);
+        reducer.reducePacket(rv2[2], rv2);
+        reducer.reducePacket(rv2[3], rv2 + 1);
+        reducer.reducePacket(rv2[1], rv2);
       }
       half val1 = __low2half(*rv1);
       reducer.reduce(__high2half(*rv1), &val1);
