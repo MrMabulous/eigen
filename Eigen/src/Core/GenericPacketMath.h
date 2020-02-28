@@ -230,17 +230,23 @@ EIGEN_DEVICE_FUNC inline std::complex<RealScalar> ptrue(const std::complex<RealS
 template <typename Packet> EIGEN_DEVICE_FUNC inline Packet
 pnot(const Packet& a) { return pxor(ptrue(a), a);}
 
-/** \internal \returns \a a shifted by N bits to the right */
+/** \internal \returns \a a logically shifted by N bits to the right */
 template<int N> EIGEN_DEVICE_FUNC inline int
-pshiftright(const int& a) { return a >> N; }
+parithmetic_shift_right(const int& a) { return a >> N; }
 template<int N> EIGEN_DEVICE_FUNC inline long int
-pshiftright(const long int& a) { return a >> N; }
+parithmetic_shift_right(const long int& a) { return a >> N; }
+
+/** \internal \returns \a a arithmetically shifted by N bits to the right */
+template<int N> EIGEN_DEVICE_FUNC inline int
+plogical_shift_right(const int& a) { return static_cast<int>(static_cast<unsigned int>(a) >> N); }
+template<int N> EIGEN_DEVICE_FUNC inline long int
+plogical_shift_right(const long int& a) { return static_cast<long>(static_cast<unsigned long>(a) >> N); }
 
 /** \internal \returns \a a shifted by N bits to the left */
 template<int N> EIGEN_DEVICE_FUNC inline int
-pshiftleft(const int& a) { return a << N; }
+plogical_shift_left(const int& a) { return a << N; }
 template<int N> EIGEN_DEVICE_FUNC inline long int
-pshiftleft(const long int& a) { return a << N; }
+plogical_shift_left(const long int& a) { return a << N; }
 
 /** \internal \returns the significant and exponent of the underlying floating point numbers
   * See https://en.cppreference.com/w/cpp/numeric/math/frexp
