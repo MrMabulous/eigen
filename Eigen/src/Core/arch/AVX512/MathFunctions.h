@@ -29,6 +29,12 @@ namespace internal {
 #define _EIGEN_DECLARE_CONST_Packet8d_FROM_INT64(NAME, X) \
   const Packet8d p8d_##NAME = _mm512_castsi512_pd(_mm512_set1_epi64(X))
 
+#define _EIGEN_DECLARE_CONST_Packet16b(NAME, X) \
+  const Packet16b p16b_##NAME = pset1<Packet16b>(X)
+
+#define _EIGEN_DECLARE_CONST_Packet16b_FROM_INT(NAME, X) \
+  const Packet16b p16b_##NAME =  preinterpret<Packet16b,Packet16i>(pset1<Packet16i>(X))
+
 // Natural logarithm
 // Computes log(x) as log(2^e * m) = C*e + log(m), where the constant C =log(2)
 // and m is in the range [sqrt(1/2),sqrt(2)). In this range, the logarithm can
@@ -127,6 +133,12 @@ plog<Packet16f>(const Packet16f& _x) {
               _mm512_mask_blend_ps(pos_inf_mask,x,p16f_pos_inf),
               p16f_nan),
             p16f_minus_inf);
+}
+
+template <>
+EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet16b
+plog<Packet16b>(const Packet16b& _x) {
+  return F32ToBf16(plog<Packet16f>(Bf16ToF32(_x)));
 }
 #endif
 
@@ -253,6 +265,11 @@ pexp<Packet8d>(const Packet8d& _x) {
   return pmax(pmul(x, e), _x);
   }*/
 
+template <>
+EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet16b
+pexp<Packet16b>(const Packet16b& _x) {
+  return F32ToBf16(pexp<Packet16f>(Bf16ToF32(_x)));
+}
 
 // Functions for sqrt.
 // The EIGEN_FAST_MATH version uses the _mm_rsqrt_ps approximation and one step
@@ -298,14 +315,26 @@ psqrt<Packet8d>(const Packet8d& _x) {
 
   return _mm512_mask_blend_pd(denormal_mask, pmul(_x,x), _mm512_setzero_pd());
 }
+
+template <>
+EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet16b
+psqrt<Packet16b>(const Packet16b& _x) {
+  return F32ToBf16(psqrt<Packet16f>(Bf16ToF32(_x)));
+}
 #else
 template <>
 EIGEN_STRONG_INLINE Packet16f psqrt<Packet16f>(const Packet16f& x) {
   return _mm512_sqrt_ps(x);
 }
+
 template <>
 EIGEN_STRONG_INLINE Packet8d psqrt<Packet8d>(const Packet8d& x) {
   return _mm512_sqrt_pd(x);
+}
+
+template <>
+EIGEN_STRONG_INLINE Packet16b psqrt<Packet16b>(const Packet16b& x) {
+  return F32ToBf16(psqrt<Packet16f>(Bf16ToF32(x)));
 }
 #endif
 
@@ -317,6 +346,10 @@ EIGEN_STRONG_INLINE Packet16f prsqrt<Packet16f>(const Packet16f& x) {
   return _mm512_rsqrt28_ps(x);
 }
 
+template <>
+EIGEN_STRONG_INLINE Packet16b prsqrt<Packet16b>(const Packet16b& x) {
+  return F32ToBf16(prsqrt<Packet16f>(Bf16ToF32(x)));
+}
 #elif EIGEN_FAST_MATH
 
 template <>
@@ -347,7 +380,13 @@ prsqrt<Packet16f>(const Packet16f& _x) {
   // For other arguments, choose the output of the intrinsic. This will
   // return rsqrt(+inf) = 0, rsqrt(x) = NaN if x < 0, and rsqrt(0) = +inf.
   return _mm512_mask_blend_ps(not_finite_pos_mask, y_newton, y_approx);
-  }
+}
+
+template <>
+EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet16b
+prsqrt<Packet16b>(const Packet16b& _x) {
+  return F32ToBf16(prsqrt<Packet16f>(Bf16ToF32(_x)));
+}
 
 #else
 
@@ -357,6 +396,10 @@ EIGEN_STRONG_INLINE Packet16f prsqrt<Packet16f>(const Packet16f& x) {
   return _mm512_div_ps(p16f_one, _mm512_sqrt_ps(x));
 }
 
+template <>
+EIGEN_STRONG_INLINE Packet16b prsqrt<Packet16b>(const Packet16b& x) {
+  return F32ToBf16(prsqrt<Packet16f>(Bf16ToF32(x)));
+}
 #endif
 
 // prsqrt for double.
@@ -413,8 +456,18 @@ Packet16f plog1p<Packet16f>(const Packet16f& _x) {
 }
 
 template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED
+Packet16b plog1p<Packet16b>(const Packet16b& _x) {
+  return F32ToBf16(plog1p<Packet16f>(Bf16ToF32(_x)));
+}
+
+template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED
 Packet16f pexpm1<Packet16f>(const Packet16f& _x) {
   return generic_expm1(_x);
+}
+
+template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED
+Packet16b pexpm1<Packet16b>(const Packet16b& _x) {
+  return F32ToBf16(pexpm1<Packet16f>(Bf16ToF32(_x)));
 }
 #endif
 
@@ -428,15 +481,33 @@ psin<Packet16f>(const Packet16f& _x) {
 }
 
 template <>
+EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet16b
+psin<Packet16b>(const Packet16b& _x) {
+  return F32ToBf16(psin<Packet16f>(Bf16ToF32(_x)));
+}
+
+template <>
 EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet16f
 pcos<Packet16f>(const Packet16f& _x) {
   return pcos_float(_x);
 }
 
 template <>
+EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet16b
+pcos<Packet16b>(const Packet16b& _x) {
+  return F32ToBf16(pcos<Packet16f>(Bf16ToF32(_x)));
+}
+
+template <>
 EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet16f
 ptanh<Packet16f>(const Packet16f& _x) {
   return internal::generic_fast_tanh_float(_x);
+}
+
+template <>
+EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet16b
+ptanh<Packet16b>(const Packet16b& _x) {
+  return F32ToBf16(ptanh<Packet16f>(Bf16ToF32(_x)));
 }
 
 }  // end namespace internal
