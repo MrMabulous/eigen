@@ -732,9 +732,11 @@ EIGEN_DECLARE_TEST(packetmath)
     CALL_SUBTEST_5( test::runner<int16_t>::run() );
     CALL_SUBTEST_6( test::runner<uint16_t>::run() );
     CALL_SUBTEST_7( test::runner<int32_t>::run() );
+#ifndef __PPC__
     CALL_SUBTEST_8( test::runner<uint32_t>::run() );
-    CALL_SUBTEST_9( test::runner<int64_t>::run() );
     CALL_SUBTEST_10( test::runner<uint64_t>::run() );
+#endif
+    CALL_SUBTEST_9( test::runner<int64_t>::run() );
     CALL_SUBTEST_11( test::runner<std::complex<float> >::run() );
     CALL_SUBTEST_12( test::runner<std::complex<double> >::run() );
     CALL_SUBTEST_13(( packetmath<half,internal::packet_traits<half>::type>() ));
