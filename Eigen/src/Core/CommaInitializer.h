@@ -43,6 +43,8 @@ struct CommaInitializer
   inline CommaInitializer(XprType& xpr, const DenseBase<OtherDerived>& other)
     : m_xpr(xpr), m_row(0), m_col(other.cols()), m_currentBlockRows(other.rows())
   {
+    eigen_assert(m_xpr.rows() > 0 && m_xpr.cols() > 0
+      && "Cannot comma-initialize a 0x0 matrix (operator<<)");
     m_xpr.block(0, 0, other.rows(), other.cols()) = other;
   }
 
