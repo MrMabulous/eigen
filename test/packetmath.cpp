@@ -14,6 +14,7 @@
 #define REF_SUB(a,b) ((a)-(b))
 #define REF_MUL(a,b) ((a)*(b))
 #define REF_DIV(a,b) ((a)/(b))
+#define REF_ABS_DIFF(a,b) ((a)>(b)?(a)-(b):(b)-(a))
 
 template<typename Scalar,typename Packet> void packetmath()
 {
@@ -320,6 +321,8 @@ template<typename Scalar,typename Packet> void packetmath()
     }
     CHECK_CWISE2_IF(true, internal::pcmp_eq, internal::pcmp_eq);
   }
+
+  CHECK_CWISE1_IF(PacketTraits::HasSqrt, numext::sqrt, internal::psqrt);
 }
 
 template<typename Scalar,typename Packet> void packetmath_real()
@@ -341,7 +344,6 @@ template<typename Scalar,typename Packet> void packetmath_real()
   if(internal::random<float>(0,1)<0.1f)
      data1[internal::random<int>(0, PacketSize)] = 0;
 
-  CHECK_CWISE1_IF(PacketTraits::HasSqrt, std::sqrt, internal::psqrt);
   CHECK_CWISE1_IF(PacketTraits::HasLog, std::log, internal::plog);
   CHECK_CWISE1_IF(PacketTraits::HasRsqrt, Scalar(1)/std::sqrt, internal::prsqrt);
 
@@ -556,6 +558,7 @@ template<typename Scalar,typename Packet> void packetmath_notcomplex()
   CHECK_CWISE2_IF(PacketTraits::HasMin, (std::min), internal::pmin);
   CHECK_CWISE2_IF(PacketTraits::HasMax, (std::max), internal::pmax);
   CHECK_CWISE1(numext::abs, internal::pabs);
+  CHECK_CWISE2_IF(PacketTraits::HasAbsDiff, REF_ABS_DIFF, internal::pabsdiff);
 
   ref[0] = data1[0];
   for (int i=0; i<PacketSize; ++i)

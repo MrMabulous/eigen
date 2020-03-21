@@ -44,19 +44,21 @@ struct default_packet_traits
   enum {
     HasHalfPacket = 0,
 
-    HasAdd    = 1,
-    HasSub    = 1,
-    HasMul    = 1,
-    HasNegate = 1,
-    HasAbs    = 1,
-    HasArg    = 0,
-    HasAbs2   = 1,
-    HasMin    = 1,
-    HasMax    = 1,
-    HasConj   = 1,
+    HasAdd       = 1,
+    HasSub       = 1,
+    HasShift     = 1,
+    HasMul       = 1,
+    HasNegate    = 1,
+    HasAbs       = 1,
+    HasArg       = 0,
+    HasAbs2      = 1,
+    HasAbsDiff   = 0,
+    HasMin       = 1,
+    HasMax       = 1,
+    HasConj      = 1,
     HasSetLinear = 1,
-    HasBlend  = 0,
-    HasReduxp = 1,
+    HasBlend     = 0,
+    HasReduxp    = 1,
 
     HasDiv    = 0,
     HasSqrt   = 0,
@@ -194,6 +196,12 @@ pmax(const Packet& a, const Packet& b) { return numext::maxi(a, b); }
 /** \internal \returns the absolute value of \a a */
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
 pabs(const Packet& a) { using std::abs; return abs(a); }
+template<> EIGEN_DEVICE_FUNC inline unsigned int
+pabs(const unsigned int& a) { return a; }
+template<> EIGEN_DEVICE_FUNC inline unsigned long
+pabs(const unsigned long& a) { return a; }
+template<> EIGEN_DEVICE_FUNC inline unsigned long long
+pabs(const unsigned long long& a) { return a; }
 
 /** \internal \returns the phase angle of \a a */
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
@@ -230,17 +238,23 @@ EIGEN_DEVICE_FUNC inline std::complex<RealScalar> ptrue(const std::complex<RealS
 template <typename Packet> EIGEN_DEVICE_FUNC inline Packet
 pnot(const Packet& a) { return pxor(ptrue(a), a);}
 
-/** \internal \returns \a a shifted by N bits to the right */
+/** \internal \returns \a a logically shifted by N bits to the right */
 template<int N> EIGEN_DEVICE_FUNC inline int
-pshiftright(const int& a) { return a >> N; }
+parithmetic_shift_right(const int& a) { return a >> N; }
 template<int N> EIGEN_DEVICE_FUNC inline long int
-pshiftright(const long int& a) { return a >> N; }
+parithmetic_shift_right(const long int& a) { return a >> N; }
+
+/** \internal \returns \a a arithmetically shifted by N bits to the right */
+template<int N> EIGEN_DEVICE_FUNC inline int
+plogical_shift_right(const int& a) { return static_cast<int>(static_cast<unsigned int>(a) >> N); }
+template<int N> EIGEN_DEVICE_FUNC inline long int
+plogical_shift_right(const long int& a) { return static_cast<long>(static_cast<unsigned long>(a) >> N); }
 
 /** \internal \returns \a a shifted by N bits to the left */
 template<int N> EIGEN_DEVICE_FUNC inline int
-pshiftleft(const int& a) { return a << N; }
+plogical_shift_left(const int& a) { return a << N; }
 template<int N> EIGEN_DEVICE_FUNC inline long int
-pshiftleft(const long int& a) { return a << N; }
+plogical_shift_left(const long int& a) { return a << N; }
 
 /** \internal \returns the significant and exponent of the underlying floating point numbers
   * See https://en.cppreference.com/w/cpp/numeric/math/frexp
@@ -308,6 +322,10 @@ pcmp_eq(const Packet& a, const Packet& b) { return a==b ? ptrue(a) : pzero(a); }
 /** \internal \returns a < b or a==NaN or b==NaN as a bit mask */
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
 pcmp_lt_or_nan(const Packet& a, const Packet& b) { return pnot(pcmp_le(b,a)); } 
+
+/** \internal \returns the min of \a a and \a b  (coeff-wise) */
+template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
+pabsdiff(const Packet& a, const Packet& b) { return pselect(pcmp_lt(a, b), psub(b, a), psub(a, b)); }
 
 /** \internal \returns a packet version of \a *from, from must be 16 bytes aligned */
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
