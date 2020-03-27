@@ -44,6 +44,7 @@ struct default_packet_traits
   enum {
     HasHalfPacket = 0,
 
+    HasCast      = 1,
     HasAdd       = 1,
     HasSub       = 1,
     HasShift     = 1,
