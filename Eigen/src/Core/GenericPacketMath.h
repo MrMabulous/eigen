@@ -236,7 +236,7 @@ por(const Packet& a, const Packet& b) { return a | b; }
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
 pxor(const Packet& a, const Packet& b) { return a ^ b; }
 
-/** \internal \returns the bitwise xor of \a a andnot \a b */
+/** \internal \returns the bitwise and of \a a and not \a b */
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
 pandnot(const Packet& a, const Packet& b) { return a & (~b); }
 
