@@ -236,9 +236,19 @@ por(const Packet& a, const Packet& b) { return a | b; }
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
 pxor(const Packet& a, const Packet& b) { return a ^ b; }
 
-/** \internal \returns the bitwise andnot of \a a and \a b */
+/** \internal \returns the bitwise xor of \a a andnot \a b */
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
 pandnot(const Packet& a, const Packet& b) { return a & (~b); }
+
+// Specializations for bool, which is not bitwise.
+template<> EIGEN_DEVICE_FUNC inline bool
+pand(const bool& a, const bool& b) { return a && b; }
+template<> EIGEN_DEVICE_FUNC inline bool
+por(const bool& a, const bool& b) { return a || b; }
+template<> EIGEN_DEVICE_FUNC inline bool
+pxor(const bool& a, const bool& b) { return a ^ b; }
+template<> EIGEN_DEVICE_FUNC inline bool
+pandnot(const bool& a, const bool& b) { return a && (!b); }
 
 /** \internal \returns ones */
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
