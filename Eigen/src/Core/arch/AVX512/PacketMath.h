@@ -463,8 +463,7 @@ EIGEN_STRONG_INLINE Packet8d pand<Packet8d>(const Packet8d& a,
 
   Packet4d lane1_a = _mm512_extractf64x4_pd(a, 1);
   Packet4d lane1_b = _mm512_extractf64x4_pd(b, 1);
-  res = _mm512_insertf64x4(res, _mm256_and_pd(lane1_a, lane1_b), 1);
-
+  return _mm512_insertf64x4(res, _mm256_and_pd(lane1_a, lane1_b), 1);
 #endif
 }
 
@@ -1693,12 +1692,12 @@ template<> EIGEN_STRONG_INLINE Packet16h preverse(const Packet16h& a)
 
 template<> EIGEN_STRONG_INLINE Packet16h pinsertfirst(const Packet16h& a, Eigen::half b)
 {
-  return _mm256_insert_epi16(a,b,0);
+  return _mm256_insert_epi16(a,b.x,0);
 }
 
 template<> EIGEN_STRONG_INLINE Packet16h pinsertlast(const Packet16h& a, Eigen::half b)
 {
-  return _mm256_insert_epi16(a,b,15);
+  return _mm256_insert_epi16(a,b.x,15);
 }
 
 template<> EIGEN_STRONG_INLINE Packet16h pgather<Eigen::half, Packet16h>(const Eigen::half* from, Index stride)
