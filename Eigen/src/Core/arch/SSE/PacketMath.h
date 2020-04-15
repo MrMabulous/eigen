@@ -45,7 +45,6 @@ typedef __m128d Packet2d;
 
 typedef eigen_packet_wrapper<__m128i, 0> Packet4i;
 
-
 template<> struct is_arithmetic<__m128>  { enum { value = true }; };
 template<> struct is_arithmetic<__m128i> { enum { value = true }; };
 template<> struct is_arithmetic<__m128d> { enum { value = true }; };
