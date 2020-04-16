@@ -80,12 +80,7 @@ template<typename Scalar,typename Packet> void packetmath_boolean()
 
   for (int i=0; i<size; ++i)
   {
-    if (std::is_same<Scalar, bool>::value) {
-      data1[i] = internal::random<bool>() ? Scalar(1) : Scalar(0);
-    } else {
-      // For non-boolean types these ops are bitwise, so fill with word randomly with ones or zeros.
-      data1[i] = Scalar(0);
-    }
+    data1[i] = internal::random<Scalar>();
   }
   CHECK_CWISE2_IF(true, internal::por, internal::por);
   CHECK_CWISE2_IF(true, internal::pxor, internal::pxor);
