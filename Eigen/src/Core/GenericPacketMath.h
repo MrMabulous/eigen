@@ -342,11 +342,10 @@ pcmp_eq(const Packet& a, const Packet& b) { return a==b ? ptrue(a) : pzero(a); }
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
 pcmp_lt_or_nan(const Packet& a, const Packet& b) { return pnot(pcmp_le(b,a)); } 
 
-/** \internal \returns (\cond[i] == 0 ? \b[i] : \a[i]) for each field in packet */
+/** \internal \returns \a or \b for each field in packet according to \mask */
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
-pselect(const Packet& cond, const Packet& a, const Packet& b) {
-  Packet mask = pcmp_eq(cond, pzero(cond));
-  return por(pand(b,mask),pandnot(a,mask));
+pselect(const Packet& mask, const Packet& a, const Packet& b) {
+  return por(pand(a,mask),pandnot(b,mask));
 }
 
 template<> EIGEN_DEVICE_FUNC inline float pselect<float>(
