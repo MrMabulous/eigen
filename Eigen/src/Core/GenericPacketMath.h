@@ -264,20 +264,6 @@ pldexp(const Packet &a, const Packet &exponent) {
   return ldexp(a, static_cast<int>(exponent));
 }
 
-/** \internal \returns zeros */
-template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
-pzero(const Packet& a) { return pxor(a,a); }
-
-template<> EIGEN_DEVICE_FUNC inline float pzero<float>(const float& a) {
-  EIGEN_UNUSED_VARIABLE(a);
-  return 0.f;
-}
-
-template<> EIGEN_DEVICE_FUNC inline double pzero<double>(const double& a) {
-  EIGEN_UNUSED_VARIABLE(a);
-  return 0.;
-}
-
 // Notice: The following ops accept and/or return masks.
 // The value of each field in a masks is Scalar(0) or ~Scalar(0).
 // For boolean packet like Packet16b, this is different from the
@@ -315,6 +301,20 @@ pandnot(const bool& a, const bool& b) { return a && (!b); }
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
 ptrue(const Packet& /*a*/) { Packet b; memset((void*)&b, 0xff, sizeof(b)); return b;}
 
+/** \internal \returns zeros */
+template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
+pzero(const Packet& a) { return pxor(a,a); }
+
+template<> EIGEN_DEVICE_FUNC inline float pzero<float>(const float& a) {
+  EIGEN_UNUSED_VARIABLE(a);
+  return 0.f;
+}
+
+template<> EIGEN_DEVICE_FUNC inline double pzero<double>(const double& a) {
+  EIGEN_UNUSED_VARIABLE(a);
+  return 0.;
+}
+
 template <typename RealScalar>
 EIGEN_DEVICE_FUNC inline std::complex<RealScalar> ptrue(const std::complex<RealScalar>& /*a*/) {
   RealScalar b;
@@ -325,23 +325,6 @@ EIGEN_DEVICE_FUNC inline std::complex<RealScalar> ptrue(const std::complex<RealS
 /** \internal \returns the bitwise not of \a a */
 template <typename Packet> EIGEN_DEVICE_FUNC inline Packet
 pnot(const Packet& a) { return pxor(ptrue(a), a);}
-
-/** \internal \returns bits of \a or \b according to the input bit mask \a mask */
-template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
-pselect(const Packet& mask, const Packet& a, const Packet& b) {
-  return por(pand(a,mask),pandnot(b,mask));
-}
-
-template<> EIGEN_DEVICE_FUNC inline float pselect<float>(
-    const float& mask, const float& a, const float&b) {
-  return numext::equal_strict(mask,0.f) ? b : a;
-}
-
-template<> EIGEN_DEVICE_FUNC inline double pselect<double>(
-    const double& mask, const double& a, const double& b) {
-  return numext::equal_strict(mask,0.) ? b : a;
-}
-
 
 /** \internal \returns a <= b as a bit mask */
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
@@ -358,6 +341,25 @@ pcmp_eq(const Packet& a, const Packet& b) { return a==b ? ptrue(a) : pzero(a); }
 /** \internal \returns a < b or a==NaN or b==NaN as a bit mask */
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
 pcmp_lt_or_nan(const Packet& a, const Packet& b) { return pnot(pcmp_le(b,a)); } 
+
+/** \internal \returns (\cond[i] == 0 ? \b[i] : \a[i]) for each field in packet */
+template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
+pselect(const Packet& cond, const Packet& a, const Packet& b) {
+  Packet mask = pcmp_eq(cond, pzero(cond));
+  return por(pand(b,mask),pandnot(a,mask));
+}
+
+template<> EIGEN_DEVICE_FUNC inline float pselect<float>(
+    const float& cond, const float& a, const float&b) {
+  return numext::equal_strict(cond,0.f) ? b : a;
+}
+
+template<> EIGEN_DEVICE_FUNC inline double pselect<double>(
+    const double& cond, const double& a, const double& b) {
+  return numext::equal_strict(cond,0.) ? b : a;
+}
+
+
 
 /** \internal \returns the min of \a a and \a b  (coeff-wise) */
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
