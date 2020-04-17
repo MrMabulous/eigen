@@ -160,7 +160,7 @@ template<> struct packet_traits<int>    : default_packet_traits
   };
 };
 
-template<> struct packet_traits<bool>    : default_packet_traits
+template<> struct packet_traits<bool> : default_packet_traits
 {
   typedef Packet16b type;
   typedef Packet16b half;
@@ -169,6 +169,18 @@ template<> struct packet_traits<bool>    : default_packet_traits
     AlignedOnScalar = 1,
     HasHalfPacket = 0,
     size=16,
+
+    HasAdd       = 0,
+    HasSub       = 0,
+    HasShift     = 0,
+    HasMul       = 0,
+    HasNegate    = 0,
+    HasAbs       = 0,
+    HasAbs2      = 0,
+    HasMin       = 0,
+    HasMax       = 0,
+    HasConj      = 0,
+    HasReduxp    = 0,
   };
 };
 
