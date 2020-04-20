@@ -264,7 +264,7 @@ pldexp(const Packet &a, const Packet &exponent) {
   return ldexp(a, static_cast<int>(exponent));
 }
 
-// Notice: The following ops accept and/or return masks.
+// Notice: The following ops accept and operator on bitwise masks.
 // The value of each field in a masks is Scalar(0) or ~Scalar(0).
 // For boolean packet like Packet16b, this is different from the
 // representation of true and false, which are 1 and 0.
@@ -272,10 +272,6 @@ pldexp(const Packet &a, const Packet &exponent) {
 //    ptrue<Packet16b>()     = 0xffffffffffffffffffffffffffffffff
 // while
 //    pset1<Packet16b>(true) = 0x01010101010101010101010101010101
-//
-// One exception is the boolean operators (and, or, xor, andnot)
-// on boolean packets, which assume that only the LSB of each
-// field is used to represent the boolean value.
 
 /** \internal \returns the bitwise and of \a a and \a b */
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
@@ -292,10 +288,6 @@ pxor(const Packet& a, const Packet& b) { return a ^ b; }
 /** \internal \returns the bitwise and of \a a and not \a b */
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
 pandnot(const Packet& a, const Packet& b) { return a & (~b); }
-
-// Specialization for bool, which only operates on the LSB.
-template<> EIGEN_DEVICE_FUNC inline bool
-pandnot(const bool& a, const bool& b) { return a && (!b); }
 
 /** \internal \returns ones */
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet

@@ -85,7 +85,6 @@ template<typename Scalar,typename Packet> void packetmath_boolean()
   CHECK_CWISE2_IF(true, internal::por, internal::por);
   CHECK_CWISE2_IF(true, internal::pxor, internal::pxor);
   CHECK_CWISE2_IF(true, internal::pand, internal::pand);
-  CHECK_CWISE2_IF(true, internal::pandnot, internal::pandnot);
 }
 
 template<typename Scalar,typename Packet> void packetmath()
@@ -380,6 +379,12 @@ template<typename Scalar,typename Packet> void packetmath()
   }
 
   CHECK_CWISE1_IF(PacketTraits::HasSqrt, numext::sqrt, internal::psqrt);
+
+  for (int i=0; i<size; ++i)
+  {
+    data1[i] = internal::random<Scalar>();
+  }
+  CHECK_CWISE2_IF(true, internal::pandnot, internal::pandnot);
 
   packetmath_boolean<Scalar, Packet>();
 }

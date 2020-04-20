@@ -180,7 +180,7 @@ template<> struct packet_traits<bool> : default_packet_traits
     HasMin       = 0,
     HasMax       = 0,
     HasConj      = 0,
-    HasReduxp    = 0,
+    HasReduxp    = 0
   };
 };
 
@@ -452,11 +452,6 @@ template<> EIGEN_STRONG_INLINE Packet16b pxor<Packet16b>(const Packet16b& a, con
 template<> EIGEN_STRONG_INLINE Packet4f pandnot<Packet4f>(const Packet4f& a, const Packet4f& b) { return _mm_andnot_ps(b,a); }
 template<> EIGEN_STRONG_INLINE Packet2d pandnot<Packet2d>(const Packet2d& a, const Packet2d& b) { return _mm_andnot_pd(b,a); }
 template<> EIGEN_STRONG_INLINE Packet4i pandnot<Packet4i>(const Packet4i& a, const Packet4i& b) { return _mm_andnot_si128(b,a); }
-// Notice: This is not bitwise andnot, unlike for other types.
-template<> EIGEN_STRONG_INLINE Packet16b pandnot<Packet16b>(const Packet16b& a, const Packet16b& b) {
-  Packet16b mask = pset1<Packet16b>(true);
-  return _mm_and_si128(mask, _mm_andnot_si128(b,a));
-}
 
 template<int N> EIGEN_STRONG_INLINE Packet4i parithmetic_shift_right(Packet4i a) { return _mm_srai_epi32(a,N); }
 template<int N> EIGEN_STRONG_INLINE Packet4i plogical_shift_right(Packet4i a) { return _mm_srli_epi32(a,N); }
