@@ -2849,6 +2849,16 @@ PALIGN_NEON(1, Packet2ul, vextq_u64)
 
 #undef PALIGN_NEON
 
+#define vec4f_swizzle1(v, p, q, r, s) \
+({ \
+  float32x4_t ret; \
+  ret = vmovq_n_f32(vgetq_lane_f32(v, p)); \
+  ret = vsetq_lane_f32(vgetq_lane_f32(v, q), ret, 1); \
+  ret = vsetq_lane_f32(vgetq_lane_f32(v, r), ret, 2); \
+  ret = vsetq_lane_f32(vgetq_lane_f32(v, s), ret, 3); \
+  ret; \
+})
+
 EIGEN_DEVICE_FUNC inline void ptranspose(PacketBlock<Packet2f, 2>& kernel)
 {
   const float32x2x2_t z = vzip_f32(kernel.packet[0], kernel.packet[1]);
