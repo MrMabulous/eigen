@@ -1691,12 +1691,12 @@ template<> EIGEN_STRONG_INLINE void pstoreu<bfloat16>(bfloat16* to, const Packet
 EIGEN_STRONG_INLINE Packet16f Bf16ToF32(const Packet16b& a) {
   return _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepu16_epi32(a.x), 16));
 }
-
 EIGEN_STRONG_INLINE Packet16b F32ToBf16(const Packet16f& a) {
   Packet16b r;
+
 #if defined(EIGEN_VECTORIZE_AVX512BF16)
   r.bh = _mm512_cvtneps_pbh(a);
-#elif defined(EIGEN_VECTORIZE_AVX512BW)
+#else
   __m512i t;
   __m512i input = _mm512_castps_si512(a);
   __m512i nan = _mm512_set1_epi32(0x7fc0);
@@ -1715,21 +1715,9 @@ EIGEN_STRONG_INLINE Packet16b F32ToBf16(const Packet16f& a) {
   t = _mm512_mask_blend_epi32(mask, nan, t);
 
   // output.value = static_cast<uint16_t>(input);
-  // t[12-15] t[12-15] t[8-11] t[8-11] t[4-7] t[4-7] t[0-4] t[0-4]
-  // 7[0]     6[0]     5[0]    4[0]    3[6]   2[4]   1[2]   0[0]
-  __m512i idx = _mm512_set_epi64(0, 0, 0, 0, 7, 5, 3, 0);
-  t = _mm512_packus_epi32(t, t);
-  t = _mm512_permutexvar_epi64(idx, t);
-  r.x = _mm512_castsi512_si256(t);
-#else
-  int i;
-  EIGEN_ALIGN64 bfloat16 arr[16];
-
-  for (i =0; i < 16; ++i) {
-    arr[i] = bfloat16(a[i]);
-  }
-  r = pload<Packet16b>(arr);
+  r.x = _mm512_cvtepi32_epi16(t);
 #endif
+
   return r;
 }
 
