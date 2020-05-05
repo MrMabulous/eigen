@@ -227,7 +227,7 @@ struct ScanLauncher<Self, Reducer, ThreadPoolDevice, true> {
           // write to the same cacheline of `data`.
           [=](Index blk_size) {
             const Index inner_blocks_cacheline =
-                numext::maxi(1ul, kBlockAlignment / (inner_block_size * sizeof(Scalar)));
+                numext::maxi<Index>(1, kBlockAlignment / (inner_block_size * sizeof(Scalar)));
             return inner_blocks_cacheline *
                    divup(blk_size, inner_blocks_cacheline);
           },
@@ -251,7 +251,7 @@ struct ScanLauncher<Self, Reducer, ThreadPoolDevice, true> {
             // won't write to the same cacheline of `data`.
             [=](Index blk_size) {
               const Index packets_per_cacheline =
-                  numext::maxi(1ul, kBlockAlignment / (PacketSize * sizeof(Scalar)));
+                  numext::maxi<Index>(1, kBlockAlignment / (PacketSize * sizeof(Scalar)));
               return packets_per_cacheline *
                      divup(blk_size, packets_per_cacheline);
             },
@@ -270,7 +270,7 @@ struct ScanLauncher<Self, Reducer, ThreadPoolDevice, true> {
             // won't write to the same cacheline of `data`.
             [=](Index blk_size) {
               const Index scalars_per_cacheline =
-                  numext::maxi(1ul, kBlockAlignment / sizeof(Scalar));
+                  numext::maxi<Index>(1, kBlockAlignment / sizeof(Scalar));
               return scalars_per_cacheline *
                      divup(blk_size, scalars_per_cacheline);
             },
