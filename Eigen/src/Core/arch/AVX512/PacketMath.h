@@ -1612,22 +1612,22 @@ typedef union {
   __m256bh bh;
 #endif
   __m256i x;
-} Packet16b;
+} Packet16bf;
 
-template<> struct is_arithmetic<Packet16b> { enum { value = true }; };
+template<> struct is_arithmetic<Packet16bf> { enum { value = true }; };
 
 template <>
 struct packet_traits<bfloat16> : default_packet_traits {
-  typedef Packet16b type;
+  typedef Packet16bf type;
   // There is no half-size packet for Packet8h.
-  typedef Packet16b half;
+  typedef Packet16bf half;
   enum {
     Vectorizable = 1,
     AlignedOnScalar = 1,
     size = 16,
     HasHalfPacket = 0,
     HasBlend = 0,
-    HasReduxp = 1,
+    HasInsert = 1,
     HasSin = EIGEN_FAST_MATH,
     HasCos = EIGEN_FAST_MATH,
 #if EIGEN_GNUC_AT_LEAST(5, 3) || (!EIGEN_COMP_GNUC_STRICT)
@@ -1649,50 +1649,50 @@ struct packet_traits<bfloat16> : default_packet_traits {
 };
 
 template<>
-struct unpacket_traits<Packet16b>
+struct unpacket_traits<Packet16bf>
 {
   typedef bfloat16 type;
   enum {size=16, alignment=Aligned32, vectorizable=true, masked_load_available=false, masked_store_available=false};
-  typedef Packet16b half;
+  typedef Packet16bf half;
 };
 
-template<> EIGEN_STRONG_INLINE Packet16b pset1<Packet16b>(const bfloat16& from) {
-  Packet16b r;
+template<> EIGEN_STRONG_INLINE Packet16bf pset1<Packet16bf>(const bfloat16& from) {
+  Packet16bf r;
   r.x = _mm256_set1_epi16(from.value);
   return r;
 }
 
-template<> EIGEN_STRONG_INLINE bfloat16 pfirst<Packet16b>(const Packet16b& from) {
+template<> EIGEN_STRONG_INLINE bfloat16 pfirst<Packet16bf>(const Packet16bf& from) {
   bfloat16 t;
   t.value = static_cast<unsigned short>(_mm256_extract_epi16(from.x, 0));
   return t;
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b pload<Packet16b>(const bfloat16* from) {
-  Packet16b r;
+template<> EIGEN_STRONG_INLINE Packet16bf pload<Packet16bf>(const bfloat16* from) {
+  Packet16bf r;
   r.x =  _mm256_load_si256(reinterpret_cast<const __m256i*>(from));
   return r;
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b ploadu<Packet16b>(const bfloat16* from) {
-  Packet16b r;
+template<> EIGEN_STRONG_INLINE Packet16bf ploadu<Packet16bf>(const bfloat16* from) {
+  Packet16bf r;
   r.x =  _mm256_loadu_si256(reinterpret_cast<const __m256i*>(from));
   return r;
 }
 
-template<> EIGEN_STRONG_INLINE void pstore<bfloat16>(bfloat16* to, const Packet16b& from) {
+template<> EIGEN_STRONG_INLINE void pstore<bfloat16>(bfloat16* to, const Packet16bf& from) {
   _mm256_store_si256(reinterpret_cast<__m256i*>(to), from.x);
 }
 
-template<> EIGEN_STRONG_INLINE void pstoreu<bfloat16>(bfloat16* to, const Packet16b& from) {
+template<> EIGEN_STRONG_INLINE void pstoreu<bfloat16>(bfloat16* to, const Packet16bf& from) {
   _mm256_storeu_si256(reinterpret_cast<__m256i*>(to), from.x);
 }
 
-EIGEN_STRONG_INLINE Packet16f Bf16ToF32(const Packet16b& a) {
+EIGEN_STRONG_INLINE Packet16f Bf16ToF32(const Packet16bf& a) {
   return _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepu16_epi32(a.x), 16));
 }
-EIGEN_STRONG_INLINE Packet16b F32ToBf16(const Packet16f& a) {
-  Packet16b r;
+EIGEN_STRONG_INLINE Packet16bf F32ToBf16(const Packet16f& a) {
+  Packet16bf r;
 
 #if defined(EIGEN_VECTORIZE_AVX512BF16)
   r.bh = _mm512_cvtneps_pbh(a);
@@ -1721,34 +1721,34 @@ EIGEN_STRONG_INLINE Packet16b F32ToBf16(const Packet16f& a) {
   return r;
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b pnot(const Packet16b& a) {
-  Packet16b r; r.x = _mm256_xor_si256(a.x, pcmp_eq(a.x, a.x)); return r;
+template<> EIGEN_STRONG_INLINE Packet16bf pnot(const Packet16bf& a) {
+  Packet16bf r; r.x = _mm256_xor_si256(a.x, pcmp_eq(a.x, a.x)); return r;
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b ptrue(const Packet16b& a) {
-  Packet16b r; r.x = Packet8i(ptrue(a.x)); return r;
+template<> EIGEN_STRONG_INLINE Packet16bf ptrue(const Packet16bf& a) {
+  Packet16bf r; r.x = Packet8i(ptrue(a.x)); return r;
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b por(const Packet16b& a,const Packet16b& b) {
+template<> EIGEN_STRONG_INLINE Packet16bf por(const Packet16bf& a,const Packet16bf& b) {
   // in some cases Packet8i is a wrapper around __m256i, so we need to
   // cast to Packet8i to call the correct overload.
-  Packet16b r; r.x = por(Packet8i(a.x),Packet8i(b.x)); return r;
+  Packet16bf r; r.x = por(Packet8i(a.x),Packet8i(b.x)); return r;
 }
-template<> EIGEN_STRONG_INLINE Packet16b pxor(const Packet16b& a,const Packet16b& b) {
-  Packet16b r; r.x = pxor(Packet8i(a.x),Packet8i(b.x)); return r;
+template<> EIGEN_STRONG_INLINE Packet16bf pxor(const Packet16bf& a,const Packet16bf& b) {
+  Packet16bf r; r.x = pxor(Packet8i(a.x),Packet8i(b.x)); return r;
 }
-template<> EIGEN_STRONG_INLINE Packet16b pand(const Packet16b& a,const Packet16b& b) {
-  Packet16b r; r.x = pand(Packet8i(a.x),Packet8i(b.x)); return r;
+template<> EIGEN_STRONG_INLINE Packet16bf pand(const Packet16bf& a,const Packet16bf& b) {
+  Packet16bf r; r.x = pand(Packet8i(a.x),Packet8i(b.x)); return r;
 }
-template<> EIGEN_STRONG_INLINE Packet16b pandnot(const Packet16b& a,const Packet16b& b) {
-  Packet16b r; r.x = pandnot(Packet8i(a.x),Packet8i(b.x)); return r;
-}
-
-template<> EIGEN_STRONG_INLINE Packet16b pselect(const Packet16b& mask, const Packet16b& a, const Packet16b& b) {
-  Packet16b r; r.x = _mm256_blendv_epi8(b.x, a.x, mask.x); return r;
+template<> EIGEN_STRONG_INLINE Packet16bf pandnot(const Packet16bf& a,const Packet16bf& b) {
+  Packet16bf r; r.x = pandnot(Packet8i(a.x),Packet8i(b.x)); return r;
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b pcmp_eq(const Packet16b& a,const Packet16b& b) {
+template<> EIGEN_STRONG_INLINE Packet16bf pselect(const Packet16bf& mask, const Packet16bf& a, const Packet16bf& b) {
+  Packet16bf r; r.x = _mm256_blendv_epi8(b.x, a.x, mask.x); return r;
+}
+
+template<> EIGEN_STRONG_INLINE Packet16bf pcmp_eq(const Packet16bf& a,const Packet16bf& b) {
   Packet16f af = Bf16ToF32(a);
   Packet16f bf = Bf16ToF32(b);
   Packet16f rf = pcmp_eq(af, bf);
@@ -1759,12 +1759,12 @@ template<> EIGEN_STRONG_INLINE Packet16b pcmp_eq(const Packet16b& a,const Packet
                                       _mm256_extractf128_si256(lo, 1));
   __m128i result_hi = _mm_packs_epi32(_mm256_extractf128_si256(hi, 0),
                                       _mm256_extractf128_si256(hi, 1));
-  Packet16b result;
+  Packet16bf result;
   result.x = _mm256_insertf128_si256(_mm256_castsi128_si256(result_lo), result_hi, 1);
   return result;
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b pcmp_le(const Packet16b& a, const Packet16b& b) {
+template<> EIGEN_STRONG_INLINE Packet16bf pcmp_le(const Packet16bf& a, const Packet16bf& b) {
   Packet16f af = Bf16ToF32(a);
   Packet16f bf = Bf16ToF32(b);
   Packet16f rf = pcmp_le(af, bf);
@@ -1775,12 +1775,12 @@ template<> EIGEN_STRONG_INLINE Packet16b pcmp_le(const Packet16b& a, const Packe
                                       _mm256_extractf128_si256(lo, 1));
   __m128i result_hi = _mm_packs_epi32(_mm256_extractf128_si256(hi, 0),
                                       _mm256_extractf128_si256(hi, 1));
-  Packet16b result;
+  Packet16bf result;
   result.x = _mm256_insertf128_si256(_mm256_castsi128_si256(result_lo), result_hi, 1);
   return result;
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b pcmp_lt(const Packet16b& a, const Packet16b& b) {
+template<> EIGEN_STRONG_INLINE Packet16bf pcmp_lt(const Packet16bf& a, const Packet16bf& b) {
   Packet16f af = Bf16ToF32(a);
   Packet16f bf = Bf16ToF32(b);
   Packet16f rf = pcmp_lt(af, bf);
@@ -1791,12 +1791,12 @@ template<> EIGEN_STRONG_INLINE Packet16b pcmp_lt(const Packet16b& a, const Packe
                                       _mm256_extractf128_si256(lo, 1));
   __m128i result_hi = _mm_packs_epi32(_mm256_extractf128_si256(hi, 0),
                                       _mm256_extractf128_si256(hi, 1));
-  Packet16b result;
+  Packet16bf result;
   result.x = _mm256_insertf128_si256(_mm256_castsi128_si256(result_lo), result_hi, 1);
   return result;
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b pcmp_lt_or_nan(const Packet16b& a, const Packet16b& b) {
+template<> EIGEN_STRONG_INLINE Packet16bf pcmp_lt_or_nan(const Packet16bf& a, const Packet16bf& b) {
   Packet16f af = Bf16ToF32(a);
   Packet16f bf = Bf16ToF32(b);
   Packet16f rf = pcmp_lt_or_nan(af, bf);
@@ -1807,116 +1807,116 @@ template<> EIGEN_STRONG_INLINE Packet16b pcmp_lt_or_nan(const Packet16b& a, cons
                                       _mm256_extractf128_si256(lo, 1));
   __m128i result_hi = _mm_packs_epi32(_mm256_extractf128_si256(hi, 0),
                                       _mm256_extractf128_si256(hi, 1));
-  Packet16b result;
+  Packet16bf result;
   result.x = _mm256_insertf128_si256(_mm256_castsi128_si256(result_lo), result_hi, 1);
   return result;
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b pnegate(const Packet16b& a) {
-  Packet16b sign_mask;
+template<> EIGEN_STRONG_INLINE Packet16bf pnegate(const Packet16bf& a) {
+  Packet16bf sign_mask;
   sign_mask.x = _mm256_set1_epi16(static_cast<unsigned short>(0x8000));
-  Packet16b result;
+  Packet16bf result;
   result.x = _mm256_xor_si256(a.x, sign_mask.x);
   return result;
 }
 
-template <> EIGEN_STRONG_INLINE Packet16b pconj(const Packet16b& a) {
+template <> EIGEN_STRONG_INLINE Packet16bf pconj(const Packet16bf& a) {
   return a;
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b pabs(const Packet16b& a) {
+template<> EIGEN_STRONG_INLINE Packet16bf pabs(const Packet16bf& a) {
   Packet16f af = Bf16ToF32(a);
   Packet16f rf = pabs(af);
   return F32ToBf16(rf);
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b padd<Packet16b>(const Packet16b& a, const Packet16b& b) {
+template<> EIGEN_STRONG_INLINE Packet16bf padd<Packet16bf>(const Packet16bf& a, const Packet16bf& b) {
   return F32ToBf16(_mm512_add_ps(Bf16ToF32(a), Bf16ToF32(b)));
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b psub<Packet16b>(const Packet16b& a, const Packet16b& b) {
+template<> EIGEN_STRONG_INLINE Packet16bf psub<Packet16bf>(const Packet16bf& a, const Packet16bf& b) {
   Packet16f af = Bf16ToF32(a);
   Packet16f bf = Bf16ToF32(b);
   Packet16f rf = psub(af, bf);
   return F32ToBf16(rf);
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b pmul<Packet16b>(const Packet16b& a, const Packet16b& b) {
+template<> EIGEN_STRONG_INLINE Packet16bf pmul<Packet16bf>(const Packet16bf& a, const Packet16bf& b) {
   return F32ToBf16(_mm512_mul_ps(Bf16ToF32(a), Bf16ToF32(b)));
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b pdiv<Packet16b>(const Packet16b& a, const Packet16b& b) {
+template<> EIGEN_STRONG_INLINE Packet16bf pdiv<Packet16bf>(const Packet16bf& a, const Packet16bf& b) {
   Packet16f af = Bf16ToF32(a);
   Packet16f bf = Bf16ToF32(b);
   Packet16f rf = pdiv(af, bf);
   return F32ToBf16(rf);
 }
 
-template <> EIGEN_STRONG_INLINE Packet16b pmin<Packet16b>(const Packet16b& a, const Packet16b& b) {
+template <> EIGEN_STRONG_INLINE Packet16bf pmin<Packet16bf>(const Packet16bf& a, const Packet16bf& b) {
   Packet16f af = Bf16ToF32(a);
   Packet16f bf = Bf16ToF32(b);
   Packet16f rf = pmin(af, bf);
   return F32ToBf16(rf);
 }
 
-template <> EIGEN_STRONG_INLINE Packet16b pmax<Packet16b>(const Packet16b& a, const Packet16b& b) {
+template <> EIGEN_STRONG_INLINE Packet16bf pmax<Packet16bf>(const Packet16bf& a, const Packet16bf& b) {
   Packet16f af = Bf16ToF32(a);
   Packet16f bf = Bf16ToF32(b);
   Packet16f rf = pmax(af, bf);
   return F32ToBf16(rf);
 }
 
-template<> EIGEN_STRONG_INLINE bfloat16 predux<Packet16b>(const Packet16b& p) {
+template<> EIGEN_STRONG_INLINE bfloat16 predux<Packet16bf>(const Packet16bf& p) {
   return (bfloat16)predux<Packet16f>(Bf16ToF32(p));
 }
 
-template<> EIGEN_STRONG_INLINE bfloat16 predux_mul<Packet16b>(const Packet16b& from) {
+template<> EIGEN_STRONG_INLINE bfloat16 predux_mul<Packet16bf>(const Packet16bf& from) {
   Packet16f from_float = Bf16ToF32(from);
   return bfloat16(predux_mul(from_float));
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b preduxp<Packet16b>(const Packet16b* p) {
+template<> EIGEN_STRONG_INLINE Packet16bf preduxp<Packet16bf>(const Packet16bf* p) {
   Packet16f t = Bf16ToF32(*p);
   return F32ToBf16(preduxp<Packet16f>(&t));
 }
 
-template<> EIGEN_STRONG_INLINE bfloat16 predux_min<Packet16b>(const Packet16b& from) {
+template<> EIGEN_STRONG_INLINE bfloat16 predux_min<Packet16bf>(const Packet16bf& from) {
   Packet16f from_float = Bf16ToF32(from);
   return bfloat16(predux_min(from_float));
 }
 
-template<> EIGEN_STRONG_INLINE bfloat16 predux_max<Packet16b>(const Packet16b& from) {
+template<> EIGEN_STRONG_INLINE bfloat16 predux_max<Packet16bf>(const Packet16bf& from) {
   Packet16f from_float = Bf16ToF32(from);
   return bfloat16(predux_max(from_float));
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b preverse(const Packet16b& a)
+template<> EIGEN_STRONG_INLINE Packet16bf preverse(const Packet16bf& a)
 {
   __m128i m = _mm_setr_epi8(14,15,12,13,10,11,8,9,6,7,4,5,2,3,0,1);
-  Packet16b res;
+  Packet16bf res;
   res.x = _mm256_insertf128_si256(
                     _mm256_castsi128_si256(_mm_shuffle_epi8(_mm256_extractf128_si256(a.x,1),m)),
                                            _mm_shuffle_epi8(_mm256_extractf128_si256(a.x,0),m), 1);
   return res;
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b pinsertfirst(const Packet16b& a, bfloat16 b)
+template<> EIGEN_STRONG_INLINE Packet16bf pinsertfirst(const Packet16bf& a, bfloat16 b)
 {
-  Packet16b res;
+  Packet16bf res;
   res.x = _mm256_insert_epi16(a.x,b.value,0);
   return res;
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b pinsertlast(const Packet16b& a, bfloat16 b)
+template<> EIGEN_STRONG_INLINE Packet16bf pinsertlast(const Packet16bf& a, bfloat16 b)
 {
-  Packet16b res;
+  Packet16bf res;
   res.x = _mm256_insert_epi16(a.x,b.value,15);
   return res;
 }
 
-template<> EIGEN_STRONG_INLINE Packet16b pgather<bfloat16, Packet16b>(const bfloat16* from, Index stride)
+template<> EIGEN_STRONG_INLINE Packet16bf pgather<bfloat16, Packet16bf>(const bfloat16* from, Index stride)
 {
-  Packet16b result;
+  Packet16bf result;
   result.x = _mm256_set_epi16(
       from[15*stride].value, from[14*stride].value, from[13*stride].value, from[12*stride].value,
       from[11*stride].value, from[10*stride].value, from[9*stride].value, from[8*stride].value,
@@ -1925,7 +1925,7 @@ template<> EIGEN_STRONG_INLINE Packet16b pgather<bfloat16, Packet16b>(const bflo
   return result;
 }
 
-template<> EIGEN_STRONG_INLINE void pscatter<bfloat16, Packet16b>(bfloat16* to, const Packet16b& from, Index stride)
+template<> EIGEN_STRONG_INLINE void pscatter<bfloat16, Packet16bf>(bfloat16* to, const Packet16bf& from, Index stride)
 {
   EIGEN_ALIGN64 bfloat16 aux[16];
   pstore(aux, from);
@@ -1948,7 +1948,7 @@ template<> EIGEN_STRONG_INLINE void pscatter<bfloat16, Packet16b>(bfloat16* to, 
 }
 
 EIGEN_STRONG_INLINE void
-ptranspose(PacketBlock<Packet16b,16>& kernel) {
+ptranspose(PacketBlock<Packet16bf,16>& kernel) {
   __m256i a = kernel.packet[0].x;
   __m256i b = kernel.packet[1].x;
   __m256i c = kernel.packet[2].x;
@@ -2056,7 +2056,7 @@ ptranspose(PacketBlock<Packet16b,16>& kernel) {
 }
 
 EIGEN_STRONG_INLINE void
-ptranspose(PacketBlock<Packet16b,8>& kernel) {
+ptranspose(PacketBlock<Packet16bf,8>& kernel) {
   EIGEN_ALIGN64 bfloat16 in[8][16];
   pstore<bfloat16>(in[0], kernel.packet[0]);
   pstore<bfloat16>(in[1], kernel.packet[1]);
@@ -2078,18 +2078,18 @@ ptranspose(PacketBlock<Packet16b,8>& kernel) {
     }
   }
 
-  kernel.packet[0] = pload<Packet16b>(out[0]);
-  kernel.packet[1] = pload<Packet16b>(out[1]);
-  kernel.packet[2] = pload<Packet16b>(out[2]);
-  kernel.packet[3] = pload<Packet16b>(out[3]);
-  kernel.packet[4] = pload<Packet16b>(out[4]);
-  kernel.packet[5] = pload<Packet16b>(out[5]);
-  kernel.packet[6] = pload<Packet16b>(out[6]);
-  kernel.packet[7] = pload<Packet16b>(out[7]);
+  kernel.packet[0] = pload<Packet16bf>(out[0]);
+  kernel.packet[1] = pload<Packet16bf>(out[1]);
+  kernel.packet[2] = pload<Packet16bf>(out[2]);
+  kernel.packet[3] = pload<Packet16bf>(out[3]);
+  kernel.packet[4] = pload<Packet16bf>(out[4]);
+  kernel.packet[5] = pload<Packet16bf>(out[5]);
+  kernel.packet[6] = pload<Packet16bf>(out[6]);
+  kernel.packet[7] = pload<Packet16bf>(out[7]);
 }
 
 EIGEN_STRONG_INLINE void
-ptranspose(PacketBlock<Packet16b,4>& kernel) {
+ptranspose(PacketBlock<Packet16bf,4>& kernel) {
   EIGEN_ALIGN64 bfloat16 in[4][16];
   pstore<bfloat16>(in[0], kernel.packet[0]);
   pstore<bfloat16>(in[1], kernel.packet[1]);
@@ -2113,10 +2113,10 @@ ptranspose(PacketBlock<Packet16b,4>& kernel) {
     }
   }
 
-  kernel.packet[0] = pload<Packet16b>(out[0]);
-  kernel.packet[1] = pload<Packet16b>(out[1]);
-  kernel.packet[2] = pload<Packet16b>(out[2]);
-  kernel.packet[3] = pload<Packet16b>(out[3]);
+  kernel.packet[0] = pload<Packet16bf>(out[0]);
+  kernel.packet[1] = pload<Packet16bf>(out[1]);
+  kernel.packet[2] = pload<Packet16bf>(out[2]);
+  kernel.packet[3] = pload<Packet16bf>(out[3]);
 }
 
 } // end namespace internal

@@ -47,20 +47,12 @@ struct bfloat16;
 
 namespace bfloat16_impl {
 
-#if !defined(EIGEN_HAS_GPU_BF16)
 // Make our own __bfloat16_raw definition.
 struct __bfloat16_raw {
   EIGEN_DEVICE_FUNC __bfloat16_raw() : value(0) {}
   explicit EIGEN_DEVICE_FUNC __bfloat16_raw(unsigned short raw) : value(raw) {}
   unsigned short value;
 };
-#elif defined(EIGEN_HAS_HIP_BF16)
-  // Nothing to do here
-#elif defined(EIGEN_HAS_CUDA_BF16)
-  // Nothing to do here
-#elif defined(SYCL_DEVICE_ONLY)
-  // Nothing to do here
-#endif
 
 EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC __bfloat16_raw raw_uint16_to_bfloat16(unsigned short value);
 EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC __bfloat16_raw float_to_bfloat16_rtne(float ff);
@@ -69,14 +61,6 @@ EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC float bfloat16_to_float(__bfloat16_raw h);
 struct bfloat16_base : public __bfloat16_raw {
   EIGEN_DEVICE_FUNC bfloat16_base() {}
   EIGEN_DEVICE_FUNC bfloat16_base(const __bfloat16_raw& h) : __bfloat16_raw(h) {}
-
-#if defined(EIGEN_HAS_GPU_BF16)
- #if defined(EIGEN_HAS_HIP_BF16)
-  // Nothing to do here
- #elif defined(EIGEN_HAS_CUDA_BF16)
-  // Nothing to do here
- #endif
-#endif
 };
 
 } // namespace bfloat16_impl
@@ -84,27 +68,11 @@ struct bfloat16_base : public __bfloat16_raw {
 // Class definition.
 struct bfloat16 : public bfloat16_impl::bfloat16_base {
 
-  // Writing this out as separate #if-else blocks to make the code easier to follow
-  // The same applies to most #if-else blocks in this file
-#if !defined(EIGEN_HAS_GPU_BF16)
   typedef bfloat16_impl::__bfloat16_raw __bfloat16_raw;
-#elif defined(EIGEN_HAS_HIP_BF16)
-  // Nothing to do here
-#elif defined(EIGEN_HAS_CUDA_BF16)
-  // Nothing to do here
-#endif
 
   EIGEN_DEVICE_FUNC bfloat16() {}
 
   EIGEN_DEVICE_FUNC bfloat16(const __bfloat16_raw& h) : bfloat16_impl::bfloat16_base(h) {}
-
-#if defined(EIGEN_HAS_GPU_BF16)
- #if defined(EIGEN_HAS_HIP_BF16)
-  // Nothing to do here
- #elif defined(EIGEN_HAS_CUDA_BF16)
-  // Nothing to do here
- #endif
-#endif
 
   explicit EIGEN_DEVICE_FUNC bfloat16(bool b)
       : bfloat16_impl::bfloat16_base(bfloat16_impl::raw_uint16_to_bfloat16(b ? 0x3f80 : 0)) {}

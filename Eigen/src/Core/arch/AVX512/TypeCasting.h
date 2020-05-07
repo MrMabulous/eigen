@@ -49,7 +49,7 @@ struct type_casting_traits<bfloat16, float> {
   };
 };
 
-template<> EIGEN_STRONG_INLINE Packet16f pcast<Packet16b, Packet16f>(const Packet16b& a) {
+template<> EIGEN_STRONG_INLINE Packet16f pcast<Packet16bf, Packet16f>(const Packet16bf& a) {
   return Bf16ToF32(a);
 }
 
@@ -62,7 +62,7 @@ struct type_casting_traits<float, bfloat16> {
   };
 };
 
-template<> EIGEN_STRONG_INLINE Packet16b pcast<Packet16f, Packet16b>(const Packet16f& a) {
+template<> EIGEN_STRONG_INLINE Packet16bf pcast<Packet16f, Packet16bf>(const Packet16f& a) {
   return F32ToBf16(a);
 }
 
