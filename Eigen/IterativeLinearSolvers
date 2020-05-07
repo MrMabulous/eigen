@@ -41,6 +41,7 @@
 #include "src/IterativeLinearSolvers/LeastSquareConjugateGradient.h"
 #include "src/IterativeLinearSolvers/BiCGSTAB.h"
 #include "src/IterativeLinearSolvers/IDRStab.h"
+#include "src/IterativeLinearSolvers/BiCGSTABL.h"
 #include "src/IterativeLinearSolvers/IncompleteLUT.h"
 #include "src/IterativeLinearSolvers/IncompleteCholesky.h"
 
