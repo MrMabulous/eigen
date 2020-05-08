@@ -41,25 +41,26 @@
 		3. Fokkema, Diederik R. Enhanced implementation of BiCGstab (l) for solving linear systems of equations. Universiteit Utrecht. Mathematisch Instituut, 1996
 */
 
-#ifndef BiCGSTABL_h
-#define BiCGSTABL_h
+#ifndef EIGEN_BICGSTABL_H
+#define EIGEN_BICGSTABL_H
 
 #include <algorithm>
 #include <eigen3/Eigen/QR>
 #include <eigen3/Eigen/LU>
 #include <eigen3/Eigen/Dense>
+#include <iostream>
 
 #define BICGSTABL_IN_LIBRARY 1 //1 is needed to have bicgstab(L) compile with Eigen, as part of the library for the unit tests. 0 to have it as a plugin for the test suite and in Plasimo.
 //TODO: Figure out a better fix.
 
-#define BICGSTABL_REL_UPDATE 1	//0=no reliable update strategy, 1=reliable update strategy
-#define BICGSTABL_ALGORITHM 0   //0: original, 1: Householder QR, 2: Convex polynomial method
-#define BICGSTABL_PRECOND 1 	//0: right, 1: left. 0 may be broken, 1 is checked against Fortrain implementation of Enhanced bicgstabl
+#define BICGSTABL_REL_UPDATE 1 //0=no reliable update strategy, 1=reliable update strategy
+#define BICGSTABL_ALGORITHM 0  //0: original, 1: Householder QR, 2: Convex polynomial method
+#define BICGSTABL_PRECOND 1	   //0: right, 1: left. 0 may be broken, 1 is checked against Fortrain implementation of Enhanced bicgstabl
 /*
         Technically it is possible to change these strategies at runtime, however this would also require the user (or some sort of automated criterion) to know why and when certain methods are best.
         Currently this is done via defines to eliminate any possible contamination between the methods.
 */
-#define BICGSTABL_DEBUG_INFO 0 	//Print info to console about the problem being solved.
+#define BICGSTABL_DEBUG_INFO 0 //Print info to console about the problem being solved.
 
 #if BICGSTABL_DEBUG_INFO
 #include <chrono>
@@ -70,17 +71,17 @@ namespace Eigen
 	namespace internal
 	{
 
-		template<typename MatrixType, typename Rhs, typename Dest, typename Preconditioner>
-		bool BiCGSTABL(const MatrixType& mat, const Rhs& rhs, Dest& x,
-			const Preconditioner& precond, Index& iters,
-			typename Dest::RealScalar& tol_error, Index L)
+		template <typename MatrixType, typename Rhs, typename Dest, typename Preconditioner>
+		bool BiCGSTABL(const MatrixType &mat, const Rhs &rhs, Dest &x,
+					   const Preconditioner &precond, Index &iters,
+					   typename Dest::RealScalar &tol_error, Index L)
 		{
-			#if BICGSTABL_DEBUG_INFO
+#if BICGSTABL_DEBUG_INFO
 			std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 			std::cout << "Matrix size: " << mat.rows() << std::endl;
-			#endif
-			using std::sqrt;
+#endif
 			using std::abs;
+			using std::sqrt;
 			typedef typename Dest::RealScalar RealScalar;
 			typedef typename Dest::Scalar Scalar;
 			Index N = rhs.size();
@@ -94,12 +95,12 @@ namespace Eigen
 			typedef Matrix<Scalar, Dynamic, 1> VectorType;
 			typedef Matrix<Scalar, Dynamic, Dynamic, ColMajor> DenseMatrixType;
 
-			//We start with an initial guess x_0 and let us set r_0 as (residual calculated from x_0)
-			#if BICGSTABL_PRECOND==0
-			VectorType r0  = rhs - precond.solve(mat * x); //r_0
-			#elif BICGSTABL_PRECOND==1
-			VectorType r0  = precond.solve(rhs - mat * x); //r_0
-			#endif
+//We start with an initial guess x_0 and let us set r_0 as (residual calculated from x_0)
+#if BICGSTABL_PRECOND == 0
+			VectorType r0 = rhs - precond.solve(mat * x); //r_0
+#elif BICGSTABL_PRECOND == 1
+			VectorType r0 = precond.solve(rhs - mat * x); //r_0
+#endif
 
 			//rShadow is arbritary, but must not be orthogonal to r0.
 			VectorType rShadow = r0;
@@ -142,7 +143,7 @@ namespace Eigen
 			//Bool to signal that a new rShadow was chosen and the main loop should be restarted.
 			//bool reset = false;
 
-			while ( zeta > tol * zeta0 && k < maxIters )
+			while (zeta > tol * zeta0 && k < maxIters)
 			{
 				rho0 = -omega * rho0;
 
@@ -198,11 +199,11 @@ namespace Eigen
 						uHat.col(i) = rHat.col(i) - beta * uHat.col(i);
 					}
 
-					#if BICGSTABL_PRECOND==0
+#if BICGSTABL_PRECOND == 0
 					uHat.col(j + 1) = mat * precond.solve(uHat.col(j));
-					#elif BICGSTABL_PRECOND==1
+#elif BICGSTABL_PRECOND == 1
 					uHat.col(j + 1) = precond.solve(mat * uHat.col(j));
-					#endif
+#endif
 					alpha = rho1 / (rShadow.dot(uHat.col(j + 1)));
 
 					//Update residuals
@@ -211,11 +212,11 @@ namespace Eigen
 						rHat.col(i) = rHat.col(i) - alpha * uHat.col(i + 1);
 					}
 
-					#if BICGSTABL_PRECOND==0
-					rHat.col(j + 1) =  mat * precond.solve(rHat.col(j));
-					#elif BICGSTABL_PRECOND==1
-					rHat.col(j + 1) =  precond.solve(mat * rHat.col(j));
-					#endif
+#if BICGSTABL_PRECOND == 0
+					rHat.col(j + 1) = mat * precond.solve(rHat.col(j));
+#elif BICGSTABL_PRECOND == 1
+					rHat.col(j + 1) = precond.solve(mat * rHat.col(j));
+#endif
 
 					//Complete BiCG iteration by updating x
 					x = x + alpha * uHat.col(0);
@@ -235,7 +236,7 @@ namespace Eigen
 					}
 				}
 
-				#if BICGSTABL_ALGORITHM==0
+#if BICGSTABL_ALGORITHM == 0
 
 				if (bicg_convergence == false)
 				{
@@ -260,7 +261,6 @@ namespace Eigen
 
 						sigma(j) = rHat.col(j).squaredNorm();
 						gammaP(j) = (rHat.col(j).dot(rHat.col(0))) / sigma(j);
-
 					}
 
 					gamma(L) = gammaP(L);
@@ -279,7 +279,6 @@ namespace Eigen
 
 						gamma(j) = gammaP(j) - sum;
 					}
-
 
 					//TODO: See if this can be done without nested loops and explicit sum
 					for (Index j = 1; j <= L - 1; ++j)
@@ -301,10 +300,9 @@ namespace Eigen
 					x += rHat.block(0, 1, N, L - 1) * gammaPP.segment(1, L - 1);
 					uHat.col(0) -= uHat.block(0, 1, N, L - 1) * gamma.segment(1, L - 1);
 					rHat.col(0) -= rHat.block(0, 1, N, L - 1) * gammaP.segment(1, L - 1);
-
 				}
 
-				#elif BICGSTABL_ALGORITHM==1
+#elif BICGSTABL_ALGORITHM == 1
 
 				if (bicg_convergence == false) //(L == 1)
 				{
@@ -347,7 +345,7 @@ namespace Eigen
 					omega = gamma(L - 1);
 				}
 
-				#elif BICGSTABL_ALGORITHM==2
+#elif BICGSTABL_ALGORITHM == 2
 
 				if (L != 1 && bicg_convergence == false) //else
 				{
@@ -366,15 +364,13 @@ namespace Eigen
 						for (Index j = 0; j <= i; ++j)
 						{
 							Z(i, j) = rHat.col(i).dot(rHat.col(j));
-
 						}
-
 					}
 
 					// //Z is Hermitian, therefore only one half has to be computed, the other half can be filled in, saving several DOTs.
 					Z = (Z.template selfadjointView<Eigen::Lower>());
 					DenseMatrixType Z0 = Z.block(1, 1, L - 1,
-							L - 1); //Copy to ensure there is no in place decomposition taking place
+												 L - 1); //Copy to ensure there is no in place decomposition taking place
 					//Z = (rHat.block(0, 1, N, L)).transpose() * rHat.block(0, 1, N, L);
 					//Z = rHat.adjoint() * rHat;
 					//TODO: strictly upper/lower doesnt work, so this is performing some unneeded work.
@@ -415,23 +411,26 @@ namespace Eigen
 					//if (bicg_convergence && zeta - zeta != 0)
 					if (zeta - zeta != 0)
 					{
-						/*
+/*
 							Convergence was achieved during BiCG step, this leads to extremely small values of rHat, and Z.
 							As a result the polynomial step can break down, however x is likely to still be usable.
 						*/
-						#if BICGSTABL_DEBUG_INFO
+#if BICGSTABL_DEBUG_INFO
 						std::cout << "zeta breakdown" << std::endl;
 						//std::cout << "rHat: \n" << rHat << std::endl;
 						//std::cout << "x: \n" << x << std::endl;
 						//std::cout << "uHat: \n" << uHat << std::endl;
-						std::cout << "y0: \n" << y0 << std::endl;
-						std::cout << "yL: \n" << yL << std::endl;
-						std::cout << "Z: \n" << Z << std::endl;
-						std::cout << "zeta: \n" << zeta << std::endl;
-						#endif
+						std::cout << "y0: \n"
+								  << y0 << std::endl;
+						std::cout << "yL: \n"
+								  << yL << std::endl;
+						std::cout << "Z: \n"
+								  << Z << std::endl;
+						std::cout << "zeta: \n"
+								  << zeta << std::endl;
+#endif
 						zeta = rHat.col(0).norm();
 						break;
-
 					}
 					else
 					{
@@ -441,13 +440,9 @@ namespace Eigen
 						x += rHat.block(0, 0, N, L) * y0.block(1, 0, L, 1);
 						rHat.col(0) -= rHat.block(0, 1, N, L) * y0.block(1, 0, L, 1);
 					}
-
-
-
 				}
 
-				#endif
-
+#endif
 
 				//TODO: Duplicate update code can be removed for the L=1 and L!=1 case.
 				//TODO: Use analytical expression instead of householder for L=1.
@@ -463,7 +458,7 @@ namespace Eigen
 					Furthermore a "group wise update" strategy is used to combine updates, which improves accuracy.
 				*/
 
-				#if BICGSTABL_REL_UPDATE
+#if BICGSTABL_REL_UPDATE
 				Mx = std::max(Mx, zeta); //Maximum norm of residuals since last update of x.
 				Mr = std::max(Mr, zeta); //Maximum norm of residuals since last computation of the true residual.
 
@@ -486,15 +481,15 @@ namespace Eigen
 
 				if (compute_res)
 				{
-					#if BICGSTABL_PRECOND==0
+#if BICGSTABL_PRECOND == 0
 					rHat.col(0) = b_prime - precond.solve(mat * x);
-					#elif BICGSTABL_PRECOND==1
+#elif BICGSTABL_PRECOND == 1
 					//rHat.col(0) = b_prime - mat * x; //Fokkema paper pseudocode
 					//Fokkema paper Fortan code L250-254
 					rHat.col(0) = mat * x;
 					rHat.col(0) = precond.solve(rHat.col(0));
 					rHat.col(0) = b_prime - rHat.col(0);
-					#endif
+#endif
 
 					zeta = rHat.col(0).norm();
 					Mr = zeta;
@@ -509,80 +504,77 @@ namespace Eigen
 					}
 				}
 
-
 				compute_res = false;
 				update_app = false;
-				#endif
-				#if BICGSTABL_DEBUG_INFO
-				std::cout << "k: " << k << "res:" << zeta / zeta0 <<
-					std::endl;
-				#endif
+#endif
+#if BICGSTABL_DEBUG_INFO
+				std::cout << "k: " << k << "res:" << zeta / zeta0 << std::endl;
+#endif
 			}
 
 			//Convert internal variable to the true solution vector x
 			x = x_prime + x;
-			#if BICGSTABL_PRECOND==0
+#if BICGSTABL_PRECOND == 0
 			x = precond.solve(x);
-			#endif
+#endif
 			tol_error = zeta / zeta0;
 			//tol_error = zeta;
 			//tol_error = sqrt(rHat.col(0).squaredNorm() / rhs_sqnorm);
 			//tol_error = (mat * x - rhs).norm() / rhs.norm();
 			iters = k;
 
-			#if BICGSTABL_DEBUG_INFO
+#if BICGSTABL_DEBUG_INFO
 			//Print experimental info
 			std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-			std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>
-				(t2 - t1);
+			std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
 			std::cout << "Solver time: " << time_span.count() << " seconds" << std::endl;
 			std::cout << "#iterations:     " << k << std::endl;
 			std::cout << "Estimated error: " << tol_error << std::endl;
 			std::cout << "True error:      " << (mat * x - rhs).norm() / rhs.norm();
-			#endif
+#endif
 			return true;
 		}
 
-	}
+	} // namespace internal
 
-	template< typename _MatrixType,
-		typename _Preconditioner = DiagonalPreconditioner<typename _MatrixType::Scalar> >
+	template < typename _MatrixType,
+			   typename _Preconditioner = DiagonalPreconditioner<typename _MatrixType::Scalar> >
 	class BiCGSTABL;
 
 	namespace internal
 	{
 
-		template< typename _MatrixType, typename _Preconditioner>
-		struct traits<BiCGSTABL<_MatrixType, _Preconditioner> >
+		template <typename _MatrixType, typename _Preconditioner>
+		struct traits<Eigen::BiCGSTABL<_MatrixType,_Preconditioner> >
 		{
 			typedef _MatrixType MatrixType;
 			typedef _Preconditioner Preconditioner;
 		};
 
-	}
+	} // namespace internal
 
-	template< typename _MatrixType, typename _Preconditioner>
+	template <typename _MatrixType, typename _Preconditioner>
 	class BiCGSTABL : public IterativeSolverBase<BiCGSTABL<_MatrixType, _Preconditioner> >
 	{
-			typedef IterativeSolverBase<BiCGSTABL> Base;
-			using Base::matrix;
-			using Base::m_error;
-			using Base::m_iterations;
-			using Base::m_info;
-			using Base::m_isInitialized;
-			Index m_L = 2;
-		public:
-			typedef _MatrixType MatrixType;
-			typedef typename MatrixType::Scalar Scalar;
-			typedef typename MatrixType::RealScalar RealScalar;
-			typedef _Preconditioner Preconditioner;
+		typedef IterativeSolverBase<BiCGSTABL> Base;
+		using Base::m_error;
+		using Base::m_info;
+		using Base::m_isInitialized;
+		using Base::m_iterations;
+		using Base::matrix;
+		Index m_L = 2;
 
-		public:
+	public:
+		typedef _MatrixType MatrixType;
+		typedef typename MatrixType::Scalar Scalar;
+		typedef typename MatrixType::RealScalar RealScalar;
+		typedef _Preconditioner Preconditioner;
 
-			/** Default constructor. */
-			BiCGSTABL() : Base() {}
+	public:
+		/** Default constructor. */
+		BiCGSTABL() : Base() {}
 
-			/**     Initialize the solver with matrix \a A for further \c Ax=b solving.
+		/**     Initialize the solver with matrix \a A for further \c Ax=b solving.
 
 			        This constructor is a shortcut for the default constructor followed
 			        by a call to compute().
@@ -592,93 +584,91 @@ namespace Eigen
 			        this class becomes invalid. Call compute() to update it with the new
 			        matrix A, or modify a copy of A.
 			*/
-			template<typename MatrixDerived>
-			explicit BiCGSTABL(const EigenBase<MatrixDerived>& A) : Base(A.derived()) {}
+		template <typename MatrixDerived>
+		explicit BiCGSTABL(const EigenBase<MatrixDerived> &A) : Base(A.derived()) {}
 
-			~BiCGSTABL() {}
+		~BiCGSTABL() {}
 
-			/** \internal */
-			/**     Loops over the number of columns of b and does the following:
+/** \internal */
+/**     Loops over the number of columns of b and does the following:
 			        1. sets the tolerence and maxIterations
 			        2. Calls the function that has the core solver routine
 			*/
-			#if BICGSTABL_IN_LIBRARY==0
-			template<typename Rhs, typename Dest>
-			void _solve_with_guess_impl(const Rhs& b, Dest& x) const
+#if BICGSTABL_IN_LIBRARY == 0
+		template <typename Rhs, typename Dest>
+		void _solve_with_guess_impl(const Rhs &b, Dest &x) const
+		{
+			_solve_vector_with_guess_impl(b, x);
+		}
+#endif
+
+		template <typename Rhs, typename Dest>
+		void _solve_vector_with_guess_impl(const Rhs &b, Dest &x) const
+		{
+			m_iterations = Base::maxIterations();
+			m_error = Base::m_tolerance;
+
+			bool ret = internal::BiCGSTABL(matrix(), b, x, Base::m_preconditioner, m_iterations, m_error,
+										   m_L);
+#if BICGSTABL_DEBUG_INFO
+			std::cout << "ret: " << ret << std::endl;
+			std::cout << "m_error: " << m_error << std::endl;
+			std::cout << "Base::m_tolerance: " << Base::m_tolerance << std::endl;
+#endif
+
+			if (ret == false)
 			{
-				_solve_vector_with_guess_impl(b, x);
+				m_info = NumericalIssue;
+				x.setZero(); //x=nan does not pass Eigen's tests even if m_info=NumericalIssue :)
+				m_error = ((std::isfinite)(m_error) ? m_error : 1.0);
 			}
-			#endif
-
-			template<typename Rhs, typename Dest>
-			void _solve_vector_with_guess_impl(const Rhs& b, Dest& x) const
+			else
 			{
-				m_iterations = Base::maxIterations();
-				m_error = Base::m_tolerance;
-
-				bool ret = internal::BiCGSTABL(matrix(), b, x, Base::m_preconditioner, m_iterations, m_error,
-						m_L);
-				#if BICGSTABL_DEBUG_INFO
-				std::cout << "ret: " << ret << std::endl;
-				std::cout << "m_error: " << m_error << std::endl;
-				std::cout << "Base::m_tolerance: " << Base::m_tolerance << std::endl;
-				#endif
-
-				if (ret == false)
-				{
-					m_info = NumericalIssue;
-					x.setZero(); //x=nan does not pass Eigen's tests even if m_info=NumericalIssue :)
-					m_error = ((std::isfinite)(m_error) ? m_error : 1.0);
-				}
-				else
-				{
-					m_info = (m_error <= Base::m_tolerance) ? Success
-						: NoConvergence;
-				}
-
-				// m_info = (!ret) ? NumericalIssue
-				// 	: m_error <= Base::m_tolerance ? Success
-				// 	: NoConvergence;
-				//m_info=NumericalIssue;
-				#if BICGSTABL_DEBUG_INFO
-				std::cout << "m_error_returned: " << m_error << std::endl;
-				std::cout << "m_info: " << m_info << std::endl;
-				#endif
-				// m_info = (!ret) ? NumericalIssue
-				// 	: m_error <= Base::m_tolerance ? Success
-				// 	: NoConvergence;
-				m_isInitialized = true;
+				m_info = (m_error <= Base::m_tolerance) ? Success
+														: NoConvergence;
 			}
 
-			/** \internal */
-			/** Resizes the x vector to match the dimenstion of b and sets the elements to zero*/
-			#if BICGSTABL_IN_LIBRARY==0
-			using Base::_solve_impl;
-			template<typename Rhs, typename Dest>
-			void _solve_impl(const MatrixBase<Rhs>& b, Dest& x) const
+// m_info = (!ret) ? NumericalIssue
+// 	: m_error <= Base::m_tolerance ? Success
+// 	: NoConvergence;
+//m_info=NumericalIssue;
+#if BICGSTABL_DEBUG_INFO
+			std::cout << "m_error_returned: " << m_error << std::endl;
+			std::cout << "m_info: " << m_info << std::endl;
+#endif
+			// m_info = (!ret) ? NumericalIssue
+			// 	: m_error <= Base::m_tolerance ? Success
+			// 	: NoConvergence;
+			m_isInitialized = true;
+		}
+
+/** \internal */
+/** Resizes the x vector to match the dimenstion of b and sets the elements to zero*/
+#if BICGSTABL_IN_LIBRARY == 0
+		using Base::_solve_impl;
+		template <typename Rhs, typename Dest>
+		void _solve_impl(const MatrixBase<Rhs> &b, Dest &x) const
+		{
+
+			x.resize(this->rows(), b.cols());
+			x.setZero();
+
+			_solve_with_guess_impl(b, x);
+		}
+#endif
+		void setL(Index L)
+		{
+			if (L < 1)
 			{
-
-				x.resize(this->rows(), b.cols());
-				x.setZero();
-
-				_solve_with_guess_impl(b, x);
-			}
-			#endif
-			void setL(Index L)
-			{
-				if (L < 1)
-				{
-					L = 2;
-				}
-
-				m_L = L;
+				L = 2;
 			}
 
-		protected:
+			m_L = L;
+		}
 
+	protected:
 	};
 
-}
+} // namespace Eigen
 
-#endif /* BiCGSTABL_h */
-
+#endif /* EIGEN_BICGSTABL_H */

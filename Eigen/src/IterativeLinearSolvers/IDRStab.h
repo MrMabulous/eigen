@@ -197,7 +197,7 @@ namespace Eigen
 						VectorType v = U.block(0, i, N, 1);
 
 						//"How much do v and w have in common?"
-						h_FOM(i, q - 1) = v.adjoint() * w;
+						h_FOM(i, q - 1) = v.dot(w);
 
 						//"Subtract the part they have in common"
 						w = w - h_FOM(i, q - 1) * v;
@@ -328,7 +328,7 @@ namespace Eigen
 			//Pre-allocate sigma, this space will be recycled without additional allocations.
 			DenseMatrixTypeCol sigma(S, S);
 
-			int rt_counter = k;				//Iteration at which R_T was reset last
+			Index rt_counter = k;				//Iteration at which R_T was reset last
 			bool reset_while = false;			//Should the while loop be reset for some reason?
 
 			#if IDRSTAB_ACCURATE
