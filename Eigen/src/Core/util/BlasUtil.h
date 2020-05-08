@@ -258,6 +258,13 @@ public:
     return internal::first_default_aligned(m_data, size);
   }
 
+  template<typename SubPacket>
+  EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE void storePacketBlock(Index i, Index j, const PacketBlock<SubPacket, 4> &block) const {
+    pstore<Scalar>(&operator()(i, j + 0), block.packet[0]);
+    pstore<Scalar>(&operator()(i, j + 1), block.packet[1]);
+    pstore<Scalar>(&operator()(i, j + 2), block.packet[2]);
+    pstore<Scalar>(&operator()(i, j + 3), block.packet[3]);
+  }
 protected:
   Scalar* EIGEN_RESTRICT m_data;
   const Index m_stride;
