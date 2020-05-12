@@ -195,6 +195,36 @@ protected:
 template<typename Scalar, typename Index, int StorageOrder, int AlignmentType = Unaligned, int Incr = 1>
 class blas_data_mapper;
 
+template<typename Index, typename Scalar, typename Packet, int n, int idx, int StorageOrder>
+class PacketBlockManagement
+{
+  PacketBlockManagement<Index, Scalar, Packet, n, idx - 1, StorageOrder> pbm;
+public:
+  EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE void store(Scalar *to, const Index stride, Index i, Index j, const PacketBlock<Packet, n> &block) const {
+    pbm.store(to, stride, i, j, block);
+    pstore<Scalar>(to + i + (j + idx)*stride, block.packet[idx]);
+  }
+};
+
+template<typename Index, typename Scalar, typename Packet, int n, int idx>
+class PacketBlockManagement<Index, Scalar, Packet, n, idx, RowMajor>
+{
+  PacketBlockManagement<Index, Scalar, Packet, n, idx - 1, RowMajor> pbm;
+public:
+  EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE void store(Scalar *to, const Index stride, Index i, Index j, const PacketBlock<Packet, n> &block) const {
+    pbm.store(to, stride, i, j, block);
+    pstore<Scalar>(to + (j + idx) + i*stride, block.packet[idx]);
+  }
+};
+
+template<typename Index, typename Scalar, typename Packet, int n, int StorageOrder>
+class PacketBlockManagement<Index, Scalar, Packet, n, -1, StorageOrder>
+{
+public:
+  EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE void store(Scalar *to, const Index stride, Index i, Index j, const PacketBlock<Packet, n> &block) const {
+  }
+};
+
 template<typename Scalar, typename Index, int StorageOrder, int AlignmentType>
 class blas_data_mapper<Scalar,Index,StorageOrder,AlignmentType,1>
 {
@@ -258,12 +288,10 @@ public:
     return internal::first_default_aligned(m_data, size);
   }
 
-  template<typename SubPacket>
-  EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE void storePacketBlock(Index i, Index j, const PacketBlock<SubPacket, 4> &block) const {
-    pstore<Scalar>(&operator()(i, j + 0), block.packet[0]);
-    pstore<Scalar>(&operator()(i, j + 1), block.packet[1]);
-    pstore<Scalar>(&operator()(i, j + 2), block.packet[2]);
-    pstore<Scalar>(&operator()(i, j + 3), block.packet[3]);
+  template<typename SubPacket, int n>
+  EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE void storePacketBlock(Index i, Index j, const PacketBlock<SubPacket, n> &block) const {
+    PacketBlockManagement<Index, Scalar, SubPacket, n, n, StorageOrder> pbm;
+    pbm.store(m_data, m_stride, i, j, block);
   }
 protected:
   Scalar* EIGEN_RESTRICT m_data;

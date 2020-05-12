@@ -150,7 +150,7 @@ EIGEN_STRONG_INLINE void storeAccumulator(Index i, Index j, const DataMapper& da
   block.packet[2] = result.sf.v1;
   block.packet[3] = result.sf.v0;
 
-  data.template storePacketBlock<Packet4f>(i, j, block);
+  data.template storePacketBlock<Packet4f, 4>(i, j, block);
 }
 
 template<typename RhsScalar, typename Index, typename DataMapper, int mr, int nr, bool ConjugateLhs, bool ConjugateRhs>
