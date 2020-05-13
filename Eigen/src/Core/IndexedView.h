@@ -199,6 +199,7 @@ struct unary_evaluator<IndexedView<ArgType, RowIndices, ColIndices>, IndexBased>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
   Scalar& coeffRef(Index index)
   {
+    EIGEN_STATIC_ASSERT_LVALUE(XprType)
     Index row = XprType::RowsAtCompileTime == 1 ? 0 : index;
     Index col = XprType::RowsAtCompileTime == 1 ? index : 0;
     return m_argImpl.coeffRef( m_xpr.rowIndices()[row], m_xpr.colIndices()[col]);
