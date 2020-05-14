@@ -140,13 +140,13 @@ public:
   difference_type operator-(const indexed_based_stl_reverse_iterator_base& other) const
   {
     eigen_assert(mp_xpr == other.mp_xpr);
-    return m_index - other.m_index;
+    return other.m_index - m_index;
   }
 
   difference_type operator-(const other_iterator& other) const
   {
     eigen_assert(mp_xpr == other.mp_xpr);
-    return m_index - other.m_index;
+    return other.m_index - m_index;
   }
 
   bool operator==(const indexed_based_stl_reverse_iterator_base& other) const { eigen_assert(mp_xpr == other.mp_xpr); return m_index == other.m_index; }
