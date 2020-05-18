@@ -10,14 +10,109 @@
 
 #include "packetmath_test_shared.h"
 
-#define REF_ADD(a,b) ((a)+(b))
-#define REF_SUB(a,b) ((a)-(b))
-#define REF_MUL(a,b) ((a)*(b))
-#define REF_DIV(a,b) ((a)/(b))
+template <typename T>
+inline T REF_ADD(const T& a, const T& b) { return a + b;}
+template <typename T>
+inline T REF_SUB(const T& a, const T& b) { return a - b;}
+template <typename T>
+inline T REF_MUL(const T& a, const T& b) { return a * b;}
+template <typename T>
+inline T REF_DIV(const T& a, const T& b) { return a / b;}
+template <typename T>
+inline T REF_ABS_DIFF(const T& a, const T& b) { return a>b ? a - b : b-a;}
+
+// Specializations for bool
+template <>
+inline bool REF_ADD(const bool& a, const bool& b) { return a || b;}
+template <>
+inline bool REF_SUB(const bool& a, const bool& b) { return a ^ b;}
+template <>
+inline bool REF_MUL(const bool& a, const bool& b) { return a && b;}
+
+
+template<typename FromScalar, typename FromPacket, typename ToScalar, typename ToPacket, bool CanCast = false>
+struct test_cast_helper;
+
+template<typename FromScalar, typename FromPacket, typename ToScalar, typename ToPacket>
+struct test_cast_helper<FromScalar, FromPacket, ToScalar, ToPacket, false> {
+  static void run() {}
+};
+
+template<typename FromScalar, typename FromPacket, typename ToScalar, typename ToPacket>
+struct test_cast_helper<FromScalar, FromPacket, ToScalar, ToPacket, true> {
+  static void run() {
+    static const int PacketSize = internal::unpacket_traits<FromPacket>::size;
+    EIGEN_ALIGN_MAX FromScalar data1[PacketSize];
+    EIGEN_ALIGN_MAX ToScalar data2[PacketSize];
+    EIGEN_ALIGN_MAX ToScalar ref[PacketSize];
+
+    // Construct a packet of scalars that will not overflow when casting
+    for (int i=0; i<PacketSize; ++i) {
+      const FromScalar from_scalar = Array<FromScalar,1,1>::Random().value();
+      const ToScalar to_scalar = Array<ToScalar,1,1>::Random().value();
+      const FromScalar c = sizeof(ToScalar) > sizeof(FromScalar) ? static_cast<FromScalar>(to_scalar) : from_scalar;
+      data1[i] = (NumTraits<FromScalar>::IsSigned && !NumTraits<ToScalar>::IsSigned) ? numext::abs(c) : c;
+    }
+
+    for (int i=0; i<PacketSize; ++i)
+      ref[i] = static_cast<const ToScalar>(data1[i]);
+    internal::pstore(data2, internal::pcast<FromPacket, ToPacket>(internal::pload<FromPacket>(data1)));
+
+    VERIFY(test::areApprox(ref, data2, PacketSize) && "internal::pcast<>");
+  }
+};
+
+template<typename FromPacket, typename ToScalar>
+void test_cast() {
+  typedef typename internal::unpacket_traits<FromPacket>::type FromScalar;
+  typedef typename internal::packet_traits<FromScalar> FromPacketTraits;
+  typedef typename internal::packet_traits<ToScalar>::type Full;
+  typedef typename internal::unpacket_traits<Full>::half Half;
+  typedef typename internal::unpacket_traits<typename internal::unpacket_traits<Full>::half>::half Quarter;
+
+  static const int PacketSize = internal::unpacket_traits<FromPacket>::size;
+  static const bool CanCast =
+      FromPacketTraits::HasCast &&
+      (PacketSize == internal::unpacket_traits<Full>::size ||
+      PacketSize == internal::unpacket_traits<Half>::size ||
+      PacketSize == internal::unpacket_traits<Quarter>::size);
+
+  typedef typename internal::conditional<internal::unpacket_traits<Quarter>::size == PacketSize, Quarter,
+      typename internal::conditional<internal::unpacket_traits<Half>::size == PacketSize, Half, Full>::type>::type
+      ToPacket;
+
+  test_cast_helper<FromScalar, FromPacket, ToScalar, ToPacket, CanCast>::run();
+}
+
+template<typename Scalar,typename Packet>
+void packetmath_boolean_mask_ops()
+{
+  const int PacketSize = internal::unpacket_traits<Packet>::size;
+  const int size = 2*PacketSize;
+  EIGEN_ALIGN_MAX Scalar data1[size];
+  EIGEN_ALIGN_MAX Scalar data2[size];
+  EIGEN_ALIGN_MAX Scalar ref[size];
+
+  for (int i=0; i<size; ++i)
+  {
+    data1[i] = internal::random<Scalar>();
+  }
+  CHECK_CWISE1(internal::ptrue, internal::ptrue);
+  CHECK_CWISE2_IF(true, internal::pandnot, internal::pandnot);
+  for (int i = 0; i < PacketSize; ++i) {
+    data1[i] = Scalar(i);
+    data1[i + PacketSize] = internal::random<bool>() ? data1[i] : Scalar(0);
+  }
+  CHECK_CWISE2_IF(true, internal::pcmp_eq, internal::pcmp_eq);
+}
+
+template<>
+void packetmath_boolean_mask_ops<bool, internal::Packet16b>()
+{
+}
 
 template<typename Scalar,typename Packet> void packetmath()
 {
-  using std::abs;
   typedef internal::packet_traits<Scalar> PacketTraits;
   const int PacketSize = internal::unpacket_traits<Packet>::size;
   typedef typename NumTraits<Scalar>::Real RealScalar;
@@ -32,14 +127,13 @@ template<typename Scalar,typename Packet> void packetmath()
   EIGEN_ALIGN_MAX Scalar data1[size];
   EIGEN_ALIGN_MAX Scalar data2[size];
   EIGEN_ALIGN_MAX Scalar data3[size];
-  EIGEN_ALIGN_MAX Packet packets[PacketSize*2];
   EIGEN_ALIGN_MAX Scalar ref[size];
   RealScalar refvalue = RealScalar(0);
   for (int i=0; i<size; ++i)
   {
     data1[i] = internal::random<Scalar>()/RealScalar(PacketSize);
     data2[i] = internal::random<Scalar>()/RealScalar(PacketSize);
-    refvalue = (std::max)(refvalue,abs(data1[i]));
+    refvalue = (std::max)(refvalue, numext::abs(data1[i]));
   }
 
   internal::pstore(data2, internal::pload<Packet>(data1));
@@ -92,54 +186,17 @@ template<typename Scalar,typename Packet> void packetmath()
     }
   }
 
-  for (int offset=0; offset<PacketSize; ++offset)
-  {
-    #define MIN(A,B) (A<B?A:B)
-    packets[0] = internal::pload<Packet>(data1);
-    packets[1] = internal::pload<Packet>(data1+PacketSize);
-         if (offset==0) internal::palign<0>(packets[0], packets[1]);
-    else if (offset==1) internal::palign<MIN(1,PacketSize-1)>(packets[0], packets[1]);
-    else if (offset==2) internal::palign<MIN(2,PacketSize-1)>(packets[0], packets[1]);
-    else if (offset==3) internal::palign<MIN(3,PacketSize-1)>(packets[0], packets[1]);
-    else if (offset==4) internal::palign<MIN(4,PacketSize-1)>(packets[0], packets[1]);
-    else if (offset==5) internal::palign<MIN(5,PacketSize-1)>(packets[0], packets[1]);
-    else if (offset==6) internal::palign<MIN(6,PacketSize-1)>(packets[0], packets[1]);
-    else if (offset==7) internal::palign<MIN(7,PacketSize-1)>(packets[0], packets[1]);
-    else if (offset==8) internal::palign<MIN(8,PacketSize-1)>(packets[0], packets[1]);
-    else if (offset==9) internal::palign<MIN(9,PacketSize-1)>(packets[0], packets[1]);
-    else if (offset==10) internal::palign<MIN(10,PacketSize-1)>(packets[0], packets[1]);
-    else if (offset==11) internal::palign<MIN(11,PacketSize-1)>(packets[0], packets[1]);
-    else if (offset==12) internal::palign<MIN(12,PacketSize-1)>(packets[0], packets[1]);
-    else if (offset==13) internal::palign<MIN(13,PacketSize-1)>(packets[0], packets[1]);
-    else if (offset==14) internal::palign<MIN(14,PacketSize-1)>(packets[0], packets[1]);
-    else if (offset==15) internal::palign<MIN(15,PacketSize-1)>(packets[0], packets[1]);
-    internal::pstore(data2, packets[0]);
-
-    for (int i=0; i<PacketSize; ++i)
-      ref[i] = data1[i+offset];
-
-    // palign is not used anymore, so let's just put a warning if it fails
-    ++g_test_level;
-    VERIFY(test::areApprox(ref, data2, PacketSize) && "internal::palign");
-    --g_test_level;
-  }
-
   VERIFY((!PacketTraits::Vectorizable) || PacketTraits::HasAdd);
   VERIFY((!PacketTraits::Vectorizable) || PacketTraits::HasSub);
   VERIFY((!PacketTraits::Vectorizable) || PacketTraits::HasMul);
-  VERIFY((!PacketTraits::Vectorizable) || PacketTraits::HasNegate);
-  // Disabled as it is not clear why it would be mandatory to support division.
-  //VERIFY((internal::is_same<Scalar,int>::value) || (!PacketTraits::Vectorizable) || PacketTraits::HasDiv);
 
   CHECK_CWISE2_IF(PacketTraits::HasAdd, REF_ADD,  internal::padd);
   CHECK_CWISE2_IF(PacketTraits::HasSub, REF_SUB,  internal::psub);
   CHECK_CWISE2_IF(PacketTraits::HasMul, REF_MUL,  internal::pmul);
   CHECK_CWISE2_IF(PacketTraits::HasDiv, REF_DIV, internal::pdiv);
 
-  CHECK_CWISE1(internal::pnot, internal::pnot);
-  CHECK_CWISE1(internal::pzero, internal::pzero);
-  CHECK_CWISE1(internal::ptrue, internal::ptrue);
-  CHECK_CWISE1(internal::negate, internal::pnegate);
+  if (PacketTraits::HasNegate)
+    CHECK_CWISE1(internal::negate, internal::pnegate);
   CHECK_CWISE1(numext::conj, internal::pconj);
 
   for(int offset=0;offset<3;++offset)
@@ -216,21 +273,8 @@ template<typename Scalar,typename Packet> void packetmath()
 
   ref[0] = Scalar(1);
   for (int i=0; i<PacketSize; ++i)
-    ref[0] *= data1[i];
+    ref[0] = REF_MUL(ref[0], data1[i]);
   VERIFY(internal::isApprox(ref[0], internal::predux_mul(internal::pload<Packet>(data1))) && "internal::predux_mul");
-
-  if (PacketTraits::HasReduxp)
-  {
-    for (int j=0; j<PacketSize; ++j)
-    {
-      ref[j] = Scalar(0);
-      for (int i=0; i<PacketSize; ++i)
-        ref[j] += data1[i+j*PacketSize];
-      packets[j] = internal::pload<Packet>(data1+j*PacketSize);
-    }
-    internal::pstore(data2, internal::preduxp(packets));
-    VERIFY(test::areApproxAbs(ref, data2, PacketSize, refvalue) && "internal::preduxp");
-  }
 
   for (int i=0; i<PacketSize; ++i)
     ref[i] = data1[PacketSize-i-1];
@@ -249,6 +293,7 @@ template<typename Scalar,typename Packet> void packetmath()
     }
   }
 
+
   if (PacketTraits::HasBlend) {
     Packet thenPacket = internal::pload<Packet>(data1);
     Packet elsePacket = internal::pload<Packet>(data2);
@@ -265,41 +310,6 @@ template<typename Scalar,typename Packet> void packetmath()
     }
   }
 
-  if (PacketTraits::HasBlend || g_vectorize_sse) {
-    // pinsertfirst
-    for (int i=0; i<PacketSize; ++i)
-      ref[i] = data1[i];
-    Scalar s = internal::random<Scalar>();
-    ref[0] = s;
-    internal::pstore(data2, internal::pinsertfirst(internal::pload<Packet>(data1),s));
-    VERIFY(test::areApprox(ref, data2, PacketSize) && "internal::pinsertfirst");
-  }
-
-  if (PacketTraits::HasBlend || g_vectorize_sse) {
-    // pinsertlast
-    for (int i=0; i<PacketSize; ++i)
-      ref[i] = data1[i];
-    Scalar s = internal::random<Scalar>();
-    ref[PacketSize-1] = s;
-    internal::pstore(data2, internal::pinsertlast(internal::pload<Packet>(data1),s));
-    VERIFY(test::areApprox(ref, data2, PacketSize) && "internal::pinsertlast");
-  }
-
-  {
-    for (int i=0; i<PacketSize; ++i)
-    {
-      data1[i] = internal::random<Scalar>();
-      unsigned char v = internal::random<bool>() ? 0xff : 0;
-      char* bytes = (char*)(data1+PacketSize+i);
-      for(int k=0; k<int(sizeof(Scalar)); ++k) {
-        bytes[k] = v;
-      }
-    }
-    CHECK_CWISE2_IF(true, internal::por, internal::por);
-    CHECK_CWISE2_IF(true, internal::pxor, internal::pxor);
-    CHECK_CWISE2_IF(true, internal::pand, internal::pand);
-    CHECK_CWISE2_IF(true, internal::pandnot, internal::pandnot);
-  }
   {
     for (int i = 0; i < PacketSize; ++i) {
       // "if" mask
@@ -316,18 +326,24 @@ template<typename Scalar,typename Packet> void packetmath()
     CHECK_CWISE3_IF(true, internal::pselect, internal::pselect);
   }
 
+  CHECK_CWISE1_IF(PacketTraits::HasSqrt, numext::sqrt, internal::psqrt);
+
+  for (int i=0; i<size; ++i)
   {
-    for (int i = 0; i < PacketSize; ++i) {
-      data1[i] = Scalar(i);
-      data1[i + PacketSize] = internal::random<bool>() ? data1[i] : Scalar(0);
-    }
-    CHECK_CWISE2_IF(true, internal::pcmp_eq, internal::pcmp_eq);
+    data1[i] = internal::random<Scalar>();
   }
+  CHECK_CWISE1(internal::pzero, internal::pzero);
+  CHECK_CWISE2_IF(true, internal::por, internal::por);
+  CHECK_CWISE2_IF(true, internal::pxor, internal::pxor);
+  CHECK_CWISE2_IF(true, internal::pand, internal::pand);
+
+  packetmath_boolean_mask_ops<Scalar, Packet>();
 }
+
+
 
 template<typename Scalar,typename Packet> void packetmath_real()
 {
-  using std::abs;
   typedef internal::packet_traits<Scalar> PacketTraits;
   const int PacketSize = internal::unpacket_traits<Packet>::size;
 
@@ -345,7 +361,6 @@ template<typename Scalar,typename Packet> void packetmath_real()
   if(internal::random<float>(0,1)<0.1f)
      data1[internal::random<int>(0, PacketSize)] = 0;
 
-  CHECK_CWISE1_IF(PacketTraits::HasSqrt, std::sqrt, internal::psqrt);
   CHECK_CWISE1_IF(PacketTraits::HasLog, std::log, internal::plog);
   CHECK_CWISE1_IF(PacketTraits::HasRsqrt, Scalar(1)/std::sqrt, internal::prsqrt);
 
@@ -540,7 +555,6 @@ template<typename Scalar,typename Packet> void packetmath_real()
 
 template<typename Scalar,typename Packet> void packetmath_notcomplex()
 {
-  using std::abs;
   typedef internal::packet_traits<Scalar> PacketTraits;
   const int PacketSize = internal::unpacket_traits<Packet>::size;
 
@@ -549,6 +563,19 @@ template<typename Scalar,typename Packet> void packetmath_notcomplex()
   EIGEN_ALIGN_MAX Scalar ref[PacketSize*4];
 
   Array<Scalar,Dynamic,1>::Map(data1, PacketSize*4).setRandom();
+
+  if (PacketTraits::HasCast) {
+    test_cast<Packet, float>();
+    test_cast<Packet, double>();
+    test_cast<Packet, int8_t>();
+    test_cast<Packet, uint8_t>();
+    test_cast<Packet, int16_t>();
+    test_cast<Packet, uint16_t>();
+    test_cast<Packet, int32_t>();
+    test_cast<Packet, uint32_t>();
+    test_cast<Packet, int64_t>();
+    test_cast<Packet, uint64_t>();
+  }
 
   ref[0] = data1[0];
   for (int i=0; i<PacketSize; ++i)
@@ -560,7 +587,8 @@ template<typename Scalar,typename Packet> void packetmath_notcomplex()
 
   CHECK_CWISE2_IF(PacketTraits::HasMin, (std::min), internal::pmin);
   CHECK_CWISE2_IF(PacketTraits::HasMax, (std::max), internal::pmax);
-  CHECK_CWISE1(abs, internal::pabs);
+  CHECK_CWISE1(numext::abs, internal::pabs);
+  CHECK_CWISE2_IF(PacketTraits::HasAbsDiff, REF_ABS_DIFF, internal::pabsdiff);
 
   ref[0] = data1[0];
   for (int i=0; i<PacketSize; ++i)
@@ -731,10 +759,20 @@ EIGEN_DECLARE_TEST(packetmath)
 
     CALL_SUBTEST_1( test::runner<float>::run() );
     CALL_SUBTEST_2( test::runner<double>::run() );
-    CALL_SUBTEST_3( test::runner<int>::run() );
-    CALL_SUBTEST_4( test::runner<std::complex<float> >::run() );
-    CALL_SUBTEST_5( test::runner<std::complex<double> >::run() );
-    CALL_SUBTEST_6(( packetmath<half,internal::packet_traits<half>::type>() ));
+    CALL_SUBTEST_3( test::runner<int8_t>::run() );
+    CALL_SUBTEST_4( test::runner<uint8_t>::run() );
+    CALL_SUBTEST_5( test::runner<int16_t>::run() );
+    CALL_SUBTEST_6( test::runner<uint16_t>::run() );
+    CALL_SUBTEST_7( test::runner<int32_t>::run() );
+    CALL_SUBTEST_8( test::runner<uint32_t>::run() );
+    CALL_SUBTEST_9( test::runner<int64_t>::run() );
+    CALL_SUBTEST_10( test::runner<uint64_t>::run() );
+    CALL_SUBTEST_11( test::runner<std::complex<float> >::run() );
+    CALL_SUBTEST_12( test::runner<std::complex<double> >::run() );
+    CALL_SUBTEST_13(( packetmath<half,internal::packet_traits<half>::type>() ));
+#ifdef EIGEN_PACKET_MATH_SSE_H
+    CALL_SUBTEST_14(( packetmath<bool,internal::packet_traits<bool>::type>() ));
+#endif
     g_first_pass = false;
   }
 }
