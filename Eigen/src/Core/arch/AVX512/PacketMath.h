@@ -1875,11 +1875,6 @@ template<> EIGEN_STRONG_INLINE bfloat16 predux_mul<Packet16bf>(const Packet16bf&
   return bfloat16(predux_mul(from_float));
 }
 
-template<> EIGEN_STRONG_INLINE Packet16bf preduxp<Packet16bf>(const Packet16bf* p) {
-  Packet16f t = Bf16ToF32(*p);
-  return F32ToBf16(preduxp<Packet16f>(&t));
-}
-
 template<> EIGEN_STRONG_INLINE bfloat16 predux_min<Packet16bf>(const Packet16bf& from) {
   Packet16f from_float = Bf16ToF32(from);
   return bfloat16(predux_min(from_float));

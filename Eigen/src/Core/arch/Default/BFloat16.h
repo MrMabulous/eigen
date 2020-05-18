@@ -1,33 +1,14 @@
-// This file is part of Eigen, a lightweight C++ template library
-// for linear algebra.
-//
-// This Source Code Form is subject to the terms of the Mozilla
-// Public License v. 2.0. If a copy of the MPL was not distributed
-// with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
-//
-// The conversion routines are Copyright (c) Fabian Giesen, 2016.
-// The original license follows:
-//
-// Copyright (c) Fabian Giesen, 2016
-// All rights reserved.
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted.
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-// Standard 16-bit float type, mostly useful for GPUs. Defines a new
-// type Eigen::bfloat16 with operator overloads such that it behaves
-// basically as an arithmetic type.
+/* Copyright 2017 The TensorFlow Authors. All Rights Reserved.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================*/
 
 
 #ifndef EIGEN_BFLOAT16_H
@@ -38,8 +19,6 @@
 #else
 #define EIGEN_EXPLICIT_CAST(tgt_type) operator tgt_type()
 #endif
-
-#include "Eigen/src/Core/arch/Default/Half.h"
 
 namespace Eigen {
 
@@ -138,8 +117,8 @@ struct bfloat16 : public bfloat16_impl::bfloat16_base {
   EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(complex128) const {
     return complex128(static_cast<double>(bfloat16_impl::bfloat16_to_float(*this)), double(0.0));
   }
-  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(half) const {
-    return static_cast<half>(bfloat16_impl::bfloat16_to_float(*this));
+  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(Eigen::half) const {
+    return static_cast<Eigen::half>(bfloat16_impl::bfloat16_to_float(*this));
   }
 };
 
@@ -172,7 +151,7 @@ struct numeric_limits<Eigen::bfloat16> {
   static const bool traps = numeric_limits<float>::traps;
   static const bool tinyness_before = numeric_limits<float>::tinyness_before;
 
-  static Eigen::bfloat16 (min)() { return Eigen::bfloat16_impl::raw_uint16_to_bfloat16(0x0800); }
+  static Eigen::bfloat16 (min)() { return Eigen::bfloat16_impl::raw_uint16_to_bfloat16(0x0080); }
   static Eigen::bfloat16 lowest() { return Eigen::bfloat16_impl::raw_uint16_to_bfloat16(0xff7f); }
   static Eigen::bfloat16 (max)() { return Eigen::bfloat16_impl::raw_uint16_to_bfloat16(0x7f7f); }
   static Eigen::bfloat16 epsilon() { return Eigen::bfloat16_impl::raw_uint16_to_bfloat16(0x3c00); }

@@ -164,10 +164,10 @@ using std::ptrdiff_t;
 #include "src/Core/MathFunctions.h"
 #include "src/Core/GenericPacketMath.h"
 #include "src/Core/MathFunctionsImpl.h"
-#include "src/Core/arch/Default/BFloat16.h"
 #include "src/Core/arch/Default/ConjHelper.h"
 // Generic half float support
 #include "src/Core/arch/Default/Half.h"
+#include "src/Core/arch/Default/BFloat16.h"
 #include "src/Core/arch/Default/TypeCasting.h"
 #include "src/Core/arch/Default/GenericPacketMathFunctionsFwd.h"
 
