@@ -195,33 +195,52 @@ protected:
 template<typename Scalar, typename Index, int StorageOrder, int AlignmentType = Unaligned, int Incr = 1>
 class blas_data_mapper;
 
+// TMP to help PacketBlock store implementation.
+// There's currently no known use case for PacketBlock load.
+// The default implementation assumes ColMajor order.
+// It always store each packet sequentially one `stride` apart.
 template<typename Index, typename Scalar, typename Packet, int n, int idx, int StorageOrder>
-class PacketBlockManagement
+struct PacketBlockManagement
 {
   PacketBlockManagement<Index, Scalar, Packet, n, idx - 1, StorageOrder> pbm;
-public:
   EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE void store(Scalar *to, const Index stride, Index i, Index j, const PacketBlock<Packet, n> &block) const {
     pbm.store(to, stride, i, j, block);
-    pstore<Scalar>(to + i + (j + idx)*stride, block.packet[idx]);
+    pstoreu<Scalar>(to + i + (j + idx)*stride, block.packet[idx]);
   }
 };
 
+// PacketBlockManagement specialization to take care of RowMajor order without ifs.
 template<typename Index, typename Scalar, typename Packet, int n, int idx>
-class PacketBlockManagement<Index, Scalar, Packet, n, idx, RowMajor>
+struct PacketBlockManagement<Index, Scalar, Packet, n, idx, RowMajor>
 {
   PacketBlockManagement<Index, Scalar, Packet, n, idx - 1, RowMajor> pbm;
-public:
   EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE void store(Scalar *to, const Index stride, Index i, Index j, const PacketBlock<Packet, n> &block) const {
     pbm.store(to, stride, i, j, block);
-    pstore<Scalar>(to + (j + idx) + i*stride, block.packet[idx]);
+    pstoreu<Scalar>(to + j + (i + idx)*stride, block.packet[idx]);
   }
 };
 
 template<typename Index, typename Scalar, typename Packet, int n, int StorageOrder>
-class PacketBlockManagement<Index, Scalar, Packet, n, -1, StorageOrder>
+struct PacketBlockManagement<Index, Scalar, Packet, n, -1, StorageOrder>
 {
-public:
   EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE void store(Scalar *to, const Index stride, Index i, Index j, const PacketBlock<Packet, n> &block) const {
+    EIGEN_UNUSED_VARIABLE(to);
+    EIGEN_UNUSED_VARIABLE(stride);
+    EIGEN_UNUSED_VARIABLE(i);
+    EIGEN_UNUSED_VARIABLE(j);
+    EIGEN_UNUSED_VARIABLE(block);
+  }
+};
+
+template<typename Index, typename Scalar, typename Packet, int n>
+struct PacketBlockManagement<Index, Scalar, Packet, n, -1, RowMajor>
+{
+  EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE void store(Scalar *to, const Index stride, Index i, Index j, const PacketBlock<Packet, n> &block) const {
+    EIGEN_UNUSED_VARIABLE(to);
+    EIGEN_UNUSED_VARIABLE(stride);
+    EIGEN_UNUSED_VARIABLE(i);
+    EIGEN_UNUSED_VARIABLE(j);
+    EIGEN_UNUSED_VARIABLE(block);
   }
 };
 
@@ -290,7 +309,7 @@ public:
 
   template<typename SubPacket, int n>
   EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE void storePacketBlock(Index i, Index j, const PacketBlock<SubPacket, n> &block) const {
-    PacketBlockManagement<Index, Scalar, SubPacket, n, n, StorageOrder> pbm;
+    PacketBlockManagement<Index, Scalar, SubPacket, n, n-1, StorageOrder> pbm;
     pbm.store(m_data, m_stride, i, j, block);
   }
 protected:
