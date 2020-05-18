@@ -28,8 +28,8 @@
         Right-preconditioning based on Ref. 3 is implemented here.
 */
 
-#ifndef idrstab_h
-#define idrstab_h
+#ifndef EIGEN_IDRSTAB_H
+#define EIGEN_IDRSTAB_H
 
 #include <Eigen/QR>
 #include <Eigen/LU>
@@ -146,7 +146,7 @@ namespace Eigen
 					for (Index i = 0; i < col_index; ++i)
 					{
 						//"Normalization factor" (v is normalized already)
-						auto v = U.col(i).head(N);
+						VectorType v = U.col(i).head(N);
 
 						//"How much do v and w have in common?"
 						h_FOM(i, col_index - 1) = v.dot(w);
@@ -521,14 +521,14 @@ namespace Eigen
 	} // namespace internal
 
 	template <typename _MatrixType,
-			  typename _Preconditioner = DiagonalPreconditioner<typename _MatrixType::Scalar>>
+			  typename _Preconditioner = DiagonalPreconditioner<typename _MatrixType::Scalar> >
 	class IDRStab;
 
 	namespace internal
 	{
-
+ 
 		template <typename _MatrixType, typename _Preconditioner>
-		struct traits<IDRStab<_MatrixType, _Preconditioner>>
+		struct traits<IDRStab<_MatrixType, _Preconditioner> >
 		{
 			typedef _MatrixType MatrixType;
 			typedef _Preconditioner Preconditioner;
@@ -537,7 +537,7 @@ namespace Eigen
 	} // namespace internal
 
 	template <typename _MatrixType, typename _Preconditioner>
-	class IDRStab : public IterativeSolverBase<IDRStab<_MatrixType, _Preconditioner>>
+	class IDRStab : public IterativeSolverBase<IDRStab<_MatrixType, _Preconditioner> >
 	{
 		typedef IterativeSolverBase<IDRStab> Base;
 		using Base::m_error;
@@ -622,4 +622,4 @@ namespace Eigen
 
 } // namespace Eigen
 
-#endif /* idrstab_h */
+#endif /* EIGEN_IDRSTAB_H */

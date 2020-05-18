@@ -171,8 +171,8 @@ namespace Eigen
 					Furthermore a "group wise update" strategy is used to combine updates, which improves accuracy.
 				*/
 
-				Mx = std::max(Mx, zeta); //Maximum norm of residuals since last update of x.
-				Mr = std::max(Mr, zeta); //Maximum norm of residuals since last computation of the true residual.
+				Mx = (std::max)(Mx, zeta); //Maximum norm of residuals since last update of x.
+				Mr = (std::max)(Mr, zeta); //Maximum norm of residuals since last computation of the true residual.
 
 				if (zeta < delta * zeta0 && zeta0 <= Mx)
 				{
@@ -224,14 +224,14 @@ namespace Eigen
 	} // namespace internal
 
 	template <typename _MatrixType,
-			  typename _Preconditioner = DiagonalPreconditioner<typename _MatrixType::Scalar>>
+			  typename _Preconditioner = DiagonalPreconditioner<typename _MatrixType::Scalar> >
 	class BiCGSTABL;
 
 	namespace internal
 	{
 
 		template <typename _MatrixType, typename _Preconditioner>
-		struct traits<Eigen::BiCGSTABL<_MatrixType, _Preconditioner>>
+		struct traits<Eigen::BiCGSTABL<_MatrixType, _Preconditioner> >
 		{
 			typedef _MatrixType MatrixType;
 			typedef _Preconditioner Preconditioner;
@@ -240,7 +240,7 @@ namespace Eigen
 	} // namespace internal
 
 	template <typename _MatrixType, typename _Preconditioner>
-	class BiCGSTABL : public IterativeSolverBase<BiCGSTABL<_MatrixType, _Preconditioner>>
+	class BiCGSTABL : public IterativeSolverBase<BiCGSTABL<_MatrixType, _Preconditioner> >
 	{
 		typedef IterativeSolverBase<BiCGSTABL> Base;
 		using Base::m_error;
