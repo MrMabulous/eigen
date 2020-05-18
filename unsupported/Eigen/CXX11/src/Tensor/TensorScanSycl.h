@@ -507,7 +507,7 @@ struct ScanLauncher<Self, Reducer, Eigen::SyclDevice, vectorize> {
         inclusive, dev);
   }
 };
-} // namespace internal
+}  // namespace internal
 }  // namespace Eigen
 
 #endif  // UNSUPPORTED_EIGEN_CXX11_SRC_TENSOR_TENSOR_SYCL_SYCL_HPP

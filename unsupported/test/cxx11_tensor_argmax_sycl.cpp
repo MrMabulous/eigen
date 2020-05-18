@@ -17,9 +17,9 @@
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE int64_t
 #define EIGEN_USE_SYCL
 
-#include "main.h"
-
 #include <unsupported/Eigen/CXX11/Tensor>
+
+#include "main.h"
 
 using Eigen::array;
 using Eigen::SyclDevice;

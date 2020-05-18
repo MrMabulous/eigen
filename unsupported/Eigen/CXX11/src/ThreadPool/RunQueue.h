@@ -42,8 +42,7 @@ class RunQueue {
     eigen_plain_assert((kSize & (kSize - 1)) == 0);
     eigen_plain_assert(kSize > 2);            // why would you do this?
     eigen_plain_assert(kSize <= (64 << 10));  // leave enough space for counter
-    for (unsigned i = 0; i < kSize; i++)
-      array_[i].state.store(kEmpty, std::memory_order_relaxed);
+    for (unsigned i = 0; i < kSize; i++) array_[i].state.store(kEmpty, std::memory_order_relaxed);
   }
 
   ~RunQueue() { eigen_plain_assert(Size() == 0); }
@@ -54,9 +53,7 @@ class RunQueue {
     unsigned front = front_.load(std::memory_order_relaxed);
     Elem* e = &array_[front & kMask];
     uint8_t s = e->state.load(std::memory_order_relaxed);
-    if (s != kEmpty ||
-        !e->state.compare_exchange_strong(s, kBusy, std::memory_order_acquire))
-      return w;
+    if (s != kEmpty || !e->state.compare_exchange_strong(s, kBusy, std::memory_order_acquire)) return w;
     front_.store(front + 1 + (kSize << 1), std::memory_order_relaxed);
     e->w = std::move(w);
     e->state.store(kReady, std::memory_order_release);
@@ -69,9 +66,7 @@ class RunQueue {
     unsigned front = front_.load(std::memory_order_relaxed);
     Elem* e = &array_[(front - 1) & kMask];
     uint8_t s = e->state.load(std::memory_order_relaxed);
-    if (s != kReady ||
-        !e->state.compare_exchange_strong(s, kBusy, std::memory_order_acquire))
-      return Work();
+    if (s != kReady || !e->state.compare_exchange_strong(s, kBusy, std::memory_order_acquire)) return Work();
     Work w = std::move(e->w);
     e->state.store(kEmpty, std::memory_order_release);
     front = ((front - 1) & kMask2) | (front & ~kMask2);
@@ -86,9 +81,7 @@ class RunQueue {
     unsigned back = back_.load(std::memory_order_relaxed);
     Elem* e = &array_[(back - 1) & kMask];
     uint8_t s = e->state.load(std::memory_order_relaxed);
-    if (s != kEmpty ||
-        !e->state.compare_exchange_strong(s, kBusy, std::memory_order_acquire))
-      return w;
+    if (s != kEmpty || !e->state.compare_exchange_strong(s, kBusy, std::memory_order_acquire)) return w;
     back = ((back - 1) & kMask2) | (back & ~kMask2);
     back_.store(back, std::memory_order_relaxed);
     e->w = std::move(w);
@@ -103,9 +96,7 @@ class RunQueue {
     unsigned back = back_.load(std::memory_order_relaxed);
     Elem* e = &array_[back & kMask];
     uint8_t s = e->state.load(std::memory_order_relaxed);
-    if (s != kReady ||
-        !e->state.compare_exchange_strong(s, kBusy, std::memory_order_acquire))
-      return Work();
+    if (s != kReady || !e->state.compare_exchange_strong(s, kBusy, std::memory_order_acquire)) return Work();
     Work w = std::move(e->w);
     e->state.store(kEmpty, std::memory_order_release);
     back_.store(back + 1 + (kSize << 1), std::memory_order_relaxed);
@@ -127,9 +118,7 @@ class RunQueue {
       Elem* e = &array_[mid & kMask];
       uint8_t s = e->state.load(std::memory_order_relaxed);
       if (n == 0) {
-        if (s != kReady || !e->state.compare_exchange_strong(
-                               s, kBusy, std::memory_order_acquire))
-          continue;
+        if (s != kReady || !e->state.compare_exchange_strong(s, kBusy, std::memory_order_acquire)) continue;
         start = mid;
       } else {
         // Note: no need to store temporal kBusy, we exclusively own these
@@ -140,8 +129,7 @@ class RunQueue {
       e->state.store(kEmpty, std::memory_order_release);
       n++;
     }
-    if (n != 0)
-      back_.store(start + 1 + (kSize << 1), std::memory_order_relaxed);
+    if (n != 0) back_.store(start + 1 + (kSize << 1), std::memory_order_relaxed);
     return n;
   }
 
@@ -187,7 +175,7 @@ class RunQueue {
   // SizeOrNotEmpty returns current queue size; if NeedSizeEstimate is false,
   // only whether the size is 0 is guaranteed to be correct.
   // Can be called by any thread at any time.
-  template<bool NeedSizeEstimate>
+  template <bool NeedSizeEstimate>
   unsigned SizeOrNotEmpty() const {
     // Emptiness plays critical role in thread pool blocking. So we go to great
     // effort to not produce false positives (claim non-empty queue as empty).

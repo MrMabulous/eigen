@@ -9,10 +9,10 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #define EIGEN_USE_THREADS
-#include <cstdlib>
-#include "main.h"
 #include <Eigen/CXX11/ThreadPool>
+#include <cstdlib>
 
+#include "main.h"
 
 // Visual studio doesn't implement a rand_r() function since its
 // implementation of rand() is already thread safe
@@ -25,8 +25,7 @@ int rand_reentrant(unsigned int* s) {
 #endif
 }
 
-void test_basic_runqueue()
-{
+void test_basic_runqueue() {
   RunQueue<int, 4> q;
   // Check empty state.
   VERIFY(q.Empty());
@@ -117,8 +116,7 @@ void test_basic_runqueue()
 // 1 element (either front or back at random). So queue always contains at least
 // 1 element, but otherwise changes chaotically. Another thread constantly tests
 // that the queue is not claimed to be empty.
-void test_empty_runqueue()
-{
+void test_empty_runqueue() {
   RunQueue<int, 4> q;
   q.PushFront(1);
   std::atomic<bool> done(false);
@@ -157,8 +155,7 @@ void test_empty_runqueue()
 // Stress is a chaotic random test.
 // One thread (owner) calls PushFront/PopFront, other threads call PushBack/
 // PopBack. Ensure that we don't crash, deadlock, and all sanity checks pass.
-void test_stress_runqueue()
-{
+void test_stress_runqueue() {
   static const int kEvents = 1 << 18;
   RunQueue<int, 8> q;
   std::atomic<int> total(0);
@@ -227,8 +224,7 @@ void test_stress_runqueue()
   VERIFY(total.load() == 0);
 }
 
-EIGEN_DECLARE_TEST(cxx11_runqueue)
-{
+EIGEN_DECLARE_TEST(cxx11_runqueue) {
   CALL_SUBTEST_1(test_basic_runqueue());
   CALL_SUBTEST_2(test_empty_runqueue());
   CALL_SUBTEST_3(test_stress_runqueue());

@@ -14,12 +14,12 @@
  * TensorReductionSycl.h
  *
  * \brief:
- *  This is the specialization of the reduction operation. Two phase reduction approach 
- * is used since the GPU does not have Global Synchronization for global memory among 
- * different work-group/thread block. To solve the problem, we need to create two kernels 
- * to reduce the data, where the first kernel reduce the data locally and each local 
+ *  This is the specialization of the reduction operation. Two phase reduction approach
+ * is used since the GPU does not have Global Synchronization for global memory among
+ * different work-group/thread block. To solve the problem, we need to create two kernels
+ * to reduce the data, where the first kernel reduce the data locally and each local
  * workgroup/thread-block save the input data into global memory. In the second phase (global reduction)
- * one work-group uses one work-group/thread-block to reduces the intermediate data into one single element. 
+ * one work-group uses one work-group/thread-block to reduces the intermediate data into one single element.
  * Here is an NVIDIA presentation explaining the optimized two phase reduction algorithm on GPU:
  * https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf
  *
@@ -112,8 +112,8 @@ struct SecondStepFullReducer {
   }
 };
 
-// Full reduction first phase. In this version the vectorization is true and the reduction accept 
-// any generic reducerOp  e.g( max, min, sum, mean, iamax, iamin, etc ). 
+// Full reduction first phase. In this version the vectorization is true and the reduction accept
+// any generic reducerOp  e.g( max, min, sum, mean, iamax, iamin, etc ).
 template <typename Evaluator, typename OpType, typename Evaluator::Index local_range>
 class FullReductionKernelFunctor {
  public:
@@ -222,7 +222,7 @@ class GenericNondeterministicReducer {
   typedef typename OpDef::type Op;
   template <typename Scratch>
   GenericNondeterministicReducer(Scratch, Evaluator evaluator_, EvaluatorPointerType output_accessor_, OpType functor_,
-                       Index range_, Index num_values_to_reduce_)
+                                 Index range_, Index num_values_to_reduce_)
       : evaluator(evaluator_),
         output_accessor(output_accessor_),
         functor(OpDef::get_op(functor_)),

@@ -13,16 +13,15 @@
 namespace Eigen {
 
 /** \class TensorConversionOp
-  * \ingroup CXX11_Tensor_Module
-  *
-  * \brief Tensor conversion class. This class makes it possible to vectorize
-  * type casting operations when the number of scalars per packet in the source
-  * and the destination type differ
-  */
+ * \ingroup CXX11_Tensor_Module
+ *
+ * \brief Tensor conversion class. This class makes it possible to vectorize
+ * type casting operations when the number of scalars per packet in the source
+ * and the destination type differ
+ */
 namespace internal {
-template<typename TargetType, typename XprType>
-struct traits<TensorConversionOp<TargetType, XprType> >
-{
+template <typename TargetType, typename XprType>
+struct traits<TensorConversionOp<TargetType, XprType> > {
   // Type promotion to handle the case where the types of the lhs and the rhs are different.
   typedef TargetType Scalar;
   typedef typename traits<XprType>::StorageKind StorageKind;
@@ -35,28 +34,24 @@ struct traits<TensorConversionOp<TargetType, XprType> >
   typedef typename TypeConversion<Scalar, typename traits<XprType>::PointerType>::type PointerType;
 };
 
-template<typename TargetType, typename XprType>
-struct eval<TensorConversionOp<TargetType, XprType>, Eigen::Dense>
-{
+template <typename TargetType, typename XprType>
+struct eval<TensorConversionOp<TargetType, XprType>, Eigen::Dense> {
   typedef const TensorConversionOp<TargetType, XprType>& type;
 };
 
-template<typename TargetType, typename XprType>
-struct nested<TensorConversionOp<TargetType, XprType>, 1, typename eval<TensorConversionOp<TargetType, XprType> >::type>
-{
+template <typename TargetType, typename XprType>
+struct nested<TensorConversionOp<TargetType, XprType>, 1,
+              typename eval<TensorConversionOp<TargetType, XprType> >::type> {
   typedef TensorConversionOp<TargetType, XprType> type;
 };
 
 }  // end namespace internal
 
-
 template <typename TensorEvaluator, typename SrcPacket, typename TgtPacket, int SrcCoeffRatio, int TgtCoeffRatio>
 struct PacketConverter {
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
-  PacketConverter(const TensorEvaluator& impl)
-      : m_impl(impl) {}
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE PacketConverter(const TensorEvaluator& impl) : m_impl(impl) {}
 
-  template<int LoadMode, typename Index>
+  template <int LoadMode, typename Index>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TgtPacket packet(Index index) const {
     return internal::pcast<SrcPacket, TgtPacket>(m_impl.template packet<LoadMode>(index));
   }
@@ -65,14 +60,11 @@ struct PacketConverter {
   const TensorEvaluator& m_impl;
 };
 
-
 template <typename TensorEvaluator, typename SrcPacket, typename TgtPacket>
 struct PacketConverter<TensorEvaluator, SrcPacket, TgtPacket, 2, 1> {
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
-  PacketConverter(const TensorEvaluator& impl)
-      : m_impl(impl) {}
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE PacketConverter(const TensorEvaluator& impl) : m_impl(impl) {}
 
-  template<int LoadMode, typename Index>
+  template <int LoadMode, typename Index>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TgtPacket packet(Index index) const {
     const int SrcPacketSize = internal::unpacket_traits<SrcPacket>::size;
 
@@ -88,11 +80,9 @@ struct PacketConverter<TensorEvaluator, SrcPacket, TgtPacket, 2, 1> {
 
 template <typename TensorEvaluator, typename SrcPacket, typename TgtPacket>
 struct PacketConverter<TensorEvaluator, SrcPacket, TgtPacket, 4, 1> {
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
-  PacketConverter(const TensorEvaluator& impl)
-      : m_impl(impl) {}
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE PacketConverter(const TensorEvaluator& impl) : m_impl(impl) {}
 
-  template<int LoadMode, typename Index>
+  template <int LoadMode, typename Index>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TgtPacket packet(Index index) const {
     const int SrcPacketSize = internal::unpacket_traits<SrcPacket>::size;
 
@@ -110,11 +100,10 @@ struct PacketConverter<TensorEvaluator, SrcPacket, TgtPacket, 4, 1> {
 
 template <typename TensorEvaluator, typename SrcPacket, typename TgtPacket>
 struct PacketConverter<TensorEvaluator, SrcPacket, TgtPacket, 1, 2> {
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
-  PacketConverter(const TensorEvaluator& impl)
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE PacketConverter(const TensorEvaluator& impl)
       : m_impl(impl), m_maxIndex(impl.dimensions().TotalSize()) {}
 
-  template<int LoadMode, typename Index>
+  template <int LoadMode, typename Index>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TgtPacket packet(Index index) const {
     const int SrcPacketSize = internal::unpacket_traits<SrcPacket>::size;
     // Only call m_impl.packet() when we have direct access to the underlying data. This
@@ -131,7 +120,7 @@ struct PacketConverter<TensorEvaluator, SrcPacket, TgtPacket, 1, 2> {
       EIGEN_ALIGN_MAX typename internal::unpacket_traits<TgtPacket>::type values[TgtPacketSize];
       EIGEN_UNROLL_LOOP
       for (int i = 0; i < TgtPacketSize; ++i) {
-        values[i] = converter(m_impl.coeff(index+i));
+        values[i] = converter(m_impl.coeff(index + i));
       }
       TgtPacket rslt = internal::pload<TgtPacket>(values);
       return rslt;
@@ -143,57 +132,51 @@ struct PacketConverter<TensorEvaluator, SrcPacket, TgtPacket, 1, 2> {
   const typename TensorEvaluator::Index m_maxIndex;
 };
 
-template<typename TargetType, typename XprType>
-class TensorConversionOp : public TensorBase<TensorConversionOp<TargetType, XprType>, ReadOnlyAccessors>
-{
-  public:
-    typedef typename internal::traits<TensorConversionOp>::Scalar Scalar;
-    typedef typename internal::traits<TensorConversionOp>::StorageKind StorageKind;
-    typedef typename internal::traits<TensorConversionOp>::Index Index;
-    typedef typename internal::nested<TensorConversionOp>::type Nested;
-    typedef Scalar CoeffReturnType;
-    typedef typename NumTraits<Scalar>::Real RealScalar;
+template <typename TargetType, typename XprType>
+class TensorConversionOp : public TensorBase<TensorConversionOp<TargetType, XprType>, ReadOnlyAccessors> {
+ public:
+  typedef typename internal::traits<TensorConversionOp>::Scalar Scalar;
+  typedef typename internal::traits<TensorConversionOp>::StorageKind StorageKind;
+  typedef typename internal::traits<TensorConversionOp>::Index Index;
+  typedef typename internal::nested<TensorConversionOp>::type Nested;
+  typedef Scalar CoeffReturnType;
+  typedef typename NumTraits<Scalar>::Real RealScalar;
 
-    EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorConversionOp(const XprType& xpr)
-        : m_xpr(xpr) {}
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorConversionOp(const XprType& xpr) : m_xpr(xpr) {}
 
-    EIGEN_DEVICE_FUNC
-    const typename internal::remove_all<typename XprType::Nested>::type&
-    expression() const { return m_xpr; }
+  EIGEN_DEVICE_FUNC
+  const typename internal::remove_all<typename XprType::Nested>::type& expression() const { return m_xpr; }
 
-  protected:
-    typename XprType::Nested m_xpr;
+ protected:
+  typename XprType::Nested m_xpr;
 };
 
-template <bool SameType, typename Eval, typename EvalPointerType> struct ConversionSubExprEval {
+template <bool SameType, typename Eval, typename EvalPointerType>
+struct ConversionSubExprEval {
   static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE bool run(Eval& impl, EvalPointerType) {
     impl.evalSubExprsIfNeeded(NULL);
     return true;
   }
 };
 
-template <typename Eval, typename EvalPointerType> struct ConversionSubExprEval<true, Eval, EvalPointerType> {
+template <typename Eval, typename EvalPointerType>
+struct ConversionSubExprEval<true, Eval, EvalPointerType> {
   static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE bool run(Eval& impl, EvalPointerType data) {
     return impl.evalSubExprsIfNeeded(data);
   }
 };
 
 #ifdef EIGEN_USE_THREADS
-template <bool SameType, typename Eval, typename EvalPointerType,
-          typename EvalSubExprsCallback>
+template <bool SameType, typename Eval, typename EvalPointerType, typename EvalSubExprsCallback>
 struct ConversionSubExprEvalAsync {
-  static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void run(
-      Eval& impl, EvalPointerType, EvalSubExprsCallback done) {
+  static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void run(Eval& impl, EvalPointerType, EvalSubExprsCallback done) {
     impl.evalSubExprsIfNeededAsync(nullptr, std::move(done));
   }
 };
 
-template <typename Eval, typename EvalPointerType,
-          typename EvalSubExprsCallback>
-struct ConversionSubExprEvalAsync<true, Eval, EvalPointerType,
-                                  EvalSubExprsCallback> {
-  static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void run(
-      Eval& impl, EvalPointerType data, EvalSubExprsCallback done) {
+template <typename Eval, typename EvalPointerType, typename EvalSubExprsCallback>
+struct ConversionSubExprEvalAsync<true, Eval, EvalPointerType, EvalSubExprsCallback> {
+  static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void run(Eval& impl, EvalPointerType data, EvalSubExprsCallback done) {
     impl.evalSubExprsIfNeededAsync(data, std::move(done));
   }
 };
@@ -204,7 +187,8 @@ namespace internal {
 template <typename SrcType, typename TargetType, bool IsSameT>
 struct CoeffConv {
   template <typename ArgType, typename Device>
-  static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TargetType run(const TensorEvaluator<ArgType, Device>& impl, Index index) {
+  static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TargetType run(const TensorEvaluator<ArgType, Device>& impl,
+                                                              Index index) {
     internal::scalar_cast_op<SrcType, TargetType> converter;
     return converter(impl.coeff(index));
   }
@@ -213,7 +197,8 @@ struct CoeffConv {
 template <typename SrcType, typename TargetType>
 struct CoeffConv<SrcType, TargetType, true> {
   template <typename ArgType, typename Device>
-  static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TargetType run(const TensorEvaluator<ArgType, Device>& impl, Index index) {
+  static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TargetType run(const TensorEvaluator<ArgType, Device>& impl,
+                                                              Index index) {
     return impl.coeff(index);
   }
 };
@@ -226,12 +211,13 @@ struct PacketConv {
   static const int PacketSize = internal::unpacket_traits<TargetPacket>::size;
 
   template <typename ArgType, typename Device>
-  static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TargetPacket run(const TensorEvaluator<ArgType, Device>& impl, Index index) {
+  static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TargetPacket run(const TensorEvaluator<ArgType, Device>& impl,
+                                                                Index index) {
     internal::scalar_cast_op<SrcType, TargetType> converter;
     EIGEN_ALIGN_MAX typename internal::remove_const<TargetType>::type values[PacketSize];
     EIGEN_UNROLL_LOOP
     for (int i = 0; i < PacketSize; ++i) {
-      values[i] = converter(impl.coeff(index+i));
+      values[i] = converter(impl.coeff(index + i));
     }
     TargetPacket rslt = internal::pload<TargetPacket>(values);
     return rslt;
@@ -244,11 +230,12 @@ struct PacketConv<SrcPacket, TargetPacket, LoadMode, true, IsSameT> {
   typedef typename internal::unpacket_traits<TargetPacket>::type TargetType;
 
   template <typename ArgType, typename Device>
-  static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TargetPacket run(const TensorEvaluator<ArgType, Device>& impl, Index index) {
+  static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TargetPacket run(const TensorEvaluator<ArgType, Device>& impl,
+                                                                Index index) {
     const int SrcCoeffRatio = internal::type_casting_traits<SrcType, TargetType>::SrcCoeffRatio;
     const int TgtCoeffRatio = internal::type_casting_traits<SrcType, TargetType>::TgtCoeffRatio;
-    PacketConverter<TensorEvaluator<ArgType, Device>, SrcPacket, TargetPacket,
-                    SrcCoeffRatio, TgtCoeffRatio> converter(impl);
+    PacketConverter<TensorEvaluator<ArgType, Device>, SrcPacket, TargetPacket, SrcCoeffRatio, TgtCoeffRatio> converter(
+        impl);
     return converter.template packet<LoadMode>(index);
   }
 };
@@ -259,9 +246,10 @@ struct PacketConv<SrcPacket, TargetPacket, LoadMode, /*ActuallyVectorize=*/false
   static const int PacketSize = internal::unpacket_traits<TargetPacket>::size;
 
   template <typename ArgType, typename Device>
-  static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TargetPacket run(const TensorEvaluator<ArgType, Device>& impl, Index index) {
+  static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TargetPacket run(const TensorEvaluator<ArgType, Device>& impl,
+                                                                Index index) {
     EIGEN_ALIGN_MAX typename internal::remove_const<TargetType>::type values[PacketSize];
-    for (int i = 0; i < PacketSize; ++i) values[i] = impl.coeff(index+i);
+    for (int i = 0; i < PacketSize; ++i) values[i] = impl.coeff(index + i);
     return internal::pload<TargetPacket>(values);
   }
 };
@@ -269,7 +257,8 @@ struct PacketConv<SrcPacket, TargetPacket, LoadMode, /*ActuallyVectorize=*/false
 template <typename SrcPacket, typename TargetPacket, int LoadMode>
 struct PacketConv<SrcPacket, TargetPacket, LoadMode, /*ActuallyVectorize=*/true, /*IsSameT=*/true> {
   template <typename ArgType, typename Device>
-  static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TargetPacket run(const TensorEvaluator<ArgType, Device>& impl, Index index) {
+  static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TargetPacket run(const TensorEvaluator<ArgType, Device>& impl,
+                                                                Index index) {
     return impl.template packet<LoadMode>(index);
   }
 };
@@ -277,9 +266,8 @@ struct PacketConv<SrcPacket, TargetPacket, LoadMode, /*ActuallyVectorize=*/true,
 }  // namespace internal
 
 // Eval as rvalue
-template<typename TargetType, typename ArgType, typename Device>
-struct TensorEvaluator<const TensorConversionOp<TargetType, ArgType>, Device>
-{
+template <typename TargetType, typename ArgType, typename Device>
+struct TensorEvaluator<const TensorConversionOp<TargetType, ArgType>, Device> {
   typedef TensorConversionOp<TargetType, ArgType> XprType;
   typedef typename XprType::Index Index;
   typedef typename TensorEvaluator<ArgType, Device>::Dimensions Dimensions;
@@ -294,18 +282,18 @@ struct TensorEvaluator<const TensorConversionOp<TargetType, ArgType>, Device>
   typedef typename Storage::Type EvaluatorPointerType;
 
   enum {
-    IsAligned         = false,
-    PacketAccess      =
-    #ifndef EIGEN_USE_SYCL
-                        true,
-    #else
-                        TensorEvaluator<ArgType, Device>::PacketAccess &
-                        internal::type_casting_traits<SrcType, TargetType>::VectorizedCast,
-    #endif
-    BlockAccess       = TensorEvaluator<ArgType, Device>::BlockAccess,
+    IsAligned = false,
+    PacketAccess =
+#ifndef EIGEN_USE_SYCL
+        true,
+#else
+        TensorEvaluator<ArgType, Device>::PacketAccess &
+        internal::type_casting_traits<SrcType, TargetType>::VectorizedCast,
+#endif
+    BlockAccess = TensorEvaluator<ArgType, Device>::BlockAccess,
     PreferBlockAccess = TensorEvaluator<ArgType, Device>::PreferBlockAccess,
-    Layout            = TensorEvaluator<ArgType, Device>::Layout,
-    RawAccess         = false
+    Layout = TensorEvaluator<ArgType, Device>::Layout,
+    RawAccess = false
   };
 
   static const int NumDims = internal::array_size<Dimensions>::value;
@@ -314,8 +302,7 @@ struct TensorEvaluator<const TensorConversionOp<TargetType, ArgType>, Device>
   typedef internal::TensorBlockDescriptor<NumDims, Index> TensorBlockDesc;
   typedef internal::TensorBlockScratchAllocator<Device> TensorBlockScratch;
 
-  typedef typename TensorEvaluator<const ArgType, Device>::TensorBlock
-      ArgTensorBlock;
+  typedef typename TensorEvaluator<const ArgType, Device>::TensorBlock ArgTensorBlock;
 
   struct TensorConversionOpBlockFactory {
     template <typename ArgXprType>
@@ -329,84 +316,65 @@ struct TensorEvaluator<const TensorConversionOp<TargetType, ArgType>, Device>
     }
   };
 
-  typedef internal::TensorUnaryExprBlock<TensorConversionOpBlockFactory,
-                                         ArgTensorBlock>
-      TensorBlock;
+  typedef internal::TensorUnaryExprBlock<TensorConversionOpBlockFactory, ArgTensorBlock> TensorBlock;
   //===--------------------------------------------------------------------===//
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorEvaluator(const XprType& op, const Device& device)
-    : m_impl(op.expression(), device)
-  {
-  }
+      : m_impl(op.expression(), device) {}
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Dimensions& dimensions() const { return m_impl.dimensions(); }
 
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE bool evalSubExprsIfNeeded(EvaluatorPointerType data)
-  {
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE bool evalSubExprsIfNeeded(EvaluatorPointerType data) {
     return ConversionSubExprEval<IsSameType, TensorEvaluator<ArgType, Device>, EvaluatorPointerType>::run(m_impl, data);
   }
 
 #ifdef EIGEN_USE_THREADS
   template <typename EvalSubExprsCallback>
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void evalSubExprsIfNeededAsync(
-      EvaluatorPointerType data, EvalSubExprsCallback done) {
-    ConversionSubExprEvalAsync<IsSameType, TensorEvaluator<ArgType, Device>,
-                               EvaluatorPointerType,
-        EvalSubExprsCallback>::run(m_impl, data, std::move(done));
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void evalSubExprsIfNeededAsync(EvaluatorPointerType data,
+                                                                       EvalSubExprsCallback done) {
+    ConversionSubExprEvalAsync<IsSameType, TensorEvaluator<ArgType, Device>, EvaluatorPointerType,
+                               EvalSubExprsCallback>::run(m_impl, data, std::move(done));
   }
 #endif
 
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void cleanup()
-  {
-    m_impl.cleanup();
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void cleanup() { m_impl.cleanup(); }
+
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE CoeffReturnType coeff(Index index) const {
+    return internal::CoeffConv<SrcType, TargetType, IsSameType>::run(m_impl, index);
   }
 
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE CoeffReturnType coeff(Index index) const
-  {
-    return internal::CoeffConv<SrcType, TargetType, IsSameType>::run(m_impl,index);
-  }
-
-  template<int LoadMode>
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE PacketReturnType
-  packet(Index index) const {
+  template <int LoadMode>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE PacketReturnType packet(Index index) const {
     // If we are not going to do the cast, we just need to check that base
     // TensorEvaluator has packet access. Otherwise we also need to make sure,
     // that we have an implementation of vectorized cast.
-    const bool Vectorizable =
-        IsSameType
-        ? TensorEvaluator<ArgType, Device>::PacketAccess
-        : TensorEvaluator<ArgType, Device>::PacketAccess &
-          internal::type_casting_traits<SrcType, TargetType>::VectorizedCast;
+    const bool Vectorizable = IsSameType ? TensorEvaluator<ArgType, Device>::PacketAccess
+                                         : TensorEvaluator<ArgType, Device>::PacketAccess &
+                                               internal::type_casting_traits<SrcType, TargetType>::VectorizedCast;
 
-    return internal::PacketConv<PacketSourceType, PacketReturnType, LoadMode,
-                                Vectorizable, IsSameType>::run(m_impl, index);
+    return internal::PacketConv<PacketSourceType, PacketReturnType, LoadMode, Vectorizable, IsSameType>::run(m_impl,
+                                                                                                             index);
   }
 
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorOpCost
-  costPerCoeff(bool vectorized) const {
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorOpCost costPerCoeff(bool vectorized) const {
     const double cast_cost = TensorOpCost::CastCost<SrcType, TargetType>();
     if (vectorized) {
-      const double SrcCoeffRatio =
-          internal::type_casting_traits<SrcType, TargetType>::SrcCoeffRatio;
-      const double TgtCoeffRatio =
-          internal::type_casting_traits<SrcType, TargetType>::TgtCoeffRatio;
+      const double SrcCoeffRatio = internal::type_casting_traits<SrcType, TargetType>::SrcCoeffRatio;
+      const double TgtCoeffRatio = internal::type_casting_traits<SrcType, TargetType>::TgtCoeffRatio;
       return m_impl.costPerCoeff(vectorized) * (SrcCoeffRatio / PacketSize) +
-          TensorOpCost(0, 0, TgtCoeffRatio * (cast_cost / PacketSize));
+             TensorOpCost(0, 0, TgtCoeffRatio * (cast_cost / PacketSize));
     } else {
       return m_impl.costPerCoeff(vectorized) + TensorOpCost(0, 0, cast_cost);
     }
   }
 
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
-  internal::TensorBlockResourceRequirements getResourceRequirements() const {
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE internal::TensorBlockResourceRequirements getResourceRequirements() const {
     return m_impl.getResourceRequirements();
   }
 
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorBlock
-  block(TensorBlockDesc& desc, TensorBlockScratch& scratch,
-          bool /*root_of_expr_ast*/ = false) const {
-    return TensorBlock(m_impl.block(desc, scratch),
-                         TensorConversionOpBlockFactory());
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorBlock block(TensorBlockDesc& desc, TensorBlockScratch& scratch,
+                                                          bool /*root_of_expr_ast*/ = false) const {
+    return TensorBlock(m_impl.block(desc, scratch), TensorConversionOpBlockFactory());
   }
 
   EIGEN_DEVICE_FUNC EvaluatorPointerType data() const { return NULL; }
@@ -415,15 +383,13 @@ struct TensorEvaluator<const TensorConversionOp<TargetType, ArgType>, Device>
   const TensorEvaluator<ArgType, Device>& impl() const { return m_impl; }
 #ifdef EIGEN_USE_SYCL
   // binding placeholder accessors to a command group handler for SYCL
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void bind(cl::sycl::handler &cgh) const {
-    m_impl.bind(cgh);
-  }
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void bind(cl::sycl::handler& cgh) const { m_impl.bind(cgh); }
 #endif
 
  protected:
   TensorEvaluator<ArgType, Device> m_impl;
 };
 
-} // end namespace Eigen
+}  // end namespace Eigen
 
-#endif // EIGEN_CXX11_TENSOR_TENSOR_CONVERSION_H
+#endif  // EIGEN_CXX11_TENSOR_TENSOR_CONVERSION_H
