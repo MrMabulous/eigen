@@ -4,13 +4,13 @@
 # CLANG_FORMAT_FOUND        - True if the clang-format executable was found.
 # CLANG_FORMAT_VERSION      - The version of clang-format found
 #
-# Copyright 2009-2018 The VOTCA Development Team (http://www.votca.org)
+# Copyright 2009-2020 The VOTCA Development Team (http://www.votca.org)
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Mozilla Public License Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+#     https://www.mozilla.org/en-US/MPL/2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
