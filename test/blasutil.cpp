@@ -35,46 +35,29 @@ void compare(const Packet& a, const Packet& b)
     delete[] buffB;
 }
 
-template<typename Scalar, int StorageOrder, int n, int idx>
+template<typename Scalar, int StorageOrder, int n>
 struct PacketBlockSet
 {
     typedef typename internal::packet_traits<Scalar>::type Packet;
 
-    PacketBlockSet<Scalar, StorageOrder, n, idx - 1> pbs;
-
     void setPacketBlock(internal::PacketBlock<Packet,n>& block, Scalar value)
     {
-        pbs.setPacketBlock(block, value);
-        block.packet[idx] = internal::pset1<Packet>(value);
+        for(int idx = 0; idx < n; idx++)
+        {
+            block.packet[idx] = internal::pset1<Packet>(value);
+        }
     }
 
     void comparePacketBlock(Scalar *data, int i, int j, int stride, internal::PacketBlock<Packet, n>& block)
     {
-        pbs.comparePacketBlock(data, i, j, stride, block);
-        Packet line = internal::ploadu<Packet>(data + SCATTER(i,j,idx));
-        compare<Scalar, Packet>(block.packet[idx], line);
+        for(int idx = 0; idx < n; idx++)
+        {
+            Packet line = internal::ploadu<Packet>(data + SCATTER(i,j,idx));
+            compare<Scalar, Packet>(block.packet[idx], line);
+        }
     }
 };
 
-template<typename Scalar, int StorageOrder, int n>
-struct PacketBlockSet<Scalar, StorageOrder, n, -1>
-{
-    typedef typename internal::packet_traits<Scalar>::type Packet;
-
-    void setPacketBlock(internal::PacketBlock<Packet, n>& block, Scalar value)
-    {
-        EIGEN_UNUSED_VARIABLE(block);
-        EIGEN_UNUSED_VARIABLE(value);
-    }
-    void comparePacketBlock(Scalar *data, int i, int j, int stride, internal::PacketBlock<Packet, n>& block)
-    {
-        EIGEN_UNUSED_VARIABLE(data);
-        EIGEN_UNUSED_VARIABLE(i);
-        EIGEN_UNUSED_VARIABLE(j);
-        EIGEN_UNUSED_VARIABLE(stride);
-        EIGEN_UNUSED_VARIABLE(block);
-    }
-};
 template<typename Scalar, int StorageOrder, int BlockSize>
 void run_bdmp_spec_1()
 {
@@ -168,7 +151,7 @@ void run_bdmp_spec_1()
     //Testing storePacketBlock
     internal::PacketBlock<Packet, BlockSize> block;
 
-    PacketBlockSet<Scalar, StorageOrder, BlockSize, BlockSize - 1> pbs;
+    PacketBlockSet<Scalar, StorageOrder, BlockSize> pbs;
     pbs.setPacketBlock(block, static_cast<Scalar>(2));
 
     for(int i = 0; i < szm - minSize; i++)
@@ -187,6 +170,8 @@ void run_bdmp_spec_1()
 template<typename Scalar>
 void run_test()
 {
+    run_bdmp_spec_1<Scalar, RowMajor, 1>();
+    run_bdmp_spec_1<Scalar, ColMajor, 1>();
     run_bdmp_spec_1<Scalar, RowMajor, 2>();
     run_bdmp_spec_1<Scalar, ColMajor, 2>();
     run_bdmp_spec_1<Scalar, RowMajor, 4>();
