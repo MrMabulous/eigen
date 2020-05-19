@@ -132,8 +132,8 @@ void gemm_pack_rhs<float, Index, DataMapper, nr, ColMajor, Conjugate, PanelMode>
     }
 }
 
-template<typename DataMapper, typename Index>
-EIGEN_STRONG_INLINE void storeAccumulator(Index i, Index j, const DataMapper& data, __vector_quad *acc)
+template<typename DataMapper, typename Index, typename Scalar>
+EIGEN_STRONG_INLINE void storeAccumulator(Index i, Index j, const DataMapper& data, Scalar alpha, __vector_quad *acc)
 {
   //[TODO]
   //
@@ -144,11 +144,13 @@ EIGEN_STRONG_INLINE void storeAccumulator(Index i, Index j, const DataMapper& da
   PacketQuad result;
   result.sc  =  __builtin_mma_disassemble_acc(*acc);
 
+  Packet4f pAlpha = pset1<Packet4f>(alpha);
+
   PacketBlock<Packet4f, 4> block;
-  block.packet[0] = result.sf.v3;
-  block.packet[1] = result.sf.v2;
-  block.packet[2] = result.sf.v1;
-  block.packet[3] = result.sf.v0;
+  block.packet[0] = pAlpha*result.sf.v3;
+  block.packet[1] = pAlpha*result.sf.v2;
+  block.packet[2] = pAlpha*result.sf.v1;
+  block.packet[3] = pAlpha*result.sf.v0;
 
   data.template storePacketBlock<Packet4f, 4>(i, j, block);
 }
@@ -213,10 +215,10 @@ void gebp_kernel<float, RhsScalar, Index, DataMapper, mr, nr, ConjugateLhs, Conj
                   rhs_ptr4 += floatVectorSize;
               }
 
-              storeAccumulator<DataMapper, Index>(row, col            , res, &acc );
-              storeAccumulator<DataMapper, Index>(row, col + 1*accCols, res, &acc2);
-              storeAccumulator<DataMapper, Index>(row, col + 2*accCols, res, &acc3);
-              storeAccumulator<DataMapper, Index>(row, col + 3*accCols, res, &acc4);
+              storeAccumulator<DataMapper, Index, float>(row, col            , res, alpha, &acc );
+              storeAccumulator<DataMapper, Index, float>(row, col + 1*accCols, res, alpha, &acc2);
+              storeAccumulator<DataMapper, Index, float>(row, col + 2*accCols, res, alpha, &acc3);
+              storeAccumulator<DataMapper, Index, float>(row, col + 3*accCols, res, alpha, &acc4);
           }
           for(; col + accCols <= cols; col += accCols){
               const float *rhs_ptr  = rhs_base + (col/accCols)*depth*floatVectorSize;
@@ -235,7 +237,7 @@ void gebp_kernel<float, RhsScalar, Index, DataMapper, mr, nr, ConjugateLhs, Conj
                   rhs_ptr += floatVectorSize;
               }
 
-              storeAccumulator<DataMapper, Index>(row, col, res, &acc);
+              storeAccumulator<DataMapper, Index, float>(row, col, res, alpha, &acc);
           }
         
           if(remaining_cols > 0)
