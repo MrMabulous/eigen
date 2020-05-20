@@ -391,6 +391,10 @@ public:
     return pgather<Scalar, SubPacket>(&operator()(i, j), m_stride);
   }
 
+  template<typename SubPacket, int n>
+  EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE void storePacketBlock(Index, Index, const PacketBlock<SubPacket, n>&) const {
+    eigen_assert(false && "storePacketBlock with Incr different than 1 is not supported.");
+  }
 protected:
   Scalar* EIGEN_RESTRICT m_data;
   const Index m_stride;

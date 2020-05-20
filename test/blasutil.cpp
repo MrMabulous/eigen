@@ -192,5 +192,7 @@ EIGEN_DECLARE_TEST(blasutil)
         CALL_SUBTEST_4(run_test<int64_t>());
         CALL_SUBTEST_5(run_test<float_t>());
         CALL_SUBTEST_6(run_test<double_t>());
+        CALL_SUBTEST_7(run_test<std::complex<float> >());
+        CALL_SUBTEST_8(run_test<std::complex<double> >());
     }
 }
