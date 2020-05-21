@@ -895,7 +895,7 @@ class TensorContractionKernel {
             contraction_type contract_tp = contraction_tp>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
       typename ::Eigen::internal::enable_if<contract_tp == contraction_type::local>::type
-      extract_block(const Input &inpt, Local local_ptr, const std::pair<StorageIndex, StorageIndex>& local_index,
+      extract_block(const Input &inpt, Local local_ptr, const std::pair<StorageIndex, StorageIndex> &local_index,
                     const StorageIndex &ncOffset, const StorageIndex cOffset) {
     EIGEN_CONSTEXPR StorageIndex TileSizeDimNC =
         InputBlockProperties::is_rhs ? Properties::TileSizeDimN : Properties::TileSizeDimM;

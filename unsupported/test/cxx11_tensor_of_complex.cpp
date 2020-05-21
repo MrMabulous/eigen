@@ -7,17 +7,14 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#include "main.h"
-
 #include <Eigen/CXX11/Tensor>
+
+#include "main.h"
 
 using Eigen::Tensor;
 using Eigen::TensorMap;
 
-
-
-static void test_additions()
-{
+static void test_additions() {
   Tensor<std::complex<float>, 1> data1(3);
   Tensor<std::complex<float>, 1> data2(3);
   for (int i = 0; i < 3; ++i) {
@@ -27,13 +24,11 @@ static void test_additions()
 
   Tensor<std::complex<float>, 1> sum = data1 + data2;
   for (int i = 0; i < 3; ++i) {
-    VERIFY_IS_EQUAL(sum(i),  std::complex<float>(2*i, 6*i));
+    VERIFY_IS_EQUAL(sum(i), std::complex<float>(2 * i, 6 * i));
   }
 }
 
-
-static void test_abs()
-{
+static void test_abs() {
   Tensor<std::complex<float>, 1> data1(3);
   Tensor<std::complex<double>, 1> data2(3);
   data1.setRandom();
@@ -47,9 +42,7 @@ static void test_abs()
   }
 }
 
-
-static void test_conjugate()
-{
+static void test_conjugate() {
   Tensor<std::complex<float>, 1> data1(3);
   Tensor<std::complex<double>, 1> data2(3);
   Tensor<int, 1> data3(3);
@@ -67,8 +60,7 @@ static void test_conjugate()
   }
 }
 
-static void test_contractions()
-{
+static void test_contractions() {
   Tensor<std::complex<float>, 4> t_left(30, 50, 8, 31);
   Tensor<std::complex<float>, 5> t_right(8, 31, 7, 20, 10);
   Tensor<std::complex<float>, 5> t_result(30, 50, 7, 20, 10);
@@ -93,9 +85,7 @@ static void test_contractions()
   }
 }
 
-
-EIGEN_DECLARE_TEST(cxx11_tensor_of_complex)
-{
+EIGEN_DECLARE_TEST(cxx11_tensor_of_complex) {
   CALL_SUBTEST(test_additions());
   CALL_SUBTEST(test_abs());
   CALL_SUBTEST(test_conjugate());

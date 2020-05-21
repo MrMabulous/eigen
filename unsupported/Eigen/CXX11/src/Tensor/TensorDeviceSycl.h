@@ -24,35 +24,15 @@ namespace internal {
 /// Cache all the device information needed
 struct SyclDeviceInfo {
   SyclDeviceInfo(cl::sycl::queue queue)
-      : local_mem_type(
-            queue.get_device()
-                .template get_info<cl::sycl::info::device::local_mem_type>()),
-        max_work_item_sizes(
-            queue.get_device()
-                .template get_info<
-                    cl::sycl::info::device::max_work_item_sizes>()),
-        max_mem_alloc_size(
-            queue.get_device()
-                .template get_info<
-                    cl::sycl::info::device::max_mem_alloc_size>()),
-        max_compute_units(queue.get_device()
-                              .template get_info<
-                                  cl::sycl::info::device::max_compute_units>()),
-        max_work_group_size(
-            queue.get_device()
-                .template get_info<
-                    cl::sycl::info::device::max_work_group_size>()),
-        local_mem_size(
-            queue.get_device()
-                .template get_info<cl::sycl::info::device::local_mem_size>()),
-        platform_name(queue.get_device()
-                          .get_platform()
-                          .template get_info<cl::sycl::info::platform::name>()),
-        device_name(queue.get_device()
-                        .template get_info<cl::sycl::info::device::name>()),
-        device_vendor(
-            queue.get_device()
-                .template get_info<cl::sycl::info::device::vendor>()) {}
+      : local_mem_type(queue.get_device().template get_info<cl::sycl::info::device::local_mem_type>()),
+        max_work_item_sizes(queue.get_device().template get_info<cl::sycl::info::device::max_work_item_sizes>()),
+        max_mem_alloc_size(queue.get_device().template get_info<cl::sycl::info::device::max_mem_alloc_size>()),
+        max_compute_units(queue.get_device().template get_info<cl::sycl::info::device::max_compute_units>()),
+        max_work_group_size(queue.get_device().template get_info<cl::sycl::info::device::max_work_group_size>()),
+        local_mem_size(queue.get_device().template get_info<cl::sycl::info::device::local_mem_size>()),
+        platform_name(queue.get_device().get_platform().template get_info<cl::sycl::info::platform::name>()),
+        device_name(queue.get_device().template get_info<cl::sycl::info::device::name>()),
+        device_vendor(queue.get_device().template get_info<cl::sycl::info::device::vendor>()) {}
 
   cl::sycl::info::local_mem_type local_mem_type;
   cl::sycl::id<3> max_work_item_sizes;
@@ -72,8 +52,7 @@ typedef TensorSycl::internal::buffer_data_type_t buffer_scalar_t;
 // All devices (even AMD CPU with intel OpenCL runtime) that support OpenCL and
 // can consume SPIR or SPIRV can use the Eigen SYCL backend and consequently
 // TensorFlow via the Eigen SYCL Backend.
-EIGEN_STRONG_INLINE auto get_sycl_supported_devices()
-    -> decltype(cl::sycl::device::get_devices()) {
+EIGEN_STRONG_INLINE auto get_sycl_supported_devices() -> decltype(cl::sycl::device::get_devices()) {
 #ifdef EIGEN_SYCL_USE_DEFAULT_SELECTOR
   return {cl::sycl::device(cl::sycl::default_selector())};
 #else
@@ -81,18 +60,14 @@ EIGEN_STRONG_INLINE auto get_sycl_supported_devices()
   auto platform_list = cl::sycl::platform::get_platforms();
   for (const auto &platform : platform_list) {
     auto device_list = platform.get_devices();
-    auto platform_name =
-        platform.template get_info<cl::sycl::info::platform::name>();
-    std::transform(platform_name.begin(), platform_name.end(),
-                   platform_name.begin(), ::tolower);
+    auto platform_name = platform.template get_info<cl::sycl::info::platform::name>();
+    std::transform(platform_name.begin(), platform_name.end(), platform_name.begin(), ::tolower);
     for (const auto &device : device_list) {
       auto vendor = device.template get_info<cl::sycl::info::device::vendor>();
       std::transform(vendor.begin(), vendor.end(), vendor.begin(), ::tolower);
-      bool unsupported_condition =
-          (device.is_cpu() && platform_name.find("amd") != std::string::npos &&
-           vendor.find("apu") == std::string::npos) ||
-          (platform_name.find("experimental") != std::string::npos) ||
-          device.is_host();
+      bool unsupported_condition = (device.is_cpu() && platform_name.find("amd") != std::string::npos &&
+                                    vendor.find("apu") == std::string::npos) ||
+                                   (platform_name.find("experimental") != std::string::npos) || device.is_host();
       if (!unsupported_condition) {
         supported_devices.push_back(device);
       }
@@ -106,9 +81,8 @@ class QueueInterface {
  public:
   /// Creating device by using cl::sycl::selector or cl::sycl::device.
   template <typename DeviceOrSelector>
-  explicit QueueInterface(
-      const DeviceOrSelector &dev_or_sel, cl::sycl::async_handler handler,
-      unsigned num_threads = std::thread::hardware_concurrency())
+  explicit QueueInterface(const DeviceOrSelector &dev_or_sel, cl::sycl::async_handler handler,
+                          unsigned num_threads = std::thread::hardware_concurrency())
       : m_queue(dev_or_sel, handler),
 #ifdef EIGEN_SYCL_USE_PROGRAM_CLASS
         m_prog(m_queue.get_context(), get_sycl_supported_devices()),
@@ -118,30 +92,25 @@ class QueueInterface {
 #ifdef EIGEN_SYCL_USE_PROGRAM_CLASS
     m_prog.build_with_kernel_type<DeviceOrSelector>();
     auto f = [&](cl::sycl::handler &cgh) {
-      cgh.single_task<DeviceOrSelector>(m_prog.get_kernel<DeviceOrSelector>(),
-                                        [=]() {})
+      cgh.single_task<DeviceOrSelector>(m_prog.get_kernel<DeviceOrSelector>(), [=]() {})
     };
     EIGEN_SYCL_TRY_CATCH(m_queue.submit(f));
 #endif
   }
 
   template <typename DeviceOrSelector>
-  explicit QueueInterface(
-      const DeviceOrSelector &dev_or_sel,
-      unsigned num_threads = std::thread::hardware_concurrency())
-      : QueueInterface(dev_or_sel,
-                       [this](cl::sycl::exception_list l) {
-                         this->exception_caught_ = this->sycl_async_handler(l);
-                       },
-                       num_threads) {}
+  explicit QueueInterface(const DeviceOrSelector &dev_or_sel,
+                          unsigned num_threads = std::thread::hardware_concurrency())
+      : QueueInterface(
+            dev_or_sel, [this](cl::sycl::exception_list l) { this->exception_caught_ = this->sycl_async_handler(l); },
+            num_threads) {}
 
 #ifdef EIGEN_SYCL_USE_PROGRAM_CLASS
   EIGEN_STRONG_INLINE cl::sycl::program &program() const { return m_prog; }
 #endif
 
   /// Attach an existing buffer to the pointer map, Eigen will not reuse it
-  EIGEN_STRONG_INLINE void *attach_buffer(
-      cl::sycl::buffer<buffer_scalar_t, 1> &buf) const {
+  EIGEN_STRONG_INLINE void *attach_buffer(cl::sycl::buffer<buffer_scalar_t, 1> &buf) const {
     std::lock_guard<std::mutex> lock(pmapper_mutex_);
     return static_cast<void *>(pMapper.add_pointer(buf));
   }
@@ -201,16 +170,13 @@ class QueueInterface {
 #endif
   }
   template <typename data_t>
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorSycl::internal::RangeAccess<
-      cl::sycl::access::mode::read_write, data_t>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorSycl::internal::RangeAccess<cl::sycl::access::mode::read_write, data_t>
   get(data_t *data) const {
     return get_range_accessor<cl::sycl::access::mode::read_write, data_t>(data);
   }
   template <typename data_t>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE data_t *get(
-      TensorSycl::internal::RangeAccess<cl::sycl::access::mode::read_write,
-                                        data_t>
-          data) const {
+      TensorSycl::internal::RangeAccess<cl::sycl::access::mode::read_write, data_t> data) const {
     return static_cast<data_t *>(data.get_virtual_pointer());
   }
 
@@ -223,8 +189,7 @@ class QueueInterface {
 #endif
   }
   template <cl::sycl::access::mode AcMd, typename T>
-  EIGEN_STRONG_INLINE void deallocate_temp(
-      const TensorSycl::internal::RangeAccess<AcMd, T> &p) const {
+  EIGEN_STRONG_INLINE void deallocate_temp(const TensorSycl::internal::RangeAccess<AcMd, T> &p) const {
     deallocate_temp(p.get_virtual_pointer());
   }
 
@@ -247,13 +212,11 @@ class QueueInterface {
   /// The destination pointer could be deleted before the copy happend which is
   /// why a callback function is needed. By default if none is provided, the
   /// function is blocking.
-  EIGEN_STRONG_INLINE void memcpyHostToDevice(
-      void *dst, const void *src, size_t n,
-      std::function<void()> callback) const {
+  EIGEN_STRONG_INLINE void memcpyHostToDevice(void *dst, const void *src, size_t n,
+                                              std::function<void()> callback) const {
     static const auto write_mode = cl::sycl::access::mode::discard_write;
     static const auto global_access = cl::sycl::access::target::global_buffer;
-    typedef cl::sycl::accessor<buffer_scalar_t, 1, write_mode, global_access>
-        write_accessor;
+    typedef cl::sycl::accessor<buffer_scalar_t, 1, write_mode, global_access> write_accessor;
     if (n == 0) {
       if (callback) callback();
       return;
@@ -275,13 +238,11 @@ class QueueInterface {
   /// The source pointer could be deleted before the copy happend which is
   /// why a callback function is needed. By default if none is provided, the
   /// function is blocking.
-  EIGEN_STRONG_INLINE void memcpyDeviceToHost(
-      void *dst, const void *src, size_t n,
-      std::function<void()> callback) const {
+  EIGEN_STRONG_INLINE void memcpyDeviceToHost(void *dst, const void *src, size_t n,
+                                              std::function<void()> callback) const {
     static const auto read_mode = cl::sycl::access::mode::read;
     static const auto global_access = cl::sycl::access::target::global_buffer;
-    typedef cl::sycl::accessor<buffer_scalar_t, 1, read_mode, global_access>
-        read_accessor;
+    typedef cl::sycl::accessor<buffer_scalar_t, 1, read_mode, global_access> read_accessor;
     if (n == 0) {
       if (callback) callback();
       return;
@@ -348,8 +309,7 @@ class QueueInterface {
   /// start of the buffer, so the offset in the accessor is only used by
   /// methods like handler::copy and will not be available inside a kernel.
   template <cl::sycl::access::mode AcMd, typename T>
-  EIGEN_STRONG_INLINE TensorSycl::internal::RangeAccess<AcMd, T>
-  get_range_accessor(const void *ptr) const {
+  EIGEN_STRONG_INLINE TensorSycl::internal::RangeAccess<AcMd, T> get_range_accessor(const void *ptr) const {
     static const auto global_access = cl::sycl::access::target::global_buffer;
     static const auto is_place_holder = cl::sycl::access::placeholder::true_t;
     typedef TensorSycl::internal::RangeAccess<AcMd, T> ret_type;
@@ -362,28 +322,22 @@ class QueueInterface {
     const ptrdiff_t typed_offset = offset / sizeof(T);
     eigen_assert(typed_offset >= 0);
     const auto typed_size = original_buffer.get_size() / sizeof(T);
-    auto buffer = original_buffer.template reinterpret<
-        typename Eigen::internal::remove_const<T>::type>(
+    auto buffer = original_buffer.template reinterpret<typename Eigen::internal::remove_const<T>::type>(
         cl::sycl::range<1>(typed_size));
     const ptrdiff_t size = buffer.get_count() - typed_offset;
     eigen_assert(size >= 0);
-    typedef cl::sycl::accessor<typename Eigen::internal::remove_const<T>::type,
-                               1, AcMd, global_access, is_place_holder>
+    typedef cl::sycl::accessor<typename Eigen::internal::remove_const<T>::type, 1, AcMd, global_access, is_place_holder>
         placeholder_accessor_t;
     const auto start_ptr = static_cast<internal_ptr_t>(ptr) - offset;
-    return ret_type(placeholder_accessor_t(buffer, cl::sycl::range<1>(size),
-                                           cl::sycl::id<1>(typed_offset)),
-                    static_cast<size_t>(typed_offset),
-                    reinterpret_cast<std::intptr_t>(start_ptr));
+    return ret_type(placeholder_accessor_t(buffer, cl::sycl::range<1>(size), cl::sycl::id<1>(typed_offset)),
+                    static_cast<size_t>(typed_offset), reinterpret_cast<std::intptr_t>(start_ptr));
   }
 
   /// Get a range accessor to the virtual pointer's device memory with a
   /// specified size.
   template <cl::sycl::access::mode AcMd, typename Index>
-  EIGEN_STRONG_INLINE cl::sycl::accessor<
-      buffer_scalar_t, 1, AcMd, cl::sycl::access::target::global_buffer>
-  get_range_accessor(cl::sycl::handler &cgh, const void *ptr,
-                     const Index n_bytes) const {
+  EIGEN_STRONG_INLINE cl::sycl::accessor<buffer_scalar_t, 1, AcMd, cl::sycl::access::target::global_buffer>
+  get_range_accessor(cl::sycl::handler &cgh, const void *ptr, const Index n_bytes) const {
     static const auto global_access = cl::sycl::access::target::global_buffer;
     eigen_assert(n_bytes >= 0);
     std::lock_guard<std::mutex> lock(pmapper_mutex_);
@@ -391,8 +345,7 @@ class QueueInterface {
     const ptrdiff_t offset = pMapper.get_offset(ptr);
     eigen_assert(offset >= 0);
     eigen_assert(offset + n_bytes <= buffer.get_size());
-    return buffer.template get_access<AcMd, global_access>(
-        cgh, cl::sycl::range<1>(n_bytes), cl::sycl::id<1>(offset));
+    return buffer.template get_access<AcMd, global_access>(cgh, cl::sycl::range<1>(n_bytes), cl::sycl::id<1>(offset));
   }
 
   /// Creation of sycl accessor for a buffer. This function first tries to find
@@ -400,17 +353,13 @@ class QueueInterface {
   /// not, the function then adds an entry by creating a sycl buffer for that
   /// particular pointer.
   template <cl::sycl::access::mode AcMd>
-  EIGEN_STRONG_INLINE cl::sycl::accessor<
-      buffer_scalar_t, 1, AcMd, cl::sycl::access::target::global_buffer>
+  EIGEN_STRONG_INLINE cl::sycl::accessor<buffer_scalar_t, 1, AcMd, cl::sycl::access::target::global_buffer>
   get_sycl_accessor(cl::sycl::handler &cgh, const void *ptr) const {
     std::lock_guard<std::mutex> lock(pmapper_mutex_);
-    return pMapper.get_buffer(ptr)
-        .template get_access<AcMd, cl::sycl::access::target::global_buffer>(
-            cgh);
+    return pMapper.get_buffer(ptr).template get_access<AcMd, cl::sycl::access::target::global_buffer>(cgh);
   }
 
-  EIGEN_STRONG_INLINE cl::sycl::buffer<buffer_scalar_t, 1> get_sycl_buffer(
-      const void *ptr) const {
+  EIGEN_STRONG_INLINE cl::sycl::buffer<buffer_scalar_t, 1> get_sycl_buffer(const void *ptr) const {
     std::lock_guard<std::mutex> lock(pmapper_mutex_);
     return pMapper.get_buffer(ptr);
   }
@@ -420,22 +369,16 @@ class QueueInterface {
     return pMapper.get_offset(ptr);
   }
 
-  template <typename OutScalar, typename sycl_kernel, typename Lhs,
-            typename Rhs, typename OutPtr, typename Range, typename Index,
-            typename... T>
-  EIGEN_ALWAYS_INLINE void binary_kernel_launcher(const Lhs &lhs,
-                                                  const Rhs &rhs, OutPtr outptr,
-                                                  Range thread_range,
-                                                  Index scratchSize,
-                                                  T... var) const {
+  template <typename OutScalar, typename sycl_kernel, typename Lhs, typename Rhs, typename OutPtr, typename Range,
+            typename Index, typename... T>
+  EIGEN_ALWAYS_INLINE void binary_kernel_launcher(const Lhs &lhs, const Rhs &rhs, OutPtr outptr, Range thread_range,
+                                                  Index scratchSize, T... var) const {
     auto kernel_functor = [=](cl::sycl::handler &cgh) {
       // binding the placeholder accessors to a commandgroup handler
       lhs.bind(cgh);
       rhs.bind(cgh);
       outptr.bind(cgh);
-      typedef cl::sycl::accessor<OutScalar, 1,
-                                 cl::sycl::access::mode::read_write,
-                                 cl::sycl::access::target::local>
+      typedef cl::sycl::accessor<OutScalar, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local>
           LocalAccessor;
 
       LocalAccessor scratch(cl::sycl::range<1>(scratchSize), cgh);
@@ -450,20 +393,15 @@ class QueueInterface {
     async_synchronize(e);
   }
 
-  template <typename OutScalar, typename sycl_kernel, typename InPtr,
-            typename OutPtr, typename Range, typename Index, typename... T>
-  EIGEN_ALWAYS_INLINE void unary_kernel_launcher(const InPtr &inptr,
-                                                 OutPtr &outptr,
-                                                 Range thread_range,
-                                                 Index scratchSize,
-                                                 T... var) const {
+  template <typename OutScalar, typename sycl_kernel, typename InPtr, typename OutPtr, typename Range, typename Index,
+            typename... T>
+  EIGEN_ALWAYS_INLINE void unary_kernel_launcher(const InPtr &inptr, OutPtr &outptr, Range thread_range,
+                                                 Index scratchSize, T... var) const {
     auto kernel_functor = [=](cl::sycl::handler &cgh) {
       // binding the placeholder accessors to a commandgroup handler
       inptr.bind(cgh);
       outptr.bind(cgh);
-      typedef cl::sycl::accessor<OutScalar, 1,
-                                 cl::sycl::access::mode::read_write,
-                                 cl::sycl::access::target::local>
+      typedef cl::sycl::accessor<OutScalar, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local>
           LocalAccessor;
 
       LocalAccessor scratch(cl::sycl::range<1>(scratchSize), cgh);
@@ -478,18 +416,13 @@ class QueueInterface {
     async_synchronize(e);
   }
 
-    template <typename OutScalar, typename sycl_kernel, typename InPtr,
-           typename Range, typename Index, typename... T>
-  EIGEN_ALWAYS_INLINE void nullary_kernel_launcher(const InPtr &inptr,
-                                                 Range thread_range,
-                                                 Index scratchSize,
-                                                 T... var) const {
+  template <typename OutScalar, typename sycl_kernel, typename InPtr, typename Range, typename Index, typename... T>
+  EIGEN_ALWAYS_INLINE void nullary_kernel_launcher(const InPtr &inptr, Range thread_range, Index scratchSize,
+                                                   T... var) const {
     auto kernel_functor = [=](cl::sycl::handler &cgh) {
       // binding the placeholder accessors to a commandgroup handler
       inptr.bind(cgh);
-      typedef cl::sycl::accessor<OutScalar, 1,
-                                 cl::sycl::access::mode::read_write,
-                                 cl::sycl::access::target::local>
+      typedef cl::sycl::accessor<OutScalar, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local>
           LocalAccessor;
 
       LocalAccessor scratch(cl::sycl::range<1>(scratchSize), cgh);
@@ -504,7 +437,6 @@ class QueueInterface {
     async_synchronize(e);
   }
 
-
   EIGEN_STRONG_INLINE void synchronize() const {
 #ifdef EIGEN_EXCEPTIONS
     m_queue.wait_and_throw();
@@ -512,7 +444,6 @@ class QueueInterface {
     m_queue.wait();
 #endif
   }
-
 
   EIGEN_STRONG_INLINE void async_synchronize(cl::sycl::event e) const {
     set_latest_event(e);
@@ -522,11 +453,9 @@ class QueueInterface {
   }
 
   template <typename Index>
-  EIGEN_STRONG_INLINE void parallel_for_setup(Index n, Index &tileSize,
-                                              Index &rng, Index &GRange) const {
+  EIGEN_STRONG_INLINE void parallel_for_setup(Index n, Index &tileSize, Index &rng, Index &GRange) const {
     tileSize = static_cast<Index>(getNearestPowerOfTwoWorkGroupSize());
-    tileSize = std::min(static_cast<Index>(EIGEN_SYCL_LOCAL_THREAD_DIM0 *
-                                           EIGEN_SYCL_LOCAL_THREAD_DIM1),
+    tileSize = std::min(static_cast<Index>(EIGEN_SYCL_LOCAL_THREAD_DIM0 * EIGEN_SYCL_LOCAL_THREAD_DIM1),
                         static_cast<Index>(tileSize));
     rng = n;
     if (rng == 0) rng = static_cast<Index>(1);
@@ -542,19 +471,14 @@ class QueueInterface {
   /// This is used to prepare the number of threads and also the number of
   /// threads per block for sycl kernels
   template <typename Index>
-  EIGEN_STRONG_INLINE void parallel_for_setup(
-      const std::array<Index, 2> &input_dim, cl::sycl::range<2> &global_range,
-      cl::sycl::range<2> &local_range) const {
+  EIGEN_STRONG_INLINE void parallel_for_setup(const std::array<Index, 2> &input_dim, cl::sycl::range<2> &global_range,
+                                              cl::sycl::range<2> &local_range) const {
     std::array<Index, 2> input_range = input_dim;
-    Index max_workgroup_Size =
-        static_cast<Index>(getNearestPowerOfTwoWorkGroupSize());
-    max_workgroup_Size =
-        std::min(static_cast<Index>(EIGEN_SYCL_LOCAL_THREAD_DIM0 *
-                                    EIGEN_SYCL_LOCAL_THREAD_DIM1),
-                 static_cast<Index>(max_workgroup_Size));
+    Index max_workgroup_Size = static_cast<Index>(getNearestPowerOfTwoWorkGroupSize());
+    max_workgroup_Size = std::min(static_cast<Index>(EIGEN_SYCL_LOCAL_THREAD_DIM0 * EIGEN_SYCL_LOCAL_THREAD_DIM1),
+                                  static_cast<Index>(max_workgroup_Size));
     Index pow_of_2 = static_cast<Index>(std::log2(max_workgroup_Size));
-    local_range[1] =
-        static_cast<Index>(std::pow(2, static_cast<Index>(pow_of_2 / 2)));
+    local_range[1] = static_cast<Index>(std::pow(2, static_cast<Index>(pow_of_2 / 2)));
     input_range[1] = input_dim[1];
     if (input_range[1] == 0) input_range[1] = static_cast<Index>(1);
     global_range[1] = input_range[1];
@@ -562,8 +486,7 @@ class QueueInterface {
       local_range[1] = global_range[1];
     else if (global_range[1] > local_range[1]) {
       Index xMode = static_cast<Index>(global_range[1] % local_range[1]);
-      if (xMode != 0)
-        global_range[1] += static_cast<Index>(local_range[1] - xMode);
+      if (xMode != 0) global_range[1] += static_cast<Index>(local_range[1] - xMode);
     }
     local_range[0] = static_cast<Index>(max_workgroup_Size / local_range[1]);
     input_range[0] = input_dim[0];
@@ -573,27 +496,21 @@ class QueueInterface {
       local_range[0] = global_range[0];
     else if (global_range[0] > local_range[0]) {
       Index xMode = static_cast<Index>(global_range[0] % local_range[0]);
-      if (xMode != 0)
-        global_range[0] += static_cast<Index>(local_range[0] - xMode);
+      if (xMode != 0) global_range[0] += static_cast<Index>(local_range[0] - xMode);
     }
   }
 
   /// This is used to prepare the number of threads and also the number of
   /// threads per block for sycl kernels
   template <typename Index>
-  EIGEN_STRONG_INLINE void parallel_for_setup(
-      const std::array<Index, 3> &input_dim, cl::sycl::range<3> &global_range,
-      cl::sycl::range<3> &local_range) const {
+  EIGEN_STRONG_INLINE void parallel_for_setup(const std::array<Index, 3> &input_dim, cl::sycl::range<3> &global_range,
+                                              cl::sycl::range<3> &local_range) const {
     std::array<Index, 3> input_range = input_dim;
-    Index max_workgroup_Size =
-        static_cast<Index>(getNearestPowerOfTwoWorkGroupSize());
-    max_workgroup_Size =
-        std::min(static_cast<Index>(EIGEN_SYCL_LOCAL_THREAD_DIM0 *
-                                    EIGEN_SYCL_LOCAL_THREAD_DIM1),
-                 static_cast<Index>(max_workgroup_Size));
+    Index max_workgroup_Size = static_cast<Index>(getNearestPowerOfTwoWorkGroupSize());
+    max_workgroup_Size = std::min(static_cast<Index>(EIGEN_SYCL_LOCAL_THREAD_DIM0 * EIGEN_SYCL_LOCAL_THREAD_DIM1),
+                                  static_cast<Index>(max_workgroup_Size));
     Index pow_of_2 = static_cast<Index>(std::log2(max_workgroup_Size));
-    local_range[2] =
-        static_cast<Index>(std::pow(2, static_cast<Index>(pow_of_2 / 3)));
+    local_range[2] = static_cast<Index>(std::pow(2, static_cast<Index>(pow_of_2 / 3)));
     input_range[2] = input_dim[2];
     if (input_range[2] == 0) input_range[1] = static_cast<Index>(1);
     global_range[2] = input_range[2];
@@ -601,13 +518,10 @@ class QueueInterface {
       local_range[2] = global_range[2];
     else if (global_range[2] > local_range[2]) {
       Index xMode = static_cast<Index>(global_range[2] % local_range[2]);
-      if (xMode != 0)
-        global_range[2] += static_cast<Index>(local_range[2] - xMode);
+      if (xMode != 0) global_range[2] += static_cast<Index>(local_range[2] - xMode);
     }
-    pow_of_2 = static_cast<Index>(
-        std::log2(static_cast<Index>(max_workgroup_Size / local_range[2])));
-    local_range[1] =
-        static_cast<Index>(std::pow(2, static_cast<Index>(pow_of_2 / 2)));
+    pow_of_2 = static_cast<Index>(std::log2(static_cast<Index>(max_workgroup_Size / local_range[2])));
+    local_range[1] = static_cast<Index>(std::pow(2, static_cast<Index>(pow_of_2 / 2)));
     input_range[1] = input_dim[1];
     if (input_range[1] == 0) input_range[1] = static_cast<Index>(1);
     global_range[1] = input_range[1];
@@ -615,11 +529,9 @@ class QueueInterface {
       local_range[1] = global_range[1];
     else if (global_range[1] > local_range[1]) {
       Index xMode = static_cast<Index>(global_range[1] % local_range[1]);
-      if (xMode != 0)
-        global_range[1] += static_cast<Index>(local_range[1] - xMode);
+      if (xMode != 0) global_range[1] += static_cast<Index>(local_range[1] - xMode);
     }
-    local_range[0] = static_cast<Index>(max_workgroup_Size /
-                                        (local_range[1] * local_range[2]));
+    local_range[0] = static_cast<Index>(max_workgroup_Size / (local_range[1] * local_range[2]));
     input_range[0] = input_dim[0];
     if (input_range[0] == 0) input_range[0] = static_cast<Index>(1);
     global_range[0] = input_range[0];
@@ -627,8 +539,7 @@ class QueueInterface {
       local_range[0] = global_range[0];
     else if (global_range[0] > local_range[0]) {
       Index xMode = static_cast<Index>(global_range[0] % local_range[0]);
-      if (xMode != 0)
-        global_range[0] += static_cast<Index>(local_range[0] - xMode);
+      if (xMode != 0) global_range[0] += static_cast<Index>(local_range[0] - xMode);
     }
   }
 
@@ -638,26 +549,17 @@ class QueueInterface {
 #elif defined(EIGEN_SYCL_LOCAL_MEM) && !defined(EIGEN_SYCL_NO_LOCAL_MEM)
     return true;
 #else
-    return m_device_info.local_mem_type ==
-           cl::sycl::info::local_mem_type::local;
+    return m_device_info.local_mem_type == cl::sycl::info::local_mem_type::local;
 #endif
   }
 
-  EIGEN_STRONG_INLINE unsigned long max_buffer_size() const {
-    return m_device_info.max_mem_alloc_size;
-  }
+  EIGEN_STRONG_INLINE unsigned long max_buffer_size() const { return m_device_info.max_mem_alloc_size; }
 
-  EIGEN_STRONG_INLINE unsigned long getNumSyclMultiProcessors() const {
-    return m_device_info.max_compute_units;
-  }
+  EIGEN_STRONG_INLINE unsigned long getNumSyclMultiProcessors() const { return m_device_info.max_compute_units; }
 
-  EIGEN_STRONG_INLINE unsigned long maxSyclThreadsPerBlock() const {
-    return m_device_info.max_work_group_size;
-  }
+  EIGEN_STRONG_INLINE unsigned long maxSyclThreadsPerBlock() const { return m_device_info.max_work_group_size; }
 
-  EIGEN_STRONG_INLINE cl::sycl::id<3> maxWorkItemSizes() const {
-    return m_device_info.max_work_item_sizes;
-  }
+  EIGEN_STRONG_INLINE cl::sycl::id<3> maxWorkItemSizes() const { return m_device_info.max_work_item_sizes; }
 
   /// No need for sycl it should act the same as CPU version
   EIGEN_STRONG_INLINE int majorDeviceVersion() const { return 1; }
@@ -667,9 +569,7 @@ class QueueInterface {
     return 2;
   }
 
-  EIGEN_STRONG_INLINE size_t sharedMemPerBlock() const {
-    return m_device_info.local_mem_size;
-  }
+  EIGEN_STRONG_INLINE size_t sharedMemPerBlock() const { return m_device_info.local_mem_size; }
 
   // This function returns the nearest power of 2 Work-group size which is <=
   // maximum device workgroup size.
@@ -677,17 +577,11 @@ class QueueInterface {
     return getPowerOfTwo(m_device_info.max_work_group_size, false);
   }
 
-  EIGEN_STRONG_INLINE std::string getPlatformName() const {
-    return m_device_info.platform_name;
-  }
+  EIGEN_STRONG_INLINE std::string getPlatformName() const { return m_device_info.platform_name; }
 
-  EIGEN_STRONG_INLINE std::string getDeviceName() const {
-    return m_device_info.device_name;
-  }
+  EIGEN_STRONG_INLINE std::string getDeviceName() const { return m_device_info.device_name; }
 
-  EIGEN_STRONG_INLINE std::string getDeviceVendor() const {
-    return m_device_info.device_vendor;
-  }
+  EIGEN_STRONG_INLINE std::string getDeviceVendor() const { return m_device_info.device_vendor; }
 
   // This function returns the nearest power of 2
   // if roundup is true returns result>=wgsize
@@ -744,8 +638,7 @@ class QueueInterface {
 #endif
   }
 
-  void synchronize_and_callback(cl::sycl::event e,
-                                const std::function<void()> &callback) const {
+  void synchronize_and_callback(cl::sycl::event e, const std::function<void()> &callback) const {
     set_latest_event(e);
     if (callback) {
       auto callback_ = [=]() {
@@ -812,134 +705,103 @@ struct SyclDeviceBase {
   /// QueueInterface is not owned. it is the caller's responsibility to destroy
   /// it
   const QueueInterface *m_queue_stream;
-  explicit SyclDeviceBase(const QueueInterface *queue_stream)
-      : m_queue_stream(queue_stream) {}
-  EIGEN_STRONG_INLINE const QueueInterface *queue_stream() const {
-    return m_queue_stream;
-  }
+  explicit SyclDeviceBase(const QueueInterface *queue_stream) : m_queue_stream(queue_stream) {}
+  EIGEN_STRONG_INLINE const QueueInterface *queue_stream() const { return m_queue_stream; }
 };
 
 // Here is a sycl device struct which accept the sycl queue interface
 // as an input
 struct SyclDevice : public SyclDeviceBase {
-  explicit SyclDevice(const QueueInterface *queue_stream)
-      : SyclDeviceBase(queue_stream) {}
+  explicit SyclDevice(const QueueInterface *queue_stream) : SyclDeviceBase(queue_stream) {}
 
   // this is the accessor used to construct the evaluator
   template <cl::sycl::access::mode AcMd, typename T>
-  EIGEN_STRONG_INLINE TensorSycl::internal::RangeAccess<AcMd, T>
-  get_range_accessor(const void *ptr) const {
+  EIGEN_STRONG_INLINE TensorSycl::internal::RangeAccess<AcMd, T> get_range_accessor(const void *ptr) const {
     return queue_stream()->template get_range_accessor<AcMd, T>(ptr);
   }
 
   // get sycl accessor
   template <cl::sycl::access::mode AcMd>
-  EIGEN_STRONG_INLINE cl::sycl::accessor<
-      buffer_scalar_t, 1, AcMd, cl::sycl::access::target::global_buffer>
+  EIGEN_STRONG_INLINE cl::sycl::accessor<buffer_scalar_t, 1, AcMd, cl::sycl::access::target::global_buffer>
   get_sycl_accessor(cl::sycl::handler &cgh, const void *ptr) const {
     return queue_stream()->template get_sycl_accessor<AcMd>(cgh, ptr);
   }
 
   /// Accessing the created sycl device buffer for the device pointer
-  EIGEN_STRONG_INLINE cl::sycl::buffer<buffer_scalar_t, 1> get_sycl_buffer(
-      const void *ptr) const {
+  EIGEN_STRONG_INLINE cl::sycl::buffer<buffer_scalar_t, 1> get_sycl_buffer(const void *ptr) const {
     return queue_stream()->get_sycl_buffer(ptr);
   }
 
   /// This is used to prepare the number of threads and also the number of
   /// threads per block for sycl kernels
   template <typename Index>
-  EIGEN_STRONG_INLINE void parallel_for_setup(Index n, Index &tileSize,
-                                              Index &rng, Index &GRange) const {
+  EIGEN_STRONG_INLINE void parallel_for_setup(Index n, Index &tileSize, Index &rng, Index &GRange) const {
     queue_stream()->parallel_for_setup(n, tileSize, rng, GRange);
   }
 
   /// This is used to prepare the number of threads and also the number of
   /// threads per block for sycl kernels
   template <typename Index>
-  EIGEN_STRONG_INLINE void parallel_for_setup(
-      const std::array<Index, 2> &input_dim, cl::sycl::range<2> &global_range,
-      cl::sycl::range<2> &local_range) const {
+  EIGEN_STRONG_INLINE void parallel_for_setup(const std::array<Index, 2> &input_dim, cl::sycl::range<2> &global_range,
+                                              cl::sycl::range<2> &local_range) const {
     queue_stream()->parallel_for_setup(input_dim, global_range, local_range);
   }
 
   /// This is used to prepare the number of threads and also the number of
   /// threads per block for sycl kernels
   template <typename Index>
-  EIGEN_STRONG_INLINE void parallel_for_setup(
-      const std::array<Index, 3> &input_dim, cl::sycl::range<3> &global_range,
-      cl::sycl::range<3> &local_range) const {
+  EIGEN_STRONG_INLINE void parallel_for_setup(const std::array<Index, 3> &input_dim, cl::sycl::range<3> &global_range,
+                                              cl::sycl::range<3> &local_range) const {
     queue_stream()->parallel_for_setup(input_dim, global_range, local_range);
   }
 
   /// allocate device memory
-  EIGEN_STRONG_INLINE void *allocate(size_t num_bytes) const {
-    return queue_stream()->allocate(num_bytes);
-  }
+  EIGEN_STRONG_INLINE void *allocate(size_t num_bytes) const { return queue_stream()->allocate(num_bytes); }
 
-  EIGEN_STRONG_INLINE void *allocate_temp(size_t num_bytes) const {
-    return queue_stream()->allocate_temp(num_bytes);
-  }
+  EIGEN_STRONG_INLINE void *allocate_temp(size_t num_bytes) const { return queue_stream()->allocate_temp(num_bytes); }
 
   /// deallocate device memory
-  EIGEN_STRONG_INLINE void deallocate(void *p) const {
-    queue_stream()->deallocate(p);
-  }
+  EIGEN_STRONG_INLINE void deallocate(void *p) const { queue_stream()->deallocate(p); }
 
-  EIGEN_STRONG_INLINE void deallocate_temp(void *buffer) const {
-    queue_stream()->deallocate_temp(buffer);
-  }
+  EIGEN_STRONG_INLINE void deallocate_temp(void *buffer) const { queue_stream()->deallocate_temp(buffer); }
   template <cl::sycl::access::mode AcMd, typename T>
-  EIGEN_STRONG_INLINE void deallocate_temp(
-      const TensorSycl::internal::RangeAccess<AcMd, T> &buffer) const {
+  EIGEN_STRONG_INLINE void deallocate_temp(const TensorSycl::internal::RangeAccess<AcMd, T> &buffer) const {
     queue_stream()->deallocate_temp(buffer);
   }
-  EIGEN_STRONG_INLINE void deallocate_all() const {
-    queue_stream()->deallocate_all();
-  }
+  EIGEN_STRONG_INLINE void deallocate_all() const { queue_stream()->deallocate_all(); }
 
   template <typename data_t>
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorSycl::internal::RangeAccess<
-      cl::sycl::access::mode::read_write, data_t>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorSycl::internal::RangeAccess<cl::sycl::access::mode::read_write, data_t>
   get(data_t *data) const {
     return queue_stream()->get(data);
   }
   template <typename data_t>
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE data_t *get(
-      TensorSycl::internal::RangeAccess<cl::sycl::access::mode::read_write,
-                                        data_t>
-          data) const {
+      TensorSycl::internal::RangeAccess<cl::sycl::access::mode::read_write, data_t> data) const {
     return queue_stream()->get(data);
   }
 
   /// attach existing buffer
-  EIGEN_STRONG_INLINE void *attach_buffer(
-      cl::sycl::buffer<buffer_scalar_t, 1> &buf) const {
+  EIGEN_STRONG_INLINE void *attach_buffer(cl::sycl::buffer<buffer_scalar_t, 1> &buf) const {
     return queue_stream()->attach_buffer(buf);
   }
   /// detach buffer
-  EIGEN_STRONG_INLINE void detach_buffer(void *p) const {
-    queue_stream()->detach_buffer(p);
-  }
-  EIGEN_STRONG_INLINE ptrdiff_t get_offset(const void *ptr) const {
-    return queue_stream()->get_offset(ptr);
-  }
+  EIGEN_STRONG_INLINE void detach_buffer(void *p) const { queue_stream()->detach_buffer(p); }
+  EIGEN_STRONG_INLINE ptrdiff_t get_offset(const void *ptr) const { return queue_stream()->get_offset(ptr); }
 
   // some runtime conditions that can be applied here
   EIGEN_STRONG_INLINE bool isDeviceSuitable() const { return true; }
 
   /// memcpyHostToDevice
   template <typename Index>
-  EIGEN_STRONG_INLINE void memcpyHostToDevice(
-      Index *dst, const Index *src, size_t n,
-      std::function<void()> callback = {}) const {
+  EIGEN_STRONG_INLINE void memcpyHostToDevice(Index *dst, const Index *src, size_t n,
+                                              std::function<void()> callback = {}) const {
     queue_stream()->memcpyHostToDevice(dst, src, n, callback);
   }
   /// memcpyDeviceToHost
   template <typename Index>
-  EIGEN_STRONG_INLINE void memcpyDeviceToHost(
-      void *dst, const Index *src, size_t n,
-      std::function<void()> callback = {}) const {
+  EIGEN_STRONG_INLINE void memcpyDeviceToHost(void *dst, const Index *src, size_t n,
+                                              std::function<void()> callback = {}) const {
     queue_stream()->memcpyDeviceToHost(dst, src, n, callback);
   }
   /// the memcpy function
@@ -948,17 +810,11 @@ struct SyclDevice : public SyclDeviceBase {
     queue_stream()->memcpy(dst, src, n);
   }
   /// the memset function
-  EIGEN_STRONG_INLINE void memset(void *data, int c, size_t n) const {
-    queue_stream()->memset(data, c, n);
-  }
+  EIGEN_STRONG_INLINE void memset(void *data, int c, size_t n) const { queue_stream()->memset(data, c, n); }
   /// returning the sycl queue
-  EIGEN_STRONG_INLINE cl::sycl::queue &sycl_queue() const {
-    return queue_stream()->sycl_queue();
-  }
+  EIGEN_STRONG_INLINE cl::sycl::queue &sycl_queue() const { return queue_stream()->sycl_queue(); }
 #ifdef EIGEN_SYCL_USE_PROGRAM_CLASS
-  EIGEN_STRONG_INLINE cl::sycl::program &program() const {
-    return queue_stream()->program();
-  }
+  EIGEN_STRONG_INLINE cl::sycl::program &program() const { return queue_stream()->program(); }
 #endif
 
   EIGEN_STRONG_INLINE size_t firstLevelCacheSize() const { return 48 * 1024; }
@@ -971,19 +827,13 @@ struct SyclDevice : public SyclDeviceBase {
   EIGEN_STRONG_INLINE unsigned long getNumSyclMultiProcessors() const {
     return queue_stream()->getNumSyclMultiProcessors();
   }
-  EIGEN_STRONG_INLINE unsigned long maxSyclThreadsPerBlock() const {
-    return queue_stream()->maxSyclThreadsPerBlock();
-  }
-  EIGEN_STRONG_INLINE cl::sycl::id<3> maxWorkItemSizes() const {
-    return queue_stream()->maxWorkItemSizes();
-  }
+  EIGEN_STRONG_INLINE unsigned long maxSyclThreadsPerBlock() const { return queue_stream()->maxSyclThreadsPerBlock(); }
+  EIGEN_STRONG_INLINE cl::sycl::id<3> maxWorkItemSizes() const { return queue_stream()->maxWorkItemSizes(); }
   EIGEN_STRONG_INLINE unsigned long maxSyclThreadsPerMultiProcessor() const {
     // OpenCL doesnot have such concept
     return queue_stream()->maxSyclThreadsPerMultiProcessor();
   }
-  EIGEN_STRONG_INLINE size_t sharedMemPerBlock() const {
-    return queue_stream()->sharedMemPerBlock();
-  }
+  EIGEN_STRONG_INLINE size_t sharedMemPerBlock() const { return queue_stream()->sharedMemPerBlock(); }
   EIGEN_STRONG_INLINE size_t getNearestPowerOfTwoWorkGroupSize() const {
     return queue_stream()->getNearestPowerOfTwoWorkGroupSize();
   }
@@ -992,55 +842,35 @@ struct SyclDevice : public SyclDeviceBase {
     return queue_stream()->getPowerOfTwo(val, roundUp);
   }
   /// No need for sycl it should act the same as CPU version
-  EIGEN_STRONG_INLINE int majorDeviceVersion() const {
-    return queue_stream()->majorDeviceVersion();
-  }
+  EIGEN_STRONG_INLINE int majorDeviceVersion() const { return queue_stream()->majorDeviceVersion(); }
 
-  EIGEN_STRONG_INLINE void synchronize() const {
-    queue_stream()->synchronize();
-  }
-  EIGEN_STRONG_INLINE void async_synchronize(
-      cl::sycl::event e = cl::sycl::event()) const {
+  EIGEN_STRONG_INLINE void synchronize() const { queue_stream()->synchronize(); }
+  EIGEN_STRONG_INLINE void async_synchronize(cl::sycl::event e = cl::sycl::event()) const {
     queue_stream()->async_synchronize(e);
   }
-  EIGEN_STRONG_INLINE cl::sycl::event get_latest_event() const {
-    return queue_stream()->get_latest_event();
-  }
+  EIGEN_STRONG_INLINE cl::sycl::event get_latest_event() const { return queue_stream()->get_latest_event(); }
 
   // This function checks if the runtime recorded an error for the
   // underlying stream device.
   EIGEN_STRONG_INLINE bool ok() const { return queue_stream()->ok(); }
 
-  EIGEN_STRONG_INLINE bool has_local_memory() const {
-    return queue_stream()->has_local_memory();
-  }
-  EIGEN_STRONG_INLINE long max_buffer_size() const {
-    return queue_stream()->max_buffer_size();
-  }
-  EIGEN_STRONG_INLINE std::string getPlatformName() const {
-    return queue_stream()->getPlatformName();
-  }
-  EIGEN_STRONG_INLINE std::string getDeviceName() const {
-    return queue_stream()->getDeviceName();
-  }
-  EIGEN_STRONG_INLINE std::string getDeviceVendor() const {
-    return queue_stream()->getDeviceVendor();
-  }
+  EIGEN_STRONG_INLINE bool has_local_memory() const { return queue_stream()->has_local_memory(); }
+  EIGEN_STRONG_INLINE long max_buffer_size() const { return queue_stream()->max_buffer_size(); }
+  EIGEN_STRONG_INLINE std::string getPlatformName() const { return queue_stream()->getPlatformName(); }
+  EIGEN_STRONG_INLINE std::string getDeviceName() const { return queue_stream()->getDeviceName(); }
+  EIGEN_STRONG_INLINE std::string getDeviceVendor() const { return queue_stream()->getDeviceVendor(); }
   template <typename OutScalar, typename KernelType, typename... T>
   EIGEN_ALWAYS_INLINE void binary_kernel_launcher(T... var) const {
-    queue_stream()->template binary_kernel_launcher<OutScalar, KernelType>(
-        var...);
+    queue_stream()->template binary_kernel_launcher<OutScalar, KernelType>(var...);
   }
   template <typename OutScalar, typename KernelType, typename... T>
   EIGEN_ALWAYS_INLINE void unary_kernel_launcher(T... var) const {
-    queue_stream()->template unary_kernel_launcher<OutScalar, KernelType>(
-        var...);
+    queue_stream()->template unary_kernel_launcher<OutScalar, KernelType>(var...);
   }
 
   template <typename OutScalar, typename KernelType, typename... T>
   EIGEN_ALWAYS_INLINE void nullary_kernel_launcher(T... var) const {
-    queue_stream()->template nullary_kernel_launcher<OutScalar, KernelType>(
-        var...);
+    queue_stream()->template nullary_kernel_launcher<OutScalar, KernelType>(var...);
   }
 };
 }  // end namespace Eigen

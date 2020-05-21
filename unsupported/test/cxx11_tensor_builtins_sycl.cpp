@@ -17,8 +17,9 @@
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE int64_t
 #define EIGEN_USE_SYCL
 
-#include "main.h"
 #include <unsupported/Eigen/CXX11/Tensor>
+
+#include "main.h"
 
 using Eigen::array;
 using Eigen::SyclDevice;
@@ -29,29 +30,49 @@ using Eigen::TensorMap;
 // the equivalent on the host
 namespace cl {
 namespace sycl {
-template <typename T> T abs(T x) { return cl::sycl::fabs(x); }
-template <typename T> T square(T x) { return x * x; }
-template <typename T> T cube(T x) { return x * x * x; }
-template <typename T> T inverse(T x) { return T(1) / x; }
-template <typename T> T cwiseMax(T x, T y) { return cl::sycl::max(x, y); }
-template <typename T> T cwiseMin(T x, T y) { return cl::sycl::min(x, y); }
+template <typename T>
+T abs(T x) {
+  return cl::sycl::fabs(x);
 }
+template <typename T>
+T square(T x) {
+  return x * x;
 }
+template <typename T>
+T cube(T x) {
+  return x * x * x;
+}
+template <typename T>
+T inverse(T x) {
+  return T(1) / x;
+}
+template <typename T>
+T cwiseMax(T x, T y) {
+  return cl::sycl::max(x, y);
+}
+template <typename T>
+T cwiseMin(T x, T y) {
+  return cl::sycl::min(x, y);
+}
+}  // namespace sycl
+}  // namespace cl
 
 struct EqualAssignement {
   template <typename Lhs, typename Rhs>
-  void operator()(Lhs& lhs, const Rhs& rhs) { lhs = rhs; }
+  void operator()(Lhs& lhs, const Rhs& rhs) {
+    lhs = rhs;
+  }
 };
 
 struct PlusEqualAssignement {
   template <typename Lhs, typename Rhs>
-  void operator()(Lhs& lhs, const Rhs& rhs) { lhs += rhs; }
+  void operator()(Lhs& lhs, const Rhs& rhs) {
+    lhs += rhs;
+  }
 };
 
-template <typename DataType, int DataLayout,
-          typename Assignement, typename Operator>
-void test_unary_builtins_for_scalar(const Eigen::SyclDevice& sycl_device,
-                                    const array<int64_t, 3>& tensor_range) {
+template <typename DataType, int DataLayout, typename Assignement, typename Operator>
+void test_unary_builtins_for_scalar(const Eigen::SyclDevice& sycl_device, const array<int64_t, 3>& tensor_range) {
   Operator op;
   Assignement asgn;
   {
@@ -61,20 +82,15 @@ void test_unary_builtins_for_scalar(const Eigen::SyclDevice& sycl_device,
     in = in.random() + DataType(0.01);
     out = out.random() + DataType(0.01);
     Tensor<DataType, 3, DataLayout, int64_t> reference(out);
-    DataType *gpu_data = static_cast<DataType *>(
-        sycl_device.allocate(in.size() * sizeof(DataType)));
-    DataType *gpu_data_out = static_cast<DataType *>(
-        sycl_device.allocate(out.size() * sizeof(DataType)));
+    DataType* gpu_data = static_cast<DataType*>(sycl_device.allocate(in.size() * sizeof(DataType)));
+    DataType* gpu_data_out = static_cast<DataType*>(sycl_device.allocate(out.size() * sizeof(DataType)));
     TensorMap<Tensor<DataType, 3, DataLayout, int64_t>> gpu(gpu_data, tensor_range);
     TensorMap<Tensor<DataType, 3, DataLayout, int64_t>> gpu_out(gpu_data_out, tensor_range);
-    sycl_device.memcpyHostToDevice(gpu_data, in.data(),
-                                   (in.size()) * sizeof(DataType));
-    sycl_device.memcpyHostToDevice(gpu_data_out, out.data(),
-                                   (out.size()) * sizeof(DataType));
+    sycl_device.memcpyHostToDevice(gpu_data, in.data(), (in.size()) * sizeof(DataType));
+    sycl_device.memcpyHostToDevice(gpu_data_out, out.data(), (out.size()) * sizeof(DataType));
     auto device_expr = gpu_out.device(sycl_device);
     asgn(device_expr, op(gpu));
-    sycl_device.memcpyDeviceToHost(out.data(), gpu_data_out,
-                                   (out.size()) * sizeof(DataType));
+    sycl_device.memcpyDeviceToHost(out.data(), gpu_data_out, (out.size()) * sizeof(DataType));
     for (int64_t i = 0; i < out.size(); ++i) {
       DataType ver = reference(i);
       asgn(ver, op(in(i)));
@@ -88,15 +104,12 @@ void test_unary_builtins_for_scalar(const Eigen::SyclDevice& sycl_device,
     Tensor<DataType, 3, DataLayout, int64_t> out(tensor_range);
     out = out.random() + DataType(0.01);
     Tensor<DataType, 3, DataLayout, int64_t> reference(out);
-    DataType *gpu_data_out = static_cast<DataType *>(
-        sycl_device.allocate(out.size() * sizeof(DataType)));
+    DataType* gpu_data_out = static_cast<DataType*>(sycl_device.allocate(out.size() * sizeof(DataType)));
     TensorMap<Tensor<DataType, 3, DataLayout, int64_t>> gpu_out(gpu_data_out, tensor_range);
-    sycl_device.memcpyHostToDevice(gpu_data_out, out.data(),
-                                   (out.size()) * sizeof(DataType));
+    sycl_device.memcpyHostToDevice(gpu_data_out, out.data(), (out.size()) * sizeof(DataType));
     auto device_expr = gpu_out.device(sycl_device);
     asgn(device_expr, op(gpu_out));
-    sycl_device.memcpyDeviceToHost(out.data(), gpu_data_out,
-                                   (out.size()) * sizeof(DataType));
+    sycl_device.memcpyDeviceToHost(out.data(), gpu_data_out, (out.size()) * sizeof(DataType));
     for (int64_t i = 0; i < out.size(); ++i) {
       DataType ver = reference(i);
       asgn(ver, op(reference(i)));
@@ -138,11 +151,9 @@ DECLARE_UNARY_STRUCT(isfinite)
 DECLARE_UNARY_STRUCT(isinf)
 
 template <typename DataType, int DataLayout, typename Assignement>
-void test_unary_builtins_for_assignement(const Eigen::SyclDevice& sycl_device,
-                                         const array<int64_t, 3>& tensor_range) {
+void test_unary_builtins_for_assignement(const Eigen::SyclDevice& sycl_device, const array<int64_t, 3>& tensor_range) {
 #define RUN_UNARY_TEST(FUNC) \
-  test_unary_builtins_for_scalar<DataType, DataLayout, Assignement, \
-                                 op_##FUNC>(sycl_device, tensor_range)
+  test_unary_builtins_for_scalar<DataType, DataLayout, Assignement, op_##FUNC>(sycl_device, tensor_range)
   RUN_UNARY_TEST(abs);
   RUN_UNARY_TEST(sqrt);
   RUN_UNARY_TEST(rsqrt);
@@ -161,24 +172,19 @@ void test_unary_builtins_for_assignement(const Eigen::SyclDevice& sycl_device,
 }
 
 template <typename DataType, int DataLayout, typename Operator>
-void test_unary_builtins_return_bool(const Eigen::SyclDevice& sycl_device,
-                                     const array<int64_t, 3>& tensor_range) {
+void test_unary_builtins_return_bool(const Eigen::SyclDevice& sycl_device, const array<int64_t, 3>& tensor_range) {
   /* out = op(in) */
   Operator op;
   Tensor<DataType, 3, DataLayout, int64_t> in(tensor_range);
   Tensor<bool, 3, DataLayout, int64_t> out(tensor_range);
   in = in.random() + DataType(0.01);
-  DataType *gpu_data = static_cast<DataType *>(
-      sycl_device.allocate(in.size() * sizeof(DataType)));
-  bool *gpu_data_out =
-      static_cast<bool *>(sycl_device.allocate(out.size() * sizeof(bool)));
+  DataType* gpu_data = static_cast<DataType*>(sycl_device.allocate(in.size() * sizeof(DataType)));
+  bool* gpu_data_out = static_cast<bool*>(sycl_device.allocate(out.size() * sizeof(bool)));
   TensorMap<Tensor<DataType, 3, DataLayout, int64_t>> gpu(gpu_data, tensor_range);
   TensorMap<Tensor<bool, 3, DataLayout, int64_t>> gpu_out(gpu_data_out, tensor_range);
-  sycl_device.memcpyHostToDevice(gpu_data, in.data(),
-                                 (in.size()) * sizeof(DataType));
+  sycl_device.memcpyHostToDevice(gpu_data, in.data(), (in.size()) * sizeof(DataType));
   gpu_out.device(sycl_device) = op(gpu);
-  sycl_device.memcpyDeviceToHost(out.data(), gpu_data_out,
-                                 (out.size()) * sizeof(bool));
+  sycl_device.memcpyDeviceToHost(out.data(), gpu_data_out, (out.size()) * sizeof(bool));
   for (int64_t i = 0; i < out.size(); ++i) {
     VERIFY_IS_EQUAL(out(i), op(in(i)));
   }
@@ -187,22 +193,16 @@ void test_unary_builtins_return_bool(const Eigen::SyclDevice& sycl_device,
 }
 
 template <typename DataType, int DataLayout>
-void test_unary_builtins(const Eigen::SyclDevice& sycl_device,
-                         const array<int64_t, 3>& tensor_range) {
-  test_unary_builtins_for_assignement<DataType, DataLayout,
-                                      PlusEqualAssignement>(sycl_device, tensor_range);
-  test_unary_builtins_for_assignement<DataType, DataLayout,
-                                      EqualAssignement>(sycl_device, tensor_range);
-  test_unary_builtins_return_bool<DataType, DataLayout,
-                                  op_isnan>(sycl_device, tensor_range);
-  test_unary_builtins_return_bool<DataType, DataLayout,
-                                  op_isfinite>(sycl_device, tensor_range);
-  test_unary_builtins_return_bool<DataType, DataLayout,
-                                  op_isinf>(sycl_device, tensor_range);
+void test_unary_builtins(const Eigen::SyclDevice& sycl_device, const array<int64_t, 3>& tensor_range) {
+  test_unary_builtins_for_assignement<DataType, DataLayout, PlusEqualAssignement>(sycl_device, tensor_range);
+  test_unary_builtins_for_assignement<DataType, DataLayout, EqualAssignement>(sycl_device, tensor_range);
+  test_unary_builtins_return_bool<DataType, DataLayout, op_isnan>(sycl_device, tensor_range);
+  test_unary_builtins_return_bool<DataType, DataLayout, op_isfinite>(sycl_device, tensor_range);
+  test_unary_builtins_return_bool<DataType, DataLayout, op_isinf>(sycl_device, tensor_range);
 }
 
 template <typename DataType>
-static void test_builtin_unary_sycl(const Eigen::SyclDevice &sycl_device) {
+static void test_builtin_unary_sycl(const Eigen::SyclDevice& sycl_device) {
   int64_t sizeDim1 = 10;
   int64_t sizeDim2 = 10;
   int64_t sizeDim3 = 10;
@@ -213,8 +213,7 @@ static void test_builtin_unary_sycl(const Eigen::SyclDevice &sycl_device) {
 }
 
 template <typename DataType, int DataLayout, typename Operator>
-void test_binary_builtins_func(const Eigen::SyclDevice& sycl_device,
-                               const array<int64_t, 3>& tensor_range) {
+void test_binary_builtins_func(const Eigen::SyclDevice& sycl_device, const array<int64_t, 3>& tensor_range) {
   /* out = op(in_1, in_2) */
   Operator op;
   Tensor<DataType, 3, DataLayout, int64_t> in_1(tensor_range);
@@ -223,22 +222,16 @@ void test_binary_builtins_func(const Eigen::SyclDevice& sycl_device,
   in_1 = in_1.random() + DataType(0.01);
   in_2 = in_2.random() + DataType(0.01);
   Tensor<DataType, 3, DataLayout, int64_t> reference(out);
-  DataType *gpu_data_1 = static_cast<DataType *>(
-      sycl_device.allocate(in_1.size() * sizeof(DataType)));
-  DataType *gpu_data_2 = static_cast<DataType *>(
-      sycl_device.allocate(in_2.size() * sizeof(DataType)));
-  DataType *gpu_data_out = static_cast<DataType *>(
-      sycl_device.allocate(out.size() * sizeof(DataType)));
+  DataType* gpu_data_1 = static_cast<DataType*>(sycl_device.allocate(in_1.size() * sizeof(DataType)));
+  DataType* gpu_data_2 = static_cast<DataType*>(sycl_device.allocate(in_2.size() * sizeof(DataType)));
+  DataType* gpu_data_out = static_cast<DataType*>(sycl_device.allocate(out.size() * sizeof(DataType)));
   TensorMap<Tensor<DataType, 3, DataLayout, int64_t>> gpu_1(gpu_data_1, tensor_range);
   TensorMap<Tensor<DataType, 3, DataLayout, int64_t>> gpu_2(gpu_data_2, tensor_range);
   TensorMap<Tensor<DataType, 3, DataLayout, int64_t>> gpu_out(gpu_data_out, tensor_range);
-  sycl_device.memcpyHostToDevice(gpu_data_1, in_1.data(),
-                                 (in_1.size()) * sizeof(DataType));
-  sycl_device.memcpyHostToDevice(gpu_data_2, in_2.data(),
-                                 (in_2.size()) * sizeof(DataType));
+  sycl_device.memcpyHostToDevice(gpu_data_1, in_1.data(), (in_1.size()) * sizeof(DataType));
+  sycl_device.memcpyHostToDevice(gpu_data_2, in_2.data(), (in_2.size()) * sizeof(DataType));
   gpu_out.device(sycl_device) = op(gpu_1, gpu_2);
-  sycl_device.memcpyDeviceToHost(out.data(), gpu_data_out,
-                                 (out.size()) * sizeof(DataType));
+  sycl_device.memcpyDeviceToHost(out.data(), gpu_data_out, (out.size()) * sizeof(DataType));
   for (int64_t i = 0; i < out.size(); ++i) {
     VERIFY_IS_APPROX(out(i), op(in_1(i), in_2(i)));
   }
@@ -248,8 +241,7 @@ void test_binary_builtins_func(const Eigen::SyclDevice& sycl_device,
 }
 
 template <typename DataType, int DataLayout, typename Operator>
-void test_binary_builtins_fixed_arg2(const Eigen::SyclDevice& sycl_device,
-                                     const array<int64_t, 3>& tensor_range) {
+void test_binary_builtins_fixed_arg2(const Eigen::SyclDevice& sycl_device, const array<int64_t, 3>& tensor_range) {
   /* out = op(in_1, 2) */
   Operator op;
   const DataType arg2(2);
@@ -257,17 +249,13 @@ void test_binary_builtins_fixed_arg2(const Eigen::SyclDevice& sycl_device,
   Tensor<DataType, 3, DataLayout, int64_t> out(tensor_range);
   in_1 = in_1.random();
   Tensor<DataType, 3, DataLayout, int64_t> reference(out);
-  DataType *gpu_data_1 = static_cast<DataType *>(
-      sycl_device.allocate(in_1.size() * sizeof(DataType)));
-  DataType *gpu_data_out = static_cast<DataType *>(
-      sycl_device.allocate(out.size() * sizeof(DataType)));
+  DataType* gpu_data_1 = static_cast<DataType*>(sycl_device.allocate(in_1.size() * sizeof(DataType)));
+  DataType* gpu_data_out = static_cast<DataType*>(sycl_device.allocate(out.size() * sizeof(DataType)));
   TensorMap<Tensor<DataType, 3, DataLayout, int64_t>> gpu_1(gpu_data_1, tensor_range);
   TensorMap<Tensor<DataType, 3, DataLayout, int64_t>> gpu_out(gpu_data_out, tensor_range);
-  sycl_device.memcpyHostToDevice(gpu_data_1, in_1.data(),
-                                 (in_1.size()) * sizeof(DataType));
+  sycl_device.memcpyHostToDevice(gpu_data_1, in_1.data(), (in_1.size()) * sizeof(DataType));
   gpu_out.device(sycl_device) = op(gpu_1, arg2);
-  sycl_device.memcpyDeviceToHost(out.data(), gpu_data_out,
-                                 (out.size()) * sizeof(DataType));
+  sycl_device.memcpyDeviceToHost(out.data(), gpu_data_out, (out.size()) * sizeof(DataType));
   for (int64_t i = 0; i < out.size(); ++i) {
     VERIFY_IS_APPROX(out(i), op(in_1(i), arg2));
   }
@@ -305,24 +293,17 @@ DECLARE_BINARY_STRUCT_OP(divide, /)
 DECLARE_BINARY_STRUCT_OP(modulo, %)
 
 template <typename DataType, int DataLayout>
-void test_binary_builtins(const Eigen::SyclDevice& sycl_device,
-                          const array<int64_t, 3>& tensor_range) {
-  test_binary_builtins_func<DataType, DataLayout,
-                            op_cwiseMax>(sycl_device, tensor_range);
-  test_binary_builtins_func<DataType, DataLayout,
-                            op_cwiseMin>(sycl_device, tensor_range);
-  test_binary_builtins_func<DataType, DataLayout,
-                            op_plus>(sycl_device, tensor_range);
-  test_binary_builtins_func<DataType, DataLayout,
-                            op_minus>(sycl_device, tensor_range);
-  test_binary_builtins_func<DataType, DataLayout,
-                            op_times>(sycl_device, tensor_range);
-  test_binary_builtins_func<DataType, DataLayout,
-                            op_divide>(sycl_device, tensor_range);
+void test_binary_builtins(const Eigen::SyclDevice& sycl_device, const array<int64_t, 3>& tensor_range) {
+  test_binary_builtins_func<DataType, DataLayout, op_cwiseMax>(sycl_device, tensor_range);
+  test_binary_builtins_func<DataType, DataLayout, op_cwiseMin>(sycl_device, tensor_range);
+  test_binary_builtins_func<DataType, DataLayout, op_plus>(sycl_device, tensor_range);
+  test_binary_builtins_func<DataType, DataLayout, op_minus>(sycl_device, tensor_range);
+  test_binary_builtins_func<DataType, DataLayout, op_times>(sycl_device, tensor_range);
+  test_binary_builtins_func<DataType, DataLayout, op_divide>(sycl_device, tensor_range);
 }
 
 template <typename DataType>
-static void test_floating_builtin_binary_sycl(const Eigen::SyclDevice &sycl_device) {
+static void test_floating_builtin_binary_sycl(const Eigen::SyclDevice& sycl_device) {
   int64_t sizeDim1 = 10;
   int64_t sizeDim2 = 10;
   int64_t sizeDim3 = 10;
@@ -332,19 +313,17 @@ static void test_floating_builtin_binary_sycl(const Eigen::SyclDevice &sycl_devi
 }
 
 template <typename DataType>
-static void test_integer_builtin_binary_sycl(const Eigen::SyclDevice &sycl_device) {
+static void test_integer_builtin_binary_sycl(const Eigen::SyclDevice& sycl_device) {
   int64_t sizeDim1 = 10;
   int64_t sizeDim2 = 10;
   int64_t sizeDim3 = 10;
   array<int64_t, 3> tensor_range = {{sizeDim1, sizeDim2, sizeDim3}};
-  test_binary_builtins_fixed_arg2<DataType, RowMajor,
-                                  op_modulo>(sycl_device, tensor_range);
-  test_binary_builtins_fixed_arg2<DataType, ColMajor,
-                                  op_modulo>(sycl_device, tensor_range);
+  test_binary_builtins_fixed_arg2<DataType, RowMajor, op_modulo>(sycl_device, tensor_range);
+  test_binary_builtins_fixed_arg2<DataType, ColMajor, op_modulo>(sycl_device, tensor_range);
 }
 
 EIGEN_DECLARE_TEST(cxx11_tensor_builtins_sycl) {
-  for (const auto& device :Eigen::get_sycl_supported_devices()) {
+  for (const auto& device : Eigen::get_sycl_supported_devices()) {
     QueueInterface queueInterface(device);
     Eigen::SyclDevice sycl_device(&queueInterface);
     CALL_SUBTEST_1(test_builtin_unary_sycl<float>(sycl_device));

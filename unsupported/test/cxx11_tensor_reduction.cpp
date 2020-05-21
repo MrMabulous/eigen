@@ -7,10 +7,11 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#include "main.h"
+#include <Eigen/CXX11/Tensor>
 #include <limits>
 #include <numeric>
-#include <Eigen/CXX11/Tensor>
+
+#include "main.h"
 
 using Eigen::Tensor;
 
@@ -53,7 +54,7 @@ static void test_trivial_reductions() {
   }
 }
 
-template <typename Scalar,int DataLayout>
+template <typename Scalar, int DataLayout>
 static void test_simple_reductions() {
   Tensor<Scalar, 4, DataLayout> tensor(2, 3, 5, 7);
   tensor.setRandom();
@@ -241,7 +242,6 @@ static void test_simple_reductions() {
   }
 }
 
-
 template <int DataLayout>
 static void test_reductions_in_expr() {
   Tensor<float, 4, DataLayout> tensor(2, 3, 5, 7);
@@ -266,7 +266,6 @@ static void test_reductions_in_expr() {
     }
   }
 }
-
 
 template <int DataLayout>
 static void test_full_reductions() {
@@ -334,10 +333,8 @@ template <int DataLayout>
 static void test_tensor_maps() {
   int inputs[2 * 3 * 5 * 7];
   TensorMap<Tensor<int, 4, DataLayout> > tensor_map(inputs, 2, 3, 5, 7);
-  TensorMap<Tensor<const int, 4, DataLayout> > tensor_map_const(inputs, 2, 3, 5,
-                                                                7);
-  const TensorMap<Tensor<const int, 4, DataLayout> > tensor_map_const_const(
-      inputs, 2, 3, 5, 7);
+  TensorMap<Tensor<const int, 4, DataLayout> > tensor_map_const(inputs, 2, 3, 5, 7);
+  const TensorMap<Tensor<const int, 4, DataLayout> > tensor_map_const_const(inputs, 2, 3, 5, 7);
 
   tensor_map.setRandom();
   array<ptrdiff_t, 2> reduction_axis;
@@ -346,8 +343,7 @@ static void test_tensor_maps() {
 
   Tensor<int, 2, DataLayout> result = tensor_map.sum(reduction_axis);
   Tensor<int, 2, DataLayout> result2 = tensor_map_const.sum(reduction_axis);
-  Tensor<int, 2, DataLayout> result3 =
-      tensor_map_const_const.sum(reduction_axis);
+  Tensor<int, 2, DataLayout> result3 = tensor_map_const_const.sum(reduction_axis);
 
   for (int i = 0; i < 2; ++i) {
     for (int j = 0; j < 5; ++j) {
@@ -437,7 +433,7 @@ static void test_innermost_first_dims() {
   reduction_axis[1] = 3;
 #else
   // This triggers the use of packets for RowMajor.
-  Eigen::IndexList<Eigen::type2index<2>, Eigen::type2index<3>> reduction_axis;
+  Eigen::IndexList<Eigen::type2index<2>, Eigen::type2index<3> > reduction_axis;
 #endif
 
   out = in.maximum(reduction_axis);
@@ -468,7 +464,7 @@ static void test_reduce_middle_dims() {
   reduction_axis[1] = 2;
 #else
   // This triggers the use of packets for RowMajor.
-  Eigen::IndexList<Eigen::type2index<1>, Eigen::type2index<2>> reduction_axis;
+  Eigen::IndexList<Eigen::type2index<1>, Eigen::type2index<2> > reduction_axis;
 #endif
 
   out = in.maximum(reduction_axis);
@@ -508,9 +504,9 @@ static void test_sum_accuracy() {
 EIGEN_DECLARE_TEST(cxx11_tensor_reduction) {
   CALL_SUBTEST(test_trivial_reductions<ColMajor>());
   CALL_SUBTEST(test_trivial_reductions<RowMajor>());
-  CALL_SUBTEST(( test_simple_reductions<float,ColMajor>() ));
-  CALL_SUBTEST(( test_simple_reductions<float,RowMajor>() ));
-  CALL_SUBTEST(( test_simple_reductions<Eigen::half,ColMajor>() ));
+  CALL_SUBTEST((test_simple_reductions<float, ColMajor>()));
+  CALL_SUBTEST((test_simple_reductions<float, RowMajor>()));
+  CALL_SUBTEST((test_simple_reductions<Eigen::half, ColMajor>()));
   CALL_SUBTEST(test_reductions_in_expr<ColMajor>());
   CALL_SUBTEST(test_reductions_in_expr<RowMajor>());
   CALL_SUBTEST(test_full_reductions<ColMajor>());

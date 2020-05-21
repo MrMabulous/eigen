@@ -7,16 +7,16 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#include "main.h"
+#include <Eigen/CXX11/Tensor>
 #include <limits>
 #include <numeric>
-#include <Eigen/CXX11/Tensor>
+
+#include "main.h"
 
 using Eigen::Tensor;
 
-template <int DataLayout, typename Type=float, bool Exclusive = false>
-static void test_1d_scan()
-{
+template <int DataLayout, typename Type = float, bool Exclusive = false>
+static void test_1d_scan() {
   int size = 50;
   Tensor<Type, 1, DataLayout> tensor(size);
   tensor.setRandom();
@@ -48,9 +48,8 @@ static void test_1d_scan()
   }
 }
 
-template <int DataLayout, typename Type=float>
-static void test_4d_scan()
-{
+template <int DataLayout, typename Type = float>
+static void test_4d_scan() {
   int size = 5;
   Tensor<Type, 4, DataLayout> tensor(size, size, size, size);
   tensor.setRandom();
