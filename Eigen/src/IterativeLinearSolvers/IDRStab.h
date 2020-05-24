@@ -5,6 +5,7 @@
 // Copyright (C) 2020 Mischa Senders <m.j.senders@student.tue.nl>
 // Copyright (C) 2020 Lex Kuijpers <l.kuijpers@student.tue.nl>
 // Copyright (C) 2020 Jens Wehner <j.wehner@esciencecenter.nl>
+// Copyright (C) 2020 Jan van Dijk <j.v.dijk@tue.nl>
 // Copyright (C) 2020 Adithya Vijaykumar
 //
 // This Source Code Form is subject to the terms of the Mozilla
