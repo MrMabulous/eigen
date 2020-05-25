@@ -41,7 +41,7 @@ namespace Eigen
   * \param iters On input the max number of iteration, on output the number of performed iterations.
   * \param tol_error On input the tolerance error, on output an estimation of the relative error.
   * \param L On input Number of additional GMRES steps to take. If L is too large (~20) instabilities occur.
-  * \return false in the case of numerical issue, for example a break down of BiCGSTABL. 
+  * \return false in the case of numerical issue, for example a break down of BiCGSTABL.
   */
 		template <typename MatrixType, typename Rhs, typename Dest, typename Preconditioner>
 		bool bicgstabl(const MatrixType &mat, const Rhs &rhs, Dest &x,
@@ -85,7 +85,7 @@ namespace Eigen
 
 			bool bicg_convergence = false;
 
-			RealScalar zeta0 = rhs.norm();
+			RealScalar zeta0 = r0.norm();
 			RealScalar zeta = zeta0;
 			RealScalar Mx = zeta0;
 			RealScalar Mr = zeta0;
@@ -104,7 +104,7 @@ namespace Eigen
 				{
 					Scalar rho1 = rShadow.dot(rHat.col(j));
 
-					if ((numext::isnan)(rho1) || rho0 != 0.0)
+					if ((numext::isnan)(rho1) || rho0 == 0.0)
 					{
 						tol_error = zeta / zeta0;
 						return false;
@@ -114,14 +114,14 @@ namespace Eigen
 					rho0 = rho1;
 
 					//Update search directions
-					uHat.leftCols(j) = rHat.leftCols(j) - beta * uHat.leftCols(j);
+					uHat.leftCols(j+1) = rHat.leftCols(j) - beta * uHat.leftCols(j+1);
 
 					uHat.col(j + 1) = precond.solve(mat * uHat.col(j));
 					alpha = rho1 / (rShadow.dot(uHat.col(j + 1)));
 
 					//Update residuals
 					//TODO check this block
-					rHat.leftCols(j) -= alpha * uHat.block(0, 1, N, j);
+					rHat.leftCols(j+1) -= alpha * uHat.block(0, 1, N, j+1);
 
 					rHat.col(j + 1) = precond.solve(mat * rHat.col(j));
 
