@@ -114,7 +114,7 @@ namespace Eigen
 					rho0 = rho1;
 
 					//Update search directions
-					uHat.leftCols(j+1) = rHat.leftCols(j) - beta * uHat.leftCols(j+1);
+					uHat.leftCols(j+1) = rHat.leftCols(j+1) - beta * uHat.leftCols(j+1);
 
 					uHat.col(j + 1) = precond.solve(mat * uHat.col(j));
 					alpha = rho1 / (rShadow.dot(uHat.col(j + 1)));
