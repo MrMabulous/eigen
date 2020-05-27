@@ -12,8 +12,8 @@
 #include <Eigen/CXX11/Tensor>
 
 
-#if EIGEN_COMP_MSVC
-#define EIGEN_NO_INT128 || !defined(__SIZEOF_INT128__)
+#if EIGEN_COMP_MSVC || !defined(__SIZEOF_INT128__)
+#define EIGEN_NO_INT128
 #else
 typedef __uint128_t uint128_t;
 #endif
