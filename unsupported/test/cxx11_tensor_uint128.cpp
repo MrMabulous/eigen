@@ -13,7 +13,7 @@
 
 
 #if EIGEN_COMP_MSVC
-#define EIGEN_NO_INT128
+#define EIGEN_NO_INT128 || !defined(__SIZEOF_INT128__)
 #else
 typedef __uint128_t uint128_t;
 #endif
