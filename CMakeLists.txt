@@ -513,7 +513,7 @@ if(EIGEN_BUILD_BTL)
   add_subdirectory(bench/btl EXCLUDE_FROM_ALL)
 endif()
 
-find_package(CLANG_FORMAT 7.0.1)
+find_package(CLANG_FORMAT 8)
 if(CLANG_FORMAT_FOUND)
     file(GLOB_RECURSE FORMAT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
   add_custom_target(format
