@@ -1691,8 +1691,14 @@ template<> EIGEN_STRONG_INLINE void pstoreu<bfloat16>(bfloat16* to, const Packet
 EIGEN_STRONG_INLINE Packet16f Bf16ToF32(const Packet16bf& a) {
   return _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepu16_epi32(a.x), 16));
 }
+
 EIGEN_STRONG_INLINE Packet16bf F32ToBf16(const Packet16f& a) {
   Packet16bf r;
+
+  // Flush input denormals value to zero with hardware capability.
+  _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
+  __m512 flush = _mm512_and_ps(a, a);
+  _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_OFF);
 
 #if defined(EIGEN_VECTORIZE_AVX512BF16)
   r.bh = _mm512_cvtneps_pbh(a);
