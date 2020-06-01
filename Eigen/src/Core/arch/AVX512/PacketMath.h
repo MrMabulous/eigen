@@ -28,6 +28,18 @@ namespace internal {
 #endif
 #endif
 
+// Helper function for bit packing snippet of low precision comparison.
+__256m CmpResult(Packet16f rf) {
+  // Pack the 32-bit flags into 16-bits flags.
+  __m256i lo = _mm256_castps_si256(extract256<0>(rf));
+  __m256i hi = _mm256_castps_si256(extract256<1>(rf));
+  __m128i result_lo = _mm_packs_epi32(_mm256_extractf128_si256(lo, 0),
+                                      _mm256_extractf128_si256(lo, 1));
+  __m128i result_hi = _mm_packs_epi32(_mm256_extractf128_si256(hi, 0),
+                                      _mm256_extractf128_si256(hi, 1));
+  return _mm256_insertf128_si256(_mm256_castsi128_si256(result_lo), result_hi, 1);
+}
+
 typedef __m512 Packet16f;
 typedef __m512i Packet16i;
 typedef __m512d Packet8d;
@@ -1342,15 +1354,7 @@ template<> EIGEN_STRONG_INLINE Packet16h pselect(const Packet16h& mask, const Pa
 template<> EIGEN_STRONG_INLINE Packet16h pcmp_eq(const Packet16h& a,const Packet16h& b) {
   Packet16f af = half2float(a);
   Packet16f bf = half2float(b);
-  Packet16f rf = pcmp_eq(af, bf);
-  // Pack the 32-bit flags into 16-bits flags.
-  __m256i lo = _mm256_castps_si256(extract256<0>(rf));
-  __m256i hi = _mm256_castps_si256(extract256<1>(rf));
-  __m128i result_lo = _mm_packs_epi32(_mm256_extractf128_si256(lo, 0),
-                                      _mm256_extractf128_si256(lo, 1));
-  __m128i result_hi = _mm_packs_epi32(_mm256_extractf128_si256(hi, 0),
-                                      _mm256_extractf128_si256(hi, 1));
-  return _mm256_insertf128_si256(_mm256_castsi128_si256(result_lo), result_hi, 1);
+  return CmpResult(pcmp_eq(af, bf));
 }
 
 template<> EIGEN_STRONG_INLINE Packet16h pnegate(const Packet16h& a) {
@@ -1755,66 +1759,26 @@ template<> EIGEN_STRONG_INLINE Packet16bf pselect(const Packet16bf& mask, const 
 }
 
 template<> EIGEN_STRONG_INLINE Packet16bf pcmp_eq(const Packet16bf& a,const Packet16bf& b) {
-  Packet16f af = Bf16ToF32(a);
-  Packet16f bf = Bf16ToF32(b);
-  Packet16f rf = pcmp_eq(af, bf);
-  // Pack the 32-bit flags into 16-bits flags.
-  __m256i lo = _mm256_castps_si256(extract256<0>(rf));
-  __m256i hi = _mm256_castps_si256(extract256<1>(rf));
-  __m128i result_lo = _mm_packs_epi32(_mm256_extractf128_si256(lo, 0),
-                                      _mm256_extractf128_si256(lo, 1));
-  __m128i result_hi = _mm_packs_epi32(_mm256_extractf128_si256(hi, 0),
-                                      _mm256_extractf128_si256(hi, 1));
   Packet16bf result;
-  result.x = _mm256_insertf128_si256(_mm256_castsi128_si256(result_lo), result_hi, 1);
+  result.x = CmpResult(pcmp_eq(Bf16ToF32(a), Bf16ToF32(b)));
   return result;
 }
 
 template<> EIGEN_STRONG_INLINE Packet16bf pcmp_le(const Packet16bf& a, const Packet16bf& b) {
-  Packet16f af = Bf16ToF32(a);
-  Packet16f bf = Bf16ToF32(b);
-  Packet16f rf = pcmp_le(af, bf);
-  // Pack the 32-bit flags into 16-bits flags.
-  __m256i lo = _mm256_castps_si256(extract256<0>(rf));
-  __m256i hi = _mm256_castps_si256(extract256<1>(rf));
-  __m128i result_lo = _mm_packs_epi32(_mm256_extractf128_si256(lo, 0),
-                                      _mm256_extractf128_si256(lo, 1));
-  __m128i result_hi = _mm_packs_epi32(_mm256_extractf128_si256(hi, 0),
-                                      _mm256_extractf128_si256(hi, 1));
   Packet16bf result;
-  result.x = _mm256_insertf128_si256(_mm256_castsi128_si256(result_lo), result_hi, 1);
+  result.x = CmpResult(pcmp_le(Bf16ToF32(a), Bf16ToF32(b)));
   return result;
 }
 
 template<> EIGEN_STRONG_INLINE Packet16bf pcmp_lt(const Packet16bf& a, const Packet16bf& b) {
-  Packet16f af = Bf16ToF32(a);
-  Packet16f bf = Bf16ToF32(b);
-  Packet16f rf = pcmp_lt(af, bf);
-  // Pack the 32-bit flags into 16-bits flags.
-  __m256i lo = _mm256_castps_si256(extract256<0>(rf));
-  __m256i hi = _mm256_castps_si256(extract256<1>(rf));
-  __m128i result_lo = _mm_packs_epi32(_mm256_extractf128_si256(lo, 0),
-                                      _mm256_extractf128_si256(lo, 1));
-  __m128i result_hi = _mm_packs_epi32(_mm256_extractf128_si256(hi, 0),
-                                      _mm256_extractf128_si256(hi, 1));
   Packet16bf result;
-  result.x = _mm256_insertf128_si256(_mm256_castsi128_si256(result_lo), result_hi, 1);
+  result.x = CmpResult(pcmp_lt(Bf16ToF32(a), Bf16ToF32(b)));
   return result;
 }
 
 template<> EIGEN_STRONG_INLINE Packet16bf pcmp_lt_or_nan(const Packet16bf& a, const Packet16bf& b) {
-  Packet16f af = Bf16ToF32(a);
-  Packet16f bf = Bf16ToF32(b);
-  Packet16f rf = pcmp_lt_or_nan(af, bf);
-  // Pack the 32-bit flags into 16-bits flags.
-  __m256i lo = _mm256_castps_si256(extract256<0>(rf));
-  __m256i hi = _mm256_castps_si256(extract256<1>(rf));
-  __m128i result_lo = _mm_packs_epi32(_mm256_extractf128_si256(lo, 0),
-                                      _mm256_extractf128_si256(lo, 1));
-  __m128i result_hi = _mm_packs_epi32(_mm256_extractf128_si256(hi, 0),
-                                      _mm256_extractf128_si256(hi, 1));
   Packet16bf result;
-  result.x = _mm256_insertf128_si256(_mm256_castsi128_si256(result_lo), result_hi, 1);
+  result.x = CmpResult(pcmp_lt_or_nan(Bf16ToF32(a), Bf16ToF32(b)));
   return result;
 }
 
