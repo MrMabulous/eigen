@@ -13,8 +13,7 @@
 #include "Eigen/CXX11/ThreadPool"
 #include "Eigen/CXX11/Tensor"
 
-static void test_create_destroy_empty_pool()
-{
+static void test_create_destroy_empty_pool() {
   // Just create and destroy the pool. This will wind up and tear down worker
   // threads. Ensure there are no issues in that logic.
   for (int i = 0; i < 16; ++i) {
@@ -22,9 +21,7 @@ static void test_create_destroy_empty_pool()
   }
 }
 
-
-static void test_parallelism(bool allow_spinning)
-{
+static void test_parallelism(bool allow_spinning) {
   // Test we never-ever fail to match available tasks with idle threads.
   const int kThreads = 16;  // code below expects that this is a multiple of 4
   ThreadPool tp(kThreads, allow_spinning);
@@ -101,9 +98,7 @@ static void test_parallelism(bool allow_spinning)
   }
 }
 
-
-static void test_cancel()
-{
+static void test_cancel() {
   ThreadPool tp(2);
 
   // Schedule a large number of closure that each sleeps for one second. This
@@ -122,7 +117,7 @@ static void test_pool_partitions() {
 
   // Assign each thread to its own partition, so that stealing other work only
   // occurs globally when a thread is idle.
-  std::vector<std::pair<unsigned, unsigned>> steal_partitions(kThreads);
+  std::vector<std::pair<unsigned, unsigned> > steal_partitions(kThreads);
   for (int i = 0; i < kThreads; ++i) {
     steal_partitions[i] = std::make_pair(i, i + 1);
   }
@@ -167,9 +162,7 @@ static void test_pool_partitions() {
   phase = 2;
 }
 
-
-EIGEN_DECLARE_TEST(cxx11_non_blocking_thread_pool)
-{
+EIGEN_DECLARE_TEST(cxx11_non_blocking_thread_pool) {
   CALL_SUBTEST(test_create_destroy_empty_pool());
   CALL_SUBTEST(test_parallelism(true));
   CALL_SUBTEST(test_parallelism(false));

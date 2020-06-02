@@ -11,24 +11,28 @@
 
 #include <Eigen/CXX11/Tensor>
 
-
-static void test_simple()
-{
+static void test_simple() {
   Tensor<float, 1, ColMajor> vec1(6);
   Tensor<float, 1, ColMajor, int> vec2(6);
 
-  vec1(0) = 4.0;  vec2(0) = 0.0;
-  vec1(1) = 8.0;  vec2(1) = 1.0;
-  vec1(2) = 15.0; vec2(2) = 2.0;
-  vec1(3) = 16.0; vec2(3) = 3.0;
-  vec1(4) = 23.0; vec2(4) = 4.0;
-  vec1(5) = 42.0; vec2(5) = 5.0;
+  vec1(0) = 4.0;
+  vec2(0) = 0.0;
+  vec1(1) = 8.0;
+  vec2(1) = 1.0;
+  vec1(2) = 15.0;
+  vec2(2) = 2.0;
+  vec1(3) = 16.0;
+  vec2(3) = 3.0;
+  vec1(4) = 23.0;
+  vec2(4) = 4.0;
+  vec1(5) = 42.0;
+  vec2(5) = 5.0;
 
   float data3[6];
-  TensorMap<Tensor<float, 1, ColMajor>> vec3(data3, 6);
+  TensorMap<Tensor<float, 1, ColMajor> > vec3(data3, 6);
   vec3 = vec1.sqrt();
   float data4[6];
-  TensorMap<Tensor<float, 1, ColMajor, int>> vec4(data4, 6);
+  TensorMap<Tensor<float, 1, ColMajor, int> > vec4(data4, 6);
   vec4 = vec2.square();
 
   VERIFY_IS_APPROX(vec3(0), sqrtf(4.0));
@@ -46,8 +50,4 @@ static void test_simple()
   VERIFY_IS_APPROX(vec4(5), 5.0f * 5.0f);
 }
 
-
-EIGEN_DECLARE_TEST(cxx11_tensor_mixed_indices)
-{
-  CALL_SUBTEST(test_simple());
-}
+EIGEN_DECLARE_TEST(cxx11_tensor_mixed_indices) { CALL_SUBTEST(test_simple()); }
