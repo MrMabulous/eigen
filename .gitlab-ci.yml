@@ -3,11 +3,14 @@
   stage: build
   image: fedora
   before_script:
-     - dnf -y install gcc-c++ cmake make
-  script:
+     - dnf -y install gcc-c++ cmake make clang-devel
+  script: 
     - cmake -B builddir -DEIGEN_TEST_CXX11=${EIGEN_TEST_CXX11}
+    - cmake --build builddir --target format && git diff --exit-code
     - cmake --build builddir --target buildtests
     - cd builddir && ctest --output-on-failure
+
+
 
 CXX11 ON:
   variables:
