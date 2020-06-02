@@ -418,7 +418,8 @@ struct svd_precondition_2x2_block_to_be_real<MatrixType, QRPreconditioner, true>
     // update largest diagonal entry
     maxDiagEntry = numext::maxi<RealScalar>(maxDiagEntry,numext::maxi<RealScalar>(abs(work_matrix.coeff(p,p)), abs(work_matrix.coeff(q,q))));
     // and check whether the 2x2 block is already diagonal
-    RealScalar threshold = numext::maxi<RealScalar>(considerAsZero, precision * maxDiagEntry);
+    RealScalar threshold = numext::maxi<RealScalar>(considerAsZero,
+                           precision * numext::maxi<RealScalar>(abs(work_matrix.coeff(p,p)), abs(work_matrix.coeff(q,q))));
     return abs(work_matrix.coeff(p,q))>threshold || abs(work_matrix.coeff(q,p)) > threshold;
   }
 };
@@ -703,7 +704,6 @@ JacobiSVD<MatrixType, QRPreconditioner>::compute(const MatrixType& matrix, unsig
     finished = true;
 
     // do a sweep: for all index pairs (p,q), perform SVD of the corresponding 2x2 sub-matrix
-
     for(Index p = 1; p < m_diagSize; ++p)
     {
       for(Index q = 0; q < p; ++q)
@@ -711,7 +711,9 @@ JacobiSVD<MatrixType, QRPreconditioner>::compute(const MatrixType& matrix, unsig
         // if this 2x2 sub-matrix is not diagonal already...
         // notice that this comparison will evaluate to false if any NaN is involved, ensuring that NaN's don't
         // keep us iterating forever. Similarly, small denormal numbers are considered zero.
-        RealScalar threshold = numext::maxi<RealScalar>(considerAsZero, precision * maxDiagEntry);
+        RealScalar threshold = numext::maxi<RealScalar>(considerAsZero,
+                   precision * numext::maxi<RealScalar>(abs(m_workMatrix.coeff(p,p)),
+                                                        abs(m_workMatrix.coeff(q,q))));
         if(abs(m_workMatrix.coeff(p,q))>threshold || abs(m_workMatrix.coeff(q,p)) > threshold)
         {
           finished = false;
@@ -731,6 +733,7 @@ JacobiSVD<MatrixType, QRPreconditioner>::compute(const MatrixType& matrix, unsig
 
             // keep track of the largest diagonal coefficient
             maxDiagEntry = numext::maxi<RealScalar>(maxDiagEntry,numext::maxi<RealScalar>(abs(m_workMatrix.coeff(p,p)), abs(m_workMatrix.coeff(q,q))));
+
           }
         }
       }
