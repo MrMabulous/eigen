@@ -18,7 +18,4 @@
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/Eigen>
 
-int main()
-{
-  return 0;
-}
+int main() { return 0; }
