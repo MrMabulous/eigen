@@ -28,18 +28,6 @@ namespace internal {
 #endif
 #endif
 
-// Helper function for bit packing snippet of low precision comparison.
-__256m CmpResult(Packet16f rf) {
-  // Pack the 32-bit flags into 16-bits flags.
-  __m256i lo = _mm256_castps_si256(extract256<0>(rf));
-  __m256i hi = _mm256_castps_si256(extract256<1>(rf));
-  __m128i result_lo = _mm_packs_epi32(_mm256_extractf128_si256(lo, 0),
-                                      _mm256_extractf128_si256(lo, 1));
-  __m128i result_hi = _mm_packs_epi32(_mm256_extractf128_si256(hi, 0),
-                                      _mm256_extractf128_si256(hi, 1));
-  return _mm256_insertf128_si256(_mm256_castsi128_si256(result_lo), result_hi, 1);
-}
-
 typedef __m512 Packet16f;
 typedef __m512i Packet16i;
 typedef __m512d Packet8d;
@@ -373,6 +361,18 @@ EIGEN_STRONG_INLINE Packet16f cat256(Packet8f a, Packet8f b) {
                                                 _mm256_castps_si256(b),1));
 }
 #endif
+
+// Helper function for bit packing snippet of low precision comparison.
+__m256i CmpResult(Packet16f rf) {
+  // Pack the 32-bit flags into 16-bits flags.
+  __m256i lo = _mm256_castps_si256(extract256<0>(rf));
+  __m256i hi = _mm256_castps_si256(extract256<1>(rf));
+  __m128i result_lo = _mm_packs_epi32(_mm256_extractf128_si256(lo, 0),
+                                      _mm256_extractf128_si256(lo, 1));
+  __m128i result_hi = _mm_packs_epi32(_mm256_extractf128_si256(hi, 0),
+                                      _mm256_extractf128_si256(hi, 1));
+  return _mm256_insertf128_si256(_mm256_castsi128_si256(result_lo), result_hi, 1);
+}
 
 template <>
 EIGEN_STRONG_INLINE Packet16f pcmp_eq(const Packet16f& a, const Packet16f& b) {
