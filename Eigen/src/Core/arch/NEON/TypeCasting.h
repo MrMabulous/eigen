@@ -39,6 +39,59 @@ template<> struct type_casting_traits<numext::int64_t,numext::uint64_t>
 template<> struct type_casting_traits<numext::uint64_t,numext::int64_t>
 { enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
 
+template<> struct type_casting_traits<numext::uint16_t,numext::int32_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::uint16_t,numext::uint32_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::uint16_t,numext::uint8_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::uint16_t,numext::int8_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::uint16_t,float>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::int16_t,numext::int32_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::int16_t,numext::uint32_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::int16_t,numext::uint8_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::int16_t,numext::int8_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::int16_t,float>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::uint8_t,numext::int32_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::uint8_t,numext::uint32_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::uint8_t,numext::uint16_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::uint8_t,numext::int16_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::uint8_t,float>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::int8_t,numext::int32_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::int8_t,numext::uint32_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::int8_t,numext::uint16_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::int8_t,numext::int16_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<numext::int8_t,float>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<float,numext::int32_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<float,numext::uint32_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<float,numext::uint16_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<float,numext::int16_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<float,numext::int8_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+template<> struct type_casting_traits<float,numext::uint8_t>
+{ enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
+
 template<> EIGEN_STRONG_INLINE Packet2f pcast<Packet2i,Packet2f>(const Packet2i& a) { return vcvt_f32_s32(a); }
 template<> EIGEN_STRONG_INLINE Packet2f pcast<Packet2ui,Packet2f>(const Packet2ui& a) { return vcvt_f32_u32(a); }
 template<> EIGEN_STRONG_INLINE Packet2f pcast<Packet2l,Packet2f>(const Packet2l& a)
