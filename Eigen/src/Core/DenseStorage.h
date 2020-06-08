@@ -9,6 +9,9 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+#include <algorithm>
+#include <utility>
+
 #ifndef EIGEN_MATRIXSTORAGE_H
 #define EIGEN_MATRIXSTORAGE_H
 
@@ -200,6 +203,20 @@ template<typename T, int Size, int _Rows, int _Cols, int _Options> class DenseSt
       if (this != &other) m_data = other.m_data;
       return *this; 
     }
+#if EIGEN_HAS_RVALUE_REFERENCES
+    EIGEN_DEVICE_FUNC
+    DenseStorage(DenseStorage&& other) EIGEN_NOEXCEPT_IF(std::is_nothrow_move_assignable<T>::value)
+    {
+      std::move(other.data(), other.data() + Size, data());
+    }
+    EIGEN_DEVICE_FUNC
+    DenseStorage& operator=(DenseStorage&& other) EIGEN_NOEXCEPT_IF(std::is_nothrow_move_assignable<T>::value)
+    {
+      if (this != &other)
+        std::move(other.data(), other.data() + Size, data());
+      return *this;
+    }
+#endif
     EIGEN_DEVICE_FUNC DenseStorage(Index size, Index rows, Index cols) {
       EIGEN_INTERNAL_DENSE_STORAGE_CTOR_PLUGIN({})
       eigen_internal_assert(size==rows*cols && rows==_Rows && cols==_Cols);
