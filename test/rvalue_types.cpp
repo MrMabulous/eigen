@@ -10,7 +10,9 @@
 #define EIGEN_RUNTIME_NO_MALLOC
 
 #include "main.h"
+#if EIGEN_HAS_CXX11
 #include "MovableScalar.h"
+#endif
 
 #include <Eigen/Core>
 
@@ -140,6 +142,8 @@ EIGEN_DECLARE_TEST(rvalue_types)
     CALL_SUBTEST_4((rvalue_transpositions<Transpositions<Dynamic, Dynamic, int> >(internal::random<int>(1,EIGEN_TEST_MAX_SIZE))));
     CALL_SUBTEST_4((rvalue_transpositions<Transpositions<Dynamic, Dynamic, Index> >(internal::random<int>(1,EIGEN_TEST_MAX_SIZE))));
 
+#if EIGEN_HAS_CXX11
     CALL_SUBTEST_5(rvalue_move(Eigen::Matrix<MovableScalar<float>,1,3>::Random().eval()));
+#endif
   }
 }
