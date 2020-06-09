@@ -136,8 +136,7 @@ plog<Packet16f>(const Packet16f& _x) {
 }
 
 template <>
-EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet16bf
-plog<Packet16bf>(const Packet16bf& _x) {
+EIGEN_STRONG_INLINE Packet16bf plog<Packet16bf>(const Packet16bf& _x) {
   return F32ToBf16(plog<Packet16f>(Bf16ToF32(_x)));
 }
 #endif
@@ -266,8 +265,7 @@ pexp<Packet8d>(const Packet8d& _x) {
   }*/
 
 template <>
-EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet16bf
-pexp<Packet16bf>(const Packet16bf& _x) {
+EIGEN_STRONG_INLINE Packet16bf pexp<Packet16bf>(const Packet16bf& _x) {
   return F32ToBf16(pexp<Packet16f>(Bf16ToF32(_x)));
 }
 
@@ -315,12 +313,6 @@ psqrt<Packet8d>(const Packet8d& _x) {
 
   return _mm512_mask_blend_pd(denormal_mask, pmul(_x,x), _mm512_setzero_pd());
 }
-
-template <>
-EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet16bf
-psqrt<Packet16bf>(const Packet16bf& _x) {
-  return F32ToBf16(psqrt<Packet16f>(Bf16ToF32(_x)));
-}
 #else
 template <>
 EIGEN_STRONG_INLINE Packet16f psqrt<Packet16f>(const Packet16f& x) {
@@ -331,12 +323,12 @@ template <>
 EIGEN_STRONG_INLINE Packet8d psqrt<Packet8d>(const Packet8d& x) {
   return _mm512_sqrt_pd(x);
 }
+#endif
 
 template <>
 EIGEN_STRONG_INLINE Packet16bf psqrt<Packet16bf>(const Packet16bf& x) {
   return F32ToBf16(psqrt<Packet16f>(Bf16ToF32(x)));
 }
-#endif
 
 // prsqrt for float.
 #if defined(EIGEN_VECTORIZE_AVX512ER)
@@ -344,11 +336,6 @@ EIGEN_STRONG_INLINE Packet16bf psqrt<Packet16bf>(const Packet16bf& x) {
 template <>
 EIGEN_STRONG_INLINE Packet16f prsqrt<Packet16f>(const Packet16f& x) {
   return _mm512_rsqrt28_ps(x);
-}
-
-template <>
-EIGEN_STRONG_INLINE Packet16bf prsqrt<Packet16bf>(const Packet16bf& x) {
-  return F32ToBf16(prsqrt<Packet16f>(Bf16ToF32(x)));
 }
 #elif EIGEN_FAST_MATH
 
@@ -381,13 +368,6 @@ prsqrt<Packet16f>(const Packet16f& _x) {
   // return rsqrt(+inf) = 0, rsqrt(x) = NaN if x < 0, and rsqrt(0) = +inf.
   return _mm512_mask_blend_ps(not_finite_pos_mask, y_newton, y_approx);
 }
-
-template <>
-EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet16bf
-prsqrt<Packet16bf>(const Packet16bf& _x) {
-  return F32ToBf16(prsqrt<Packet16f>(Bf16ToF32(_x)));
-}
-
 #else
 
 template <>
@@ -395,12 +375,12 @@ EIGEN_STRONG_INLINE Packet16f prsqrt<Packet16f>(const Packet16f& x) {
   _EIGEN_DECLARE_CONST_Packet16f(one, 1.0f);
   return _mm512_div_ps(p16f_one, _mm512_sqrt_ps(x));
 }
+#endif
 
 template <>
 EIGEN_STRONG_INLINE Packet16bf prsqrt<Packet16bf>(const Packet16bf& x) {
   return F32ToBf16(prsqrt<Packet16f>(Bf16ToF32(x)));
 }
-#endif
 
 // prsqrt for double.
 #if EIGEN_FAST_MATH
@@ -455,8 +435,8 @@ Packet16f plog1p<Packet16f>(const Packet16f& _x) {
   return generic_plog1p(_x);
 }
 
-template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED
-Packet16bf plog1p<Packet16bf>(const Packet16bf& _x) {
+template<>
+EIGEN_STRONG_INLINE Packet16bf plog1p<Packet16bf>(const Packet16bf& _x) {
   return F32ToBf16(plog1p<Packet16f>(Bf16ToF32(_x)));
 }
 
@@ -465,8 +445,8 @@ Packet16f pexpm1<Packet16f>(const Packet16f& _x) {
   return generic_expm1(_x);
 }
 
-template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED
-Packet16bf pexpm1<Packet16bf>(const Packet16bf& _x) {
+template<>
+EIGEN_STRONG_INLINE Packet16bf pexpm1<Packet16bf>(const Packet16bf& _x) {
   return F32ToBf16(pexpm1<Packet16f>(Bf16ToF32(_x)));
 }
 #endif
@@ -481,8 +461,7 @@ psin<Packet16f>(const Packet16f& _x) {
 }
 
 template <>
-EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet16bf
-psin<Packet16bf>(const Packet16bf& _x) {
+EIGEN_STRONG_INLINE Packet16bf psin<Packet16bf>(const Packet16bf& _x) {
   return F32ToBf16(psin<Packet16f>(Bf16ToF32(_x)));
 }
 
@@ -493,8 +472,7 @@ pcos<Packet16f>(const Packet16f& _x) {
 }
 
 template <>
-EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet16bf
-pcos<Packet16bf>(const Packet16bf& _x) {
+EIGEN_STRONG_INLINE Packet16bf pcos<Packet16bf>(const Packet16bf& _x) {
   return F32ToBf16(pcos<Packet16f>(Bf16ToF32(_x)));
 }
 
@@ -505,8 +483,7 @@ ptanh<Packet16f>(const Packet16f& _x) {
 }
 
 template <>
-EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet16bf
-ptanh<Packet16bf>(const Packet16bf& _x) {
+EIGEN_STRONG_INLINE Packet16bf ptanh<Packet16bf>(const Packet16bf& _x) {
   return F32ToBf16(ptanh<Packet16f>(Bf16ToF32(_x)));
 }
 
