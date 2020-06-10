@@ -294,10 +294,10 @@ EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC bfloat16 operator / (const bfloat16& a, In
 
 EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC __bfloat16_raw truncate_to_bfloat16(const float v) {
   __bfloat16_raw output;
-  if (Eigen::numext::isnan(v)) {
+  if (Eigen::numext::isnan EIGEN_NOT_A_MACRO(v)) {
     output.value = 0x7FC0;
     return output;
-  } else if (std::fabs(v) < std::numeric_limits<float>::min()) {
+  } else if (std::fabs(v) < std::numeric_limits<float>::min EIGEN_NOT_A_MACRO()) {
     // Flush denormal to +/- 0.
     output.value = std::signbit(v) ? 0x8000 : 0;
     return output;
@@ -332,14 +332,14 @@ EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC __bfloat16_raw float_to_bfloat16_rtne(floa
   input = f.u;
   __bfloat16_raw output;
 
-  if (Eigen::numext::isnan(ff)) {
+  if (Eigen::numext::isnan EIGEN_NOT_A_MACRO(ff)) {
     // If the value is a NaN, squash it to a qNaN with msb of fraction set,
     // this makes sure after truncation we don't end up with an inf.
     //
     // qNaN magic: All exponent bits set + most significant bit of fraction
     // set.
     output.value = 0x7fc0;
-  } else if (std::fabs(ff) < std::numeric_limits<float>::min()) {
+  } else if (std::fabs(ff) < std::numeric_limits<float>::min EIGEN_NOT_A_MACRO()) {
     // Flush denormal to +/- 0.0
     output.value = std::signbit(ff) ? 0x8000 : 0;
   } else {
@@ -515,10 +515,10 @@ EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC float bfloat16_to_float(__bfloat16_raw h) 
 // --- standard functions ---
 
 EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC bool (isinf)(const bfloat16& a) {
-  return (a.value & 0x7fff) == 0x7f80;
+  return std::isinf EIGEN_NOT_A_MACRO(float(a));
 }
 EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC bool (isnan)(const bfloat16& a) {
-  return (a.value & 0x7fff) == 0x7fc0;
+  return std::isnan EIGEN_NOT_A_MACRO(float(a));
 }
 EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC bool (isfinite)(const bfloat16& a) {
   return !(isinf EIGEN_NOT_A_MACRO (a)) && !(isnan EIGEN_NOT_A_MACRO (a));
@@ -650,7 +650,7 @@ template<> struct NumTraits<Eigen::bfloat16>
   EIGEN_DEVICE_FUNC static EIGEN_STRONG_INLINE Eigen::bfloat16 epsilon() {
     return bfloat16_impl::raw_uint16_to_bfloat16(0x3c00);
   }
-  EIGEN_DEVICE_FUNC static EIGEN_STRONG_INLINE Eigen::bfloat16 dummy_precision() { return Eigen::bfloat16(1e-5f); }
+  EIGEN_DEVICE_FUNC static EIGEN_STRONG_INLINE Eigen::bfloat16 dummy_precision() { return Eigen::bfloat16(2e-2f); }
   EIGEN_DEVICE_FUNC static EIGEN_STRONG_INLINE Eigen::bfloat16 highest() {
     return bfloat16_impl::raw_uint16_to_bfloat16(0x7F7F);
   }

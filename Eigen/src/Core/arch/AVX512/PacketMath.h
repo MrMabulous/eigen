@@ -1709,6 +1709,32 @@ EIGEN_STRONG_INLINE void pstoreu<bfloat16>(bfloat16* to,
   _mm256_storeu_si256(reinterpret_cast<__m256i*>(to), from.i);
 }
 
+template<> EIGEN_STRONG_INLINE Packet16bf
+ploaddup<Packet16bf>(const bfloat16* from) {
+  Packet16bf r;
+  unsigned short a = from[0].value;
+  unsigned short b = from[1].value;
+  unsigned short c = from[2].value;
+  unsigned short d = from[3].value;
+  unsigned short e = from[4].value;
+  unsigned short f = from[5].value;
+  unsigned short g = from[6].value;
+  unsigned short h = from[7].value;
+  r.i = _mm256_set_epi16(h, h, g, g, f, f, e, e, d, d, c, c, b, b, a, a);
+  return r;
+}
+
+template<> EIGEN_STRONG_INLINE Packet16bf
+ploadquad(const bfloat16* from) {
+  Packet16bf r;
+  unsigned short a = from[0].value;
+  unsigned short b = from[1].value;
+  unsigned short c = from[2].value;
+  unsigned short d = from[3].value;
+  r.i = _mm256_set_epi16(d, d, d, d, c, c, c, c, b, b, b, b, a, a, a, a);
+  return r;
+}
+
 EIGEN_STRONG_INLINE Packet16f Bf16ToF32(const Packet16bf& a) {
   return _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepu16_epi32(a.i), 16));
 }
