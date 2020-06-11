@@ -25,26 +25,10 @@ struct MovableScalar : public Base
   MovableScalar& operator=(MovableScalar&& other) = default;
   MovableScalar(Scalar scalar) : Base(100, scalar) {}
 
-  template <typename Stream>
-  Stream& operator<<(Stream& stream) const
-  {
-    if (this->size() > 0)
-      stream << operator Scalar();
-    else
-      stream << "[]";
-    return stream;
-  }
-
   operator Scalar() const { return this->size() > 0 ? this->back() : Scalar(); }
 };
 
 template<> struct NumTraits<MovableScalar<float>> : GenericNumTraits<float> {};
-}
-
-template <typename Stream, typename Scalar>
-Stream& operator<<(Stream& stream, const Eigen::MovableScalar<Scalar>& scalar)
-{
-  return scalar.operator<<(stream);
 }
 
 #endif
