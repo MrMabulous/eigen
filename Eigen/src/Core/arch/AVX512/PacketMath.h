@@ -1622,7 +1622,6 @@ typedef union {
 #ifdef EIGEN_VECTORIZE_AVX512BF16
   __m256bh bh;
 #endif
-  // __m256i
   Packet8i i;  // __m256i;
 } Packet16bf;
 
@@ -1822,6 +1821,8 @@ template <>
 EIGEN_STRONG_INLINE Packet16bf pselect(const Packet16bf& mask,
                                        const Packet16bf& a,
                                        const Packet16bf& b) {
+  // Input mask is expected to be all 0/1, handle it with 8-bit
+  // intrinsic for performance.
   Packet16bf r;
   r.i = _mm256_blendv_epi8(b.i, a.i, mask.i);
   return r;
@@ -1936,11 +1937,14 @@ EIGEN_STRONG_INLINE bfloat16 predux_max<Packet16bf>(const Packet16bf& from) {
 
 template <>
 EIGEN_STRONG_INLINE Packet16bf preverse(const Packet16bf& a) {
-  __m128i m = _mm_setr_epi8(14,15,12,13,10,11,8,9,6,7,4,5,2,3,0,1);
+  __m256i m = _mm256_setr_epi8(14,15,12,13,10,11,8,9,6,7,4,5,2,3,0,1,
+                               14,15,12,13,10,11,8,9,6,7,4,5,2,3,0,1);
+
   Packet16bf res;
-  res.i = _mm256_insertf128_si256(
-                    _mm256_castsi128_si256(_mm_shuffle_epi8(_mm256_extractf128_si256(a.i,1),m)),
-                                           _mm_shuffle_epi8(_mm256_extractf128_si256(a.i,0),m), 1);
+  // Swap hi and lo first because shuffle is in 128-bit lanes.
+  res.i = _mm256_permute2x128_si256(a.i, a.i, 1);
+  // Shuffle 8-bit values in src within 2*128-bit lanes.
+  res.i = _mm256_shuffle_epi8(a.i, m);
   return res;
 }
 
@@ -2102,33 +2106,26 @@ EIGEN_STRONG_INLINE void ptranspose(PacketBlock<Packet16bf,16>& kernel) {
 }
 
 EIGEN_STRONG_INLINE void ptranspose(PacketBlock<Packet16bf,4>& kernel) {
-  EIGEN_ALIGN64 bfloat16 in[4][16];
-  pstore<bfloat16>(in[0], kernel.packet[0]);
-  pstore<bfloat16>(in[1], kernel.packet[1]);
-  pstore<bfloat16>(in[2], kernel.packet[2]);
-  pstore<bfloat16>(in[3], kernel.packet[3]);
+  __m256i a = kernel.packet[0].i;
+  __m256i b = kernel.packet[1].i;
+  __m256i c = kernel.packet[2].i;
+  __m256i d = kernel.packet[3].i;
 
-  EIGEN_ALIGN64 bfloat16 out[4][16];
+  __m256i ab_07 = _mm256_unpacklo_epi16(a, b);
+  __m256i cd_07 = _mm256_unpacklo_epi16(c, d);
+  __m256i ab_8f = _mm256_unpackhi_epi16(a, b);
+  __m256i cd_8f = _mm256_unpackhi_epi16(c, d);
 
-  for (int i = 0; i < 4; ++i) {
-    for (int j = 0; j < 4; ++j) {
-      out[i][j] = in[j][4*i];
-    }
-    for (int j = 0; j < 4; ++j) {
-      out[i][j+4] = in[j][4*i+1];
-    }
-    for (int j = 0; j < 4; ++j) {
-      out[i][j+8] = in[j][4*i+2];
-    }
-    for (int j = 0; j < 4; ++j) {
-      out[i][j+12] = in[j][4*i+3];
-    }
-  }
+  __m256i abcd_03 = _mm256_unpacklo_epi32(ab_07, cd_07);
+  __m256i abcd_47 = _mm256_unpackhi_epi32(ab_07, cd_07);
+  __m256i abcd_8b = _mm256_unpacklo_epi32(ab_8f, cd_8f);
+  __m256i abcd_cf = _mm256_unpackhi_epi32(ab_8f, cd_8f);
 
-  kernel.packet[0] = pload<Packet16bf>(out[0]);
-  kernel.packet[1] = pload<Packet16bf>(out[1]);
-  kernel.packet[2] = pload<Packet16bf>(out[2]);
-  kernel.packet[3] = pload<Packet16bf>(out[3]);
+  // NOTE: no unpacklo/hi instr in this case, so using permute instr.
+  kernel.packet[0].i = _mm256_permute2x128_si256(abcd_03, abcd_47, 0x20);
+  kernel.packet[1].i = _mm256_permute2x128_si256(abcd_8b, abcd_cf, 0x20);
+  kernel.packet[2].i = _mm256_permute2x128_si256(abcd_03, abcd_47, 0x31);
+  kernel.packet[3].i = _mm256_permute2x128_si256(abcd_8b, abcd_cf, 0x31);
 }
 
 } // end namespace internal
