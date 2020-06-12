@@ -551,7 +551,7 @@ if(BUILD_TESTING)
   message(STATUS "         |   http://eigen.tuxfamily.org/index.php?title=Tests")
 endif()
 message(STATUS "blas     | Build BLAS library (not the same thing as Eigen)")
-message(STATUS "uninstall| Removes files installed by the install target")
+message(STATUS "uninstall| Remove files installed by the install target")
 message(STATUS "---------+--------------------------------------------------------------")
 message(STATUS "")
 
