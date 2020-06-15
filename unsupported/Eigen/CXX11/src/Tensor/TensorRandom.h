@@ -104,7 +104,7 @@ Eigen::half RandomToTypeUniform<Eigen::half>(uint64_t* state, uint64_t stream) {
 template <> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
 Eigen::bfloat16 RandomToTypeUniform<Eigen::bfloat16>(uint64_t* state, uint64_t stream) {
   Eigen::bfloat16 result;
-  // Generate 10 random bits for the mantissa
+  // Generate 7 random bits for the mantissa
   unsigned rnd = PCG_XSH_RS_generator(state, stream);
   result.value = static_cast<uint16_t>(rnd & 0x7fu);
   // Set the exponent

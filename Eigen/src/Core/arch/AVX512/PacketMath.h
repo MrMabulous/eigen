@@ -2070,39 +2070,38 @@ EIGEN_STRONG_INLINE void ptranspose(PacketBlock<Packet16bf,16>& kernel) {
   __m256i ijklmnop_ef = _mm256_unpackhi_epi64(ijkl_cf, mnop_cf);
 
   // NOTE: no unpacklo/hi instr in this case, so using permute instr.
-  __m256i a_p_0 = _mm256_permute2x128_si256(abcdefgh_01, ijklmnop_01, 0x20);
-  __m256i a_p_1 = _mm256_permute2x128_si256(abcdefgh_23, ijklmnop_23, 0x20);
-  __m256i a_p_2 = _mm256_permute2x128_si256(abcdefgh_45, ijklmnop_45, 0x20);
-  __m256i a_p_3 = _mm256_permute2x128_si256(abcdefgh_67, ijklmnop_67, 0x20);
-  __m256i a_p_4 = _mm256_permute2x128_si256(abcdefgh_89, ijklmnop_89, 0x20);
-  __m256i a_p_5 = _mm256_permute2x128_si256(abcdefgh_ab, ijklmnop_ab, 0x20);
-  __m256i a_p_6 = _mm256_permute2x128_si256(abcdefgh_cd, ijklmnop_cd, 0x20);
-  __m256i a_p_7 = _mm256_permute2x128_si256(abcdefgh_ef, ijklmnop_ef, 0x20);
-  __m256i a_p_8 = _mm256_permute2x128_si256(abcdefgh_01, ijklmnop_01, 0x31);
-  __m256i a_p_9 = _mm256_permute2x128_si256(abcdefgh_23, ijklmnop_23, 0x31);
-  __m256i a_p_a = _mm256_permute2x128_si256(abcdefgh_45, ijklmnop_45, 0x31);
-  __m256i a_p_b = _mm256_permute2x128_si256(abcdefgh_67, ijklmnop_67, 0x31);
-  __m256i a_p_c = _mm256_permute2x128_si256(abcdefgh_89, ijklmnop_89, 0x31);
-  __m256i a_p_d = _mm256_permute2x128_si256(abcdefgh_ab, ijklmnop_ab, 0x31);
-  __m256i a_p_e = _mm256_permute2x128_si256(abcdefgh_cd, ijklmnop_cd, 0x31);
-  __m256i a_p_f = _mm256_permute2x128_si256(abcdefgh_ef, ijklmnop_ef, 0x31);
-
-  kernel.packet[0].i = a_p_0;
-  kernel.packet[1].i = a_p_1;
-  kernel.packet[2].i = a_p_2;
-  kernel.packet[3].i = a_p_3;
-  kernel.packet[4].i = a_p_4;
-  kernel.packet[5].i = a_p_5;
-  kernel.packet[6].i = a_p_6;
-  kernel.packet[7].i = a_p_7;
-  kernel.packet[8].i = a_p_8;
-  kernel.packet[9].i = a_p_9;
-  kernel.packet[10].i = a_p_a;
-  kernel.packet[11].i = a_p_b;
-  kernel.packet[12].i = a_p_c;
-  kernel.packet[13].i = a_p_d;
-  kernel.packet[14].i = a_p_e;
-  kernel.packet[15].i = a_p_f;
+  kernel.packet[0].i = _mm256_permute2x128_si256(abcdefgh_01, ijklmnop_01,
+                                                 0x20);
+  kernel.packet[1].i = _mm256_permute2x128_si256(abcdefgh_23, ijklmnop_23,
+                                                 0x20);
+  kernel.packet[2].i = _mm256_permute2x128_si256(abcdefgh_45, ijklmnop_45,
+                                                 0x20);
+  kernel.packet[3].i = _mm256_permute2x128_si256(abcdefgh_67, ijklmnop_67,
+                                                 0x20);
+  kernel.packet[4].i = _mm256_permute2x128_si256(abcdefgh_89, ijklmnop_89,
+                                                 0x20);
+  kernel.packet[5].i = _mm256_permute2x128_si256(abcdefgh_ab, ijklmnop_ab,
+                                                 0x20);
+  kernel.packet[6].i = _mm256_permute2x128_si256(abcdefgh_cd, ijklmnop_cd,
+                                                 0x20);
+  kernel.packet[7].i = _mm256_permute2x128_si256(abcdefgh_ef, ijklmnop_ef,
+                                                 0x20);
+  kernel.packet[8].i = _mm256_permute2x128_si256(abcdefgh_01, ijklmnop_01,
+                                                 0x20);
+  kernel.packet[9].i = _mm256_permute2x128_si256(abcdefgh_23, ijklmnop_23,
+                                                 0x20);
+  kernel.packet[10].i = _mm256_permute2x128_si256(abcdefgh_45, ijklmnop_45,
+                                                  0x20);
+  kernel.packet[11].i = _mm256_permute2x128_si256(abcdefgh_67, ijklmnop_67,
+                                                  0x20);
+  kernel.packet[12].i = _mm256_permute2x128_si256(abcdefgh_89, ijklmnop_89,
+                                                  0x20);
+  kernel.packet[13].i = _mm256_permute2x128_si256(abcdefgh_ab, ijklmnop_ab,
+                                                  0x20);
+  kernel.packet[14].i = _mm256_permute2x128_si256(abcdefgh_cd, ijklmnop_cd,
+                                                  0x20);
+  kernel.packet[15].i = _mm256_permute2x128_si256(abcdefgh_ef, ijklmnop_ef,
+                                                  0x20);
 }
 
 EIGEN_STRONG_INLINE void ptranspose(PacketBlock<Packet16bf,4>& kernel) {
