@@ -31,18 +31,14 @@ float BinaryToFloat(uint32_t sign, uint32_t exponent, uint32_t high_mantissa,
 
 void test_truncate(float input, float expected_truncation, float expected_rounding){
   bfloat16 truncated = Eigen::bfloat16_impl::truncate_to_bfloat16(input);
-  if ((std::isnan)(input)){
-    VERIFY((std::isnan)(float(truncated)) || (std::isinf)(float(truncated)));
-    return;
-  }
-  VERIFY_IS_EQUAL(expected_truncation, float(truncated));
-
   bfloat16 rounded = Eigen::bfloat16_impl::float_to_bfloat16_rtne(input);
-  if ((std::isnan)(input)) {
-    VERIFY((std::isnan)(float(rounded)) || (std::isinf)(float(rounded)));
+  if ((numext::isnan)(input)){
+    VERIFY((numext::isnan)(static_cast<float>(truncated)) || (numext::isinf)(static_cast<float>(truncated)));
+    VERIFY((numext::isnan)(static_cast<float>(rounded)) || (numext::isinf)(static_cast<float>(rounded)));
     return;
   }
-  VERIFY_IS_EQUAL(expected_rounding, float(rounded));
+  VERIFY_IS_EQUAL(expected_truncation, static_cast<float>(truncated));
+  VERIFY_IS_EQUAL(expected_rounding, static_cast<float>(rounded));
 }
 
 void test_conversion()
@@ -53,15 +49,13 @@ void test_conversion()
   VERIFY_IS_EQUAL(bfloat16(1.0f).value, 0x3f80);
   VERIFY_IS_EQUAL(bfloat16(0.5f).value, 0x3f00);
   VERIFY_IS_EQUAL(bfloat16(0.33333f).value, 0x3eab);
-  VERIFY_IS_EQUAL(bfloat16(0.0f).value, 0x0000);
-  VERIFY_IS_EQUAL(bfloat16(-0.0f).value, 0x8000);
   VERIFY_IS_EQUAL(bfloat16(3.38e38f).value, 0x7f7e);
   VERIFY_IS_EQUAL(bfloat16(3.40e38f).value, 0x7f80);  // Becomes infinity.
 
   // Verify round-to-nearest-even behavior.
-  float val1 = float(bfloat16(__bfloat16_raw(0x3c00)));
-  float val2 = float(bfloat16(__bfloat16_raw(0x3c01)));
-  float val3 = float(bfloat16(__bfloat16_raw(0x3c02)));
+  float val1 = static_cast<float>(bfloat16(__bfloat16_raw(0x3c00)));
+  float val2 = static_cast<float>(bfloat16(__bfloat16_raw(0x3c01)));
+  float val3 = static_cast<float>(bfloat16(__bfloat16_raw(0x3c02)));
   VERIFY_IS_EQUAL(bfloat16(0.5f * (val1 + val2)).value, 0x3c00);
   VERIFY_IS_EQUAL(bfloat16(0.5f * (val2 + val3)).value, 0x3c02);
 
@@ -78,16 +72,8 @@ void test_conversion()
   VERIFY_IS_EQUAL(bfloat16(true).value, 0x3f80);
 
   // Conversion to float.
-  VERIFY_IS_EQUAL(float(bfloat16(__bfloat16_raw(0x0000))), 0.0f);
-  VERIFY_IS_EQUAL(float(bfloat16(__bfloat16_raw(0x3f80))), 1.0f);
-
-  // NaNs and infinities.
-  VERIFY(!(numext::isinf)(float(bfloat16(3.38e38f))));  // Largest finite number.
-  VERIFY(!(numext::isnan)(float(bfloat16(0.0f))));
-  VERIFY((numext::isinf)(float(bfloat16(__bfloat16_raw(0xff80)))));
-  VERIFY((numext::isnan)(float(bfloat16(__bfloat16_raw(0xffc0)))));
-  VERIFY((numext::isinf)(float(bfloat16(__bfloat16_raw(0x7f80)))));
-  VERIFY((numext::isnan)(float(bfloat16(__bfloat16_raw(0x7fc0)))));
+  VERIFY_IS_EQUAL(static_cast<float>(bfloat16(__bfloat16_raw(0x0000))), 0.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(bfloat16(__bfloat16_raw(0x3f80))), 1.0f);
 
   // Zero representations
   VERIFY_IS_EQUAL(bfloat16(0.0f), bfloat16(0.0f));
@@ -122,58 +108,58 @@ void test_conversion()
   // Representable floats round trip via bfloat16
   VERIFY_IS_EQUAL(static_cast<float>(static_cast<bfloat16>(-std::numeric_limits<float>::infinity())), -std::numeric_limits<float>::infinity());
   VERIFY_IS_EQUAL(static_cast<float>(static_cast<bfloat16>(std::numeric_limits<float>::infinity())), std::numeric_limits<float>::infinity());
-  VERIFY_IS_EQUAL(static_cast<float>(static_cast<bfloat16>(-1.0)), -1.0f);
-  VERIFY_IS_EQUAL(static_cast<float>(static_cast<bfloat16>(-0.5)), -0.5f);
-  VERIFY_IS_EQUAL(static_cast<float>(static_cast<bfloat16>(-0.0)), -0.0f);
-  VERIFY_IS_EQUAL(static_cast<float>(static_cast<bfloat16>(1.0)), 1.0f);
-  VERIFY_IS_EQUAL(static_cast<float>(static_cast<bfloat16>(0.5)), 0.5f);
-  VERIFY_IS_EQUAL(static_cast<float>(static_cast<bfloat16>(0.0)), 0.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(static_cast<bfloat16>(-1.0f)), -1.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(static_cast<bfloat16>(-0.5f)), -0.5f);
+  VERIFY_IS_EQUAL(static_cast<float>(static_cast<bfloat16>(-0.0f)), -0.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(static_cast<bfloat16>(1.0f)), 1.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(static_cast<bfloat16>(0.5f)), 0.5f);
+  VERIFY_IS_EQUAL(static_cast<float>(static_cast<bfloat16>(0.0f)), 0.0f);
 
   // Truncate test
   test_truncate(
-      BinaryToFloat(0, 0b10000000, 0b1001000, 0b1111010111000011),
-      BinaryToFloat(0, 0b10000000, 0b1001000, 0b0000000000000000),
-      BinaryToFloat(0, 0b10000000, 0b1001001, 0b0000000000000000));
+      BinaryToFloat(0, 0x80, 0x48, 0xf5c3),
+      BinaryToFloat(0, 0x80, 0x48, 0x0000),
+      BinaryToFloat(0, 0x80, 0x49, 0x0000));
   test_truncate(
-      BinaryToFloat(1, 0b10000000, 0b1001000, 0b1111010111000011),
-      BinaryToFloat(1, 0b10000000, 0b1001000, 0b0000000000000000),
-      BinaryToFloat(1, 0b10000000, 0b1001001, 0b0000000000000000));
+      BinaryToFloat(1, 0x80, 0x48, 0xf5c3),
+      BinaryToFloat(1, 0x80, 0x48, 0x0000),
+      BinaryToFloat(1, 0x80, 0x49, 0x0000));
   test_truncate(
-      BinaryToFloat(0, 0b10000000, 0b1001000, 0b1000000000000000),
-      BinaryToFloat(0, 0b10000000, 0b1001000, 0b0000000000000000),
-      BinaryToFloat(0, 0b10000000, 0b1001000, 0b0000000000000000));
+      BinaryToFloat(0, 0x80, 0x48, 0x8000),
+      BinaryToFloat(0, 0x80, 0x48, 0x0000),
+      BinaryToFloat(0, 0x80, 0x48, 0x0000));
   test_truncate(
-      BinaryToFloat(0, 0b11111111, 0b0000000, 0b0000000000000001),
-      BinaryToFloat(0, 0b11111111, 0b0000000, 0b0000000000000000),
-      BinaryToFloat(0, 0b11111111, 0b1000000, 0b0000000000000000));
+      BinaryToFloat(0, 0xff, 0x00, 0x0001),
+      BinaryToFloat(0, 0xff, 0x40, 0x0000),
+      BinaryToFloat(0, 0xff, 0x40, 0x0000));
   test_truncate(
-      BinaryToFloat(0, 0b11111111, 0b1111111, 0b1111111111111111),
-      BinaryToFloat(0, 0b11111111, 0b1111111, 0b0000000000000000),
-      BinaryToFloat(0, 0b11111111, 0b1000000, 0b0000000000000000));
+      BinaryToFloat(0, 0xff, 0x7f, 0xffff),
+      BinaryToFloat(0, 0xff, 0x40, 0x0000),
+      BinaryToFloat(0, 0xff, 0x40, 0x0000));
   test_truncate(
-      BinaryToFloat(1, 0b10000000, 0b1001000, 0b1100000000000000),
-      BinaryToFloat(1, 0b10000000, 0b1001000, 0b0000000000000000),
-      BinaryToFloat(1, 0b10000000, 0b1001001, 0b0000000000000000));
+      BinaryToFloat(1, 0x80, 0x48, 0xc000),
+      BinaryToFloat(1, 0x80, 0x48, 0x0000),
+      BinaryToFloat(1, 0x80, 0x49, 0x0000));
   test_truncate(
-      BinaryToFloat(0, 0b10000000, 0b1001000, 0b0000000000000000),
-      BinaryToFloat(0, 0b10000000, 0b1001000, 0b0000000000000000),
-      BinaryToFloat(0, 0b10000000, 0b1001000, 0b0000000000000000));
+      BinaryToFloat(0, 0x80, 0x48, 0x0000),
+      BinaryToFloat(0, 0x80, 0x48, 0x0000),
+      BinaryToFloat(0, 0x80, 0x48, 0x0000));
   test_truncate(
-      BinaryToFloat(0, 0b10000000, 0b1001000, 0b0100000000000000),
-      BinaryToFloat(0, 0b10000000, 0b1001000, 0b0000000000000000),
-      BinaryToFloat(0, 0b10000000, 0b1001000, 0b0000000000000000));
+      BinaryToFloat(0, 0x80, 0x48, 0x4000),
+      BinaryToFloat(0, 0x80, 0x48, 0x0000),
+      BinaryToFloat(0, 0x80, 0x48, 0x0000));
   test_truncate(
-      BinaryToFloat(0, 0b10000000, 0b1001000, 0b1000000000000000),
-      BinaryToFloat(0, 0b10000000, 0b1001000, 0b0000000000000000),
-      BinaryToFloat(0, 0b10000000, 0b1001000, 0b0000000000000000));
+      BinaryToFloat(0, 0x80, 0x48, 0x8000),
+      BinaryToFloat(0, 0x80, 0x48, 0x0000),
+      BinaryToFloat(0, 0x80, 0x48, 0x0000));
   test_truncate(
-      BinaryToFloat(0, 0b00000000, 0b1001000, 0b1000000000000000),
-      BinaryToFloat(0, 0b00000000, 0b0000000, 0b0000000000000000),
-      BinaryToFloat(0, 0b00000000, 0b0000000, 0b0000000000000000));
+      BinaryToFloat(0, 0x00, 0x48, 0x8000),
+      BinaryToFloat(0, 0x00, 0x00, 0x0000),
+      BinaryToFloat(0, 0x00, 0x00, 0x0000));
   test_truncate(
-      BinaryToFloat(0, 0b00000000, 0b1111111, 0b1100000000000000),
-      BinaryToFloat(0, 0b00000000, 0b0000000, 0b0000000000000000),
-      BinaryToFloat(0, 0b00000000, 0b0000000, 0b0000000000000000));
+      BinaryToFloat(0, 0x00, 0x7f, 0xc000),
+      BinaryToFloat(0, 0x00, 0x00, 0x0000),
+      BinaryToFloat(0, 0x00, 0x00, 0x0000));
 
   // Conversion
   Array<float,1,100> a;
@@ -181,7 +167,7 @@ void test_conversion()
   Array<bfloat16,1,100> b = a.cast<bfloat16>();
   Array<float,1,100> c = b.cast<float>();
   for (int i = 0; i < 100; ++i) {
-    VERIFY_LE(fabs(c(i) - a(i)) / a(i), 1.0f / 128);
+    VERIFY_LE(numext::abs(c(i) - a(i)), a(i) / 128);
   }
 
   // Epsilon
@@ -195,10 +181,23 @@ void test_conversion()
 
 #if !EIGEN_COMP_MSVC
   // Visual Studio errors out on divisions by 0
-  VERIFY((numext::isnan)(float(bfloat16(0.0 / 0.0))));
-  VERIFY((numext::isinf)(float(bfloat16(1.0 / 0.0))));
-  VERIFY((numext::isinf)(float(bfloat16(-1.0 / 0.0))));
+  VERIFY((numext::isnan)(static_cast<float>(bfloat16(0.0 / 0.0))));
+  VERIFY((numext::isinf)(static_cast<float>(bfloat16(1.0 / 0.0))));
+  VERIFY((numext::isinf)(static_cast<float>(bfloat16(-1.0 / 0.0))));
+
+  // Visual Studio errors out on divisions by 0
+  VERIFY((numext::isnan)(bfloat16(0.0 / 0.0)));
+  VERIFY((numext::isinf)(bfloat16(1.0 / 0.0)));
+  VERIFY((numext::isinf)(bfloat16(-1.0 / 0.0)));
 #endif
+
+  // NaNs and infinities.
+  VERIFY(!(numext::isinf)(static_cast<float>(bfloat16(3.38e38f))));  // Largest finite number.
+  VERIFY(!(numext::isnan)(static_cast<float>(bfloat16(0.0f))));
+  VERIFY((numext::isinf)(static_cast<float>(bfloat16(__bfloat16_raw(0xff80)))));
+  VERIFY((numext::isnan)(static_cast<float>(bfloat16(__bfloat16_raw(0xffc0)))));
+  VERIFY((numext::isinf)(static_cast<float>(bfloat16(__bfloat16_raw(0x7f80)))));
+  VERIFY((numext::isnan)(static_cast<float>(bfloat16(__bfloat16_raw(0x7fc0)))));
 
   // Exactly same checks as above, just directly on the bfloat16 representation.
   VERIFY(!(numext::isinf)(bfloat16(__bfloat16_raw(0x7bff))));
@@ -207,13 +206,6 @@ void test_conversion()
   VERIFY((numext::isnan)(bfloat16(__bfloat16_raw(0xffc0))));
   VERIFY((numext::isinf)(bfloat16(__bfloat16_raw(0x7f80))));
   VERIFY((numext::isnan)(bfloat16(__bfloat16_raw(0x7fc0))));
-
-#if !EIGEN_COMP_MSVC
-  // Visual Studio errors out on divisions by 0
-  VERIFY((numext::isnan)(bfloat16(0.0 / 0.0)));
-  VERIFY((numext::isinf)(bfloat16(1.0 / 0.0)));
-  VERIFY((numext::isinf)(bfloat16(-1.0 / 0.0)));
-#endif
 }
 
 void test_numtraits()
@@ -221,8 +213,8 @@ void test_numtraits()
   std::cout << "epsilon       = " << NumTraits<bfloat16>::epsilon() << "  (0x" << std::hex << NumTraits<bfloat16>::epsilon().value << ")" << std::endl;
   std::cout << "highest       = " << NumTraits<bfloat16>::highest() << "  (0x" << std::hex << NumTraits<bfloat16>::highest().value << ")" << std::endl;
   std::cout << "lowest        = " << NumTraits<bfloat16>::lowest() << "  (0x" << std::hex << NumTraits<bfloat16>::lowest().value << ")" << std::endl;
-  std::cout << "min           = " << (std::numeric_limits<bfloat16>::min)() << "  (0x" << std::hex << bfloat16((std::numeric_limits<bfloat16>::min)()).value << ")" << std::endl;
-  std::cout << "denorm min    = " << (std::numeric_limits<bfloat16>::denorm_min)() << "  (0x" << std::hex << bfloat16((std::numeric_limits<bfloat16>::denorm_min)()).value << ")" << std::endl;
+  std::cout << "min           = " << (std::numeric_limits<bfloat16>::min)() << "  (0x" << std::hex << (std::numeric_limits<bfloat16>::min)().value << ")" << std::endl;
+  std::cout << "denorm min    = " << (std::numeric_limits<bfloat16>::denorm_min)() << "  (0x" << std::hex << (std::numeric_limits<bfloat16>::denorm_min)().value << ")" << std::endl;
   std::cout << "infinity      = " << NumTraits<bfloat16>::infinity() << "  (0x" << std::hex << NumTraits<bfloat16>::infinity().value << ")" << std::endl;
   std::cout << "quiet nan     = " << NumTraits<bfloat16>::quiet_NaN() << "  (0x" << std::hex << NumTraits<bfloat16>::quiet_NaN().value << ")" << std::endl;
   std::cout << "signaling nan = " << std::numeric_limits<bfloat16>::signaling_NaN() << "  (0x" << std::hex << std::numeric_limits<bfloat16>::signaling_NaN().value << ")" << std::endl;
@@ -238,13 +230,13 @@ void test_numtraits()
 
 void test_arithmetic()
 {
-  VERIFY_IS_EQUAL(float(bfloat16(2) + bfloat16(2)), 4);
-  VERIFY_IS_EQUAL(float(bfloat16(2) + bfloat16(-2)), 0);
-  VERIFY_IS_APPROX(float(bfloat16(0.33333f) + bfloat16(0.66667f)), 1.0f);
-  VERIFY_IS_EQUAL(float(bfloat16(2.0f) * bfloat16(-5.5f)), -11.0f);
-  VERIFY_IS_APPROX(float(bfloat16(1.0f) / bfloat16(3.0f)), 0.3339f);
-  VERIFY_IS_EQUAL(float(-bfloat16(4096.0f)), -4096.0f);
-  VERIFY_IS_EQUAL(float(-bfloat16(-4096.0f)), 4096.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(bfloat16(2) + bfloat16(2)), 4);
+  VERIFY_IS_EQUAL(static_cast<float>(bfloat16(2) + bfloat16(-2)), 0);
+  VERIFY_IS_APPROX(static_cast<float>(bfloat16(0.33333f) + bfloat16(0.66667f)), 1.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(bfloat16(2.0f) * bfloat16(-5.5f)), -11.0f);
+  VERIFY_IS_APPROX(static_cast<float>(bfloat16(1.0f) / bfloat16(3.0f)), 0.3339f);
+  VERIFY_IS_EQUAL(static_cast<float>(-bfloat16(4096.0f)), -4096.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(-bfloat16(-4096.0f)), 4096.0f);
 }
 
 void test_comparison()
@@ -287,50 +279,50 @@ void test_comparison()
 
 void test_basic_functions()
 {
-  VERIFY_IS_EQUAL(float(numext::abs(bfloat16(3.5f))), 3.5f);
-  VERIFY_IS_EQUAL(float(abs(bfloat16(3.5f))), 3.5f);
-  VERIFY_IS_EQUAL(float(numext::abs(bfloat16(-3.5f))), 3.5f);
-  VERIFY_IS_EQUAL(float(abs(bfloat16(-3.5f))), 3.5f);
+  VERIFY_IS_EQUAL(static_cast<float>(numext::abs(bfloat16(3.5f))), 3.5f);
+  VERIFY_IS_EQUAL(static_cast<float>(abs(bfloat16(3.5f))), 3.5f);
+  VERIFY_IS_EQUAL(static_cast<float>(numext::abs(bfloat16(-3.5f))), 3.5f);
+  VERIFY_IS_EQUAL(static_cast<float>(abs(bfloat16(-3.5f))), 3.5f);
 
-  VERIFY_IS_EQUAL(float(numext::floor(bfloat16(3.5f))), 3.0f);
-  VERIFY_IS_EQUAL(float(floor(bfloat16(3.5f))), 3.0f);
-  VERIFY_IS_EQUAL(float(numext::floor(bfloat16(-3.5f))), -4.0f);
-  VERIFY_IS_EQUAL(float(floor(bfloat16(-3.5f))), -4.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(numext::floor(bfloat16(3.5f))), 3.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(floor(bfloat16(3.5f))), 3.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(numext::floor(bfloat16(-3.5f))), -4.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(floor(bfloat16(-3.5f))), -4.0f);
 
-  VERIFY_IS_EQUAL(float(numext::ceil(bfloat16(3.5f))), 4.0f);
-  VERIFY_IS_EQUAL(float(ceil(bfloat16(3.5f))), 4.0f);
-  VERIFY_IS_EQUAL(float(numext::ceil(bfloat16(-3.5f))), -3.0f);
-  VERIFY_IS_EQUAL(float(ceil(bfloat16(-3.5f))), -3.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(numext::ceil(bfloat16(3.5f))), 4.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(ceil(bfloat16(3.5f))), 4.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(numext::ceil(bfloat16(-3.5f))), -3.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(ceil(bfloat16(-3.5f))), -3.0f);
 
-  VERIFY_IS_APPROX(float(numext::sqrt(bfloat16(0.0f))), 0.0f);
-  VERIFY_IS_APPROX(float(sqrt(bfloat16(0.0f))), 0.0f);
-  VERIFY_IS_APPROX(float(numext::sqrt(bfloat16(4.0f))), 2.0f);
-  VERIFY_IS_APPROX(float(sqrt(bfloat16(4.0f))), 2.0f);
+  VERIFY_IS_APPROX(static_cast<float>(numext::sqrt(bfloat16(0.0f))), 0.0f);
+  VERIFY_IS_APPROX(static_cast<float>(sqrt(bfloat16(0.0f))), 0.0f);
+  VERIFY_IS_APPROX(static_cast<float>(numext::sqrt(bfloat16(4.0f))), 2.0f);
+  VERIFY_IS_APPROX(static_cast<float>(sqrt(bfloat16(4.0f))), 2.0f);
 
-  VERIFY_IS_APPROX(float(numext::pow(bfloat16(0.0f), bfloat16(1.0f))), 0.0f);
-  VERIFY_IS_APPROX(float(pow(bfloat16(0.0f), bfloat16(1.0f))), 0.0f);
-  VERIFY_IS_APPROX(float(numext::pow(bfloat16(2.0f), bfloat16(2.0f))), 4.0f);
-  VERIFY_IS_APPROX(float(pow(bfloat16(2.0f), bfloat16(2.0f))), 4.0f);
+  VERIFY_IS_APPROX(static_cast<float>(numext::pow(bfloat16(0.0f), bfloat16(1.0f))), 0.0f);
+  VERIFY_IS_APPROX(static_cast<float>(pow(bfloat16(0.0f), bfloat16(1.0f))), 0.0f);
+  VERIFY_IS_APPROX(static_cast<float>(numext::pow(bfloat16(2.0f), bfloat16(2.0f))), 4.0f);
+  VERIFY_IS_APPROX(static_cast<float>(pow(bfloat16(2.0f), bfloat16(2.0f))), 4.0f);
 
-  VERIFY_IS_EQUAL(float(numext::exp(bfloat16(0.0f))), 1.0f);
-  VERIFY_IS_EQUAL(float(exp(bfloat16(0.0f))), 1.0f);
-  VERIFY_IS_APPROX(float(numext::exp(bfloat16(EIGEN_PI))), 20.f + float(EIGEN_PI));
-  VERIFY_IS_APPROX(float(exp(bfloat16(EIGEN_PI))), 20.f + float(EIGEN_PI));
+  VERIFY_IS_EQUAL(static_cast<float>(numext::exp(bfloat16(0.0f))), 1.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(exp(bfloat16(0.0f))), 1.0f);
+  VERIFY_IS_APPROX(static_cast<float>(numext::exp(bfloat16(EIGEN_PI))), 20.f + static_cast<float>(EIGEN_PI));
+  VERIFY_IS_APPROX(static_cast<float>(exp(bfloat16(EIGEN_PI))), 20.f + static_cast<float>(EIGEN_PI));
 
-  VERIFY_IS_EQUAL(float(numext::expm1(bfloat16(0.0f))), 0.0f);
-  VERIFY_IS_EQUAL(float(expm1(bfloat16(0.0f))), 0.0f);
-  VERIFY_IS_APPROX(float(numext::expm1(bfloat16(2.0f))), 6.375f);
-  VERIFY_IS_APPROX(float(expm1(bfloat16(2.0f))), 6.375f);
+  VERIFY_IS_EQUAL(static_cast<float>(numext::expm1(bfloat16(0.0f))), 0.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(expm1(bfloat16(0.0f))), 0.0f);
+  VERIFY_IS_APPROX(static_cast<float>(numext::expm1(bfloat16(2.0f))), 6.375f);
+  VERIFY_IS_APPROX(static_cast<float>(expm1(bfloat16(2.0f))), 6.375f);
 
-  VERIFY_IS_EQUAL(float(numext::log(bfloat16(1.0f))), 0.0f);
-  VERIFY_IS_EQUAL(float(log(bfloat16(1.0f))), 0.0f);
-  VERIFY_IS_APPROX(float(numext::log(bfloat16(10.0f))), 2.29687f);
-  VERIFY_IS_APPROX(float(log(bfloat16(10.0f))), 2.29687f);
+  VERIFY_IS_EQUAL(static_cast<float>(numext::log(bfloat16(1.0f))), 0.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(log(bfloat16(1.0f))), 0.0f);
+  VERIFY_IS_APPROX(static_cast<float>(numext::log(bfloat16(10.0f))), 2.296875f);
+  VERIFY_IS_APPROX(static_cast<float>(log(bfloat16(10.0f))), 2.296875f);
 
-  VERIFY_IS_EQUAL(float(numext::log1p(bfloat16(0.0f))), 0.0f);
-  VERIFY_IS_EQUAL(float(log1p(bfloat16(0.0f))), 0.0f);
-  VERIFY_IS_APPROX(float(numext::log1p(bfloat16(10.0f))), 2.390625f);
-  VERIFY_IS_APPROX(float(log1p(bfloat16(10.0f))), 2.390625f);
+  VERIFY_IS_EQUAL(static_cast<float>(numext::log1p(bfloat16(0.0f))), 0.0f);
+  VERIFY_IS_EQUAL(static_cast<float>(log1p(bfloat16(0.0f))), 0.0f);
+  VERIFY_IS_APPROX(static_cast<float>(numext::log1p(bfloat16(10.0f))), 2.390625f);
+  VERIFY_IS_APPROX(static_cast<float>(log1p(bfloat16(10.0f))), 2.390625f);
 }
 
 void test_trigonometric_functions()
@@ -338,22 +330,22 @@ void test_trigonometric_functions()
   VERIFY_IS_APPROX(numext::cos(bfloat16(0.0f)), bfloat16(cosf(0.0f)));
   VERIFY_IS_APPROX(cos(bfloat16(0.0f)), bfloat16(cosf(0.0f)));
   VERIFY_IS_APPROX(numext::cos(bfloat16(EIGEN_PI)), bfloat16(cosf(EIGEN_PI)));
-  //VERIFY_IS_APPROX(numext::cos(bfloat16(EIGEN_PI/2)), bfloat16(cosf(EIGEN_PI/2)));
-  //VERIFY_IS_APPROX(numext::cos(bfloat16(3*EIGEN_PI/2)), bfloat16(cosf(3*EIGEN_PI/2)));
+  // VERIFY_IS_APPROX(numext::cos(bfloat16(EIGEN_PI/2)), bfloat16(cosf(EIGEN_PI/2)));
+  // VERIFY_IS_APPROX(numext::cos(bfloat16(3*EIGEN_PI/2)), bfloat16(cosf(3*EIGEN_PI/2)));
   VERIFY_IS_APPROX(numext::cos(bfloat16(3.5f)), bfloat16(cosf(3.5f)));
 
   VERIFY_IS_APPROX(numext::sin(bfloat16(0.0f)), bfloat16(sinf(0.0f)));
   VERIFY_IS_APPROX(sin(bfloat16(0.0f)), bfloat16(sinf(0.0f)));
-  //  VERIFY_IS_APPROX(numext::sin(bfloat16(EIGEN_PI)), bfloat16(sinf(EIGEN_PI)));
+  // VERIFY_IS_APPROX(numext::sin(bfloat16(EIGEN_PI)), bfloat16(sinf(EIGEN_PI)));
   VERIFY_IS_APPROX(numext::sin(bfloat16(EIGEN_PI/2)), bfloat16(sinf(EIGEN_PI/2)));
   VERIFY_IS_APPROX(numext::sin(bfloat16(3*EIGEN_PI/2)), bfloat16(sinf(3*EIGEN_PI/2)));
   VERIFY_IS_APPROX(numext::sin(bfloat16(3.5f)), bfloat16(sinf(3.5f)));
 
   VERIFY_IS_APPROX(numext::tan(bfloat16(0.0f)), bfloat16(tanf(0.0f)));
   VERIFY_IS_APPROX(tan(bfloat16(0.0f)), bfloat16(tanf(0.0f)));
-  //  VERIFY_IS_APPROX(numext::tan(bfloat16(EIGEN_PI)), bfloat16(tanf(EIGEN_PI)));
-  //  VERIFY_IS_APPROX(numext::tan(bfloat16(EIGEN_PI/2)), bfloat16(tanf(EIGEN_PI/2)));
-  //VERIFY_IS_APPROX(numext::tan(bfloat16(3*EIGEN_PI/2)), bfloat16(tanf(3*EIGEN_PI/2)));
+  // VERIFY_IS_APPROX(numext::tan(bfloat16(EIGEN_PI)), bfloat16(tanf(EIGEN_PI)));
+  // VERIFY_IS_APPROX(numext::tan(bfloat16(EIGEN_PI/2)), bfloat16(tanf(EIGEN_PI/2)));
+  // VERIFY_IS_APPROX(numext::tan(bfloat16(3*EIGEN_PI/2)), bfloat16(tanf(3*EIGEN_PI/2)));
   VERIFY_IS_APPROX(numext::tan(bfloat16(3.5f)), bfloat16(tanf(3.5f)));
 }
 

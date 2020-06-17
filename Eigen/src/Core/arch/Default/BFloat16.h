@@ -147,10 +147,10 @@ struct numeric_limits<Eigen::bfloat16> {
   static const int digits10 = 2;
   static const int max_digits10 = 4;
   static const int radix = 2;
-  static const int min_exponent = -125;
-  static const int min_exponent10 = -37;
-  static const int max_exponent = 128;
-  static const int max_exponent10 = 38;
+  static const int min_exponent = numeric_limits<float>::min_exponent;
+  static const int min_exponent10 = numeric_limits<float>::min_exponent10;
+  static const int max_exponent = numeric_limits<float>::max_exponent;
+  static const int max_exponent10 = numeric_limits<float>::max_exponent10;
   static const bool traps = numeric_limits<float>::traps;
   static const bool tinyness_before = numeric_limits<float>::tinyness_before;
 
@@ -161,7 +161,7 @@ struct numeric_limits<Eigen::bfloat16> {
   static Eigen::bfloat16 round_error() { return Eigen::bfloat16(0x3f00); }
   static Eigen::bfloat16 infinity() { return Eigen::bfloat16_impl::raw_uint16_to_bfloat16(0x7f80); }
   static Eigen::bfloat16 quiet_NaN() { return Eigen::bfloat16_impl::raw_uint16_to_bfloat16(0x7fc0); }
-  static Eigen::bfloat16 signaling_NaN() { return Eigen::bfloat16_impl::raw_uint16_to_bfloat16(0x7f80); }
+  static Eigen::bfloat16 signaling_NaN() { return Eigen::bfloat16_impl::raw_uint16_to_bfloat16(0x7f81); }
   static Eigen::bfloat16 denorm_min() { return Eigen::bfloat16_impl::raw_uint16_to_bfloat16(0x0001); }
 };
 
@@ -180,11 +180,6 @@ struct numeric_limits<const volatile Eigen::bfloat16> : numeric_limits<Eigen::bf
 namespace Eigen {
 
 namespace bfloat16_impl {
-
-// Intrinsics for native bf16 support. Nothing to do here now.
-#if defined(EIGEN_HAS_NATIVE_BF16)
-  // Nothing to do here
-#endif
 
 // We need to distinguish ‘clang as the CUDA compiler’ from ‘clang as the host compiler,
 // invoked by NVCC’ (e.g. on MacOS). The former needs to see both host and device implementation
@@ -281,7 +276,7 @@ EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC bool operator >= (const bfloat16& a, const
   return float(a) >= float(b);
 }
 
-#if defined(__clang__) && defined(__CUDA__)
+#if EIGEN_COMP_CLANG && defined(EIGEN_CUDACC)
 #pragma pop_macro("EIGEN_DEVICE_FUNC")
 #endif
 #endif  // Emulate support for bfloat16 floats
@@ -650,7 +645,7 @@ template<> struct NumTraits<Eigen::bfloat16>
   EIGEN_DEVICE_FUNC static EIGEN_STRONG_INLINE Eigen::bfloat16 epsilon() {
     return bfloat16_impl::raw_uint16_to_bfloat16(0x3c00);
   }
-  EIGEN_DEVICE_FUNC static EIGEN_STRONG_INLINE Eigen::bfloat16 dummy_precision() { return Eigen::bfloat16(2e-2f); }
+  EIGEN_DEVICE_FUNC static EIGEN_STRONG_INLINE Eigen::bfloat16 dummy_precision() { return Eigen::bfloat16(5e-2f); }
   EIGEN_DEVICE_FUNC static EIGEN_STRONG_INLINE Eigen::bfloat16 highest() {
     return bfloat16_impl::raw_uint16_to_bfloat16(0x7F7F);
   }

@@ -1775,13 +1775,6 @@ EIGEN_STRONG_INLINE Packet16bf F32ToBf16(const Packet16f& a) {
 }
 
 template <>
-EIGEN_STRONG_INLINE Packet16bf pnot(const Packet16bf& a) {
-  Packet16bf r;
-  r.i = pxor<Packet8i>(a.i, ptrue<Packet8i>(a.i));
-  return r;
-}
-
-template <>
 EIGEN_STRONG_INLINE Packet16bf ptrue(const Packet16bf& a) {
   Packet16bf r;
   r.i = ptrue<Packet8i>(a.i);
@@ -1945,20 +1938,6 @@ EIGEN_STRONG_INLINE Packet16bf preverse(const Packet16bf& a) {
   res.i = _mm256_permute2x128_si256(a.i, a.i, 1);
   // Shuffle 8-bit values in src within 2*128-bit lanes.
   res.i = _mm256_shuffle_epi8(a.i, m);
-  return res;
-}
-
-template <>
-EIGEN_STRONG_INLINE Packet16bf pinsertfirst(const Packet16bf& a, bfloat16 b) {
-  Packet16bf res;
-  res.i = _mm256_insert_epi16(a.i, b.value, 0);
-  return res;
-}
-
-template <>
-EIGEN_STRONG_INLINE Packet16bf pinsertlast(const Packet16bf& a, bfloat16 b) {
-  Packet16bf res;
-  res.i = _mm256_insert_epi16(a.i, b.value, 15);
   return res;
 }
 
