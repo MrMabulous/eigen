@@ -58,6 +58,7 @@ struct default_packet_traits
     HasConj      = 1,
     HasSetLinear = 1,
     HasBlend     = 0,
+    HasCmp       = 0,
 
     HasDiv    = 0,
     HasSqrt   = 0,
