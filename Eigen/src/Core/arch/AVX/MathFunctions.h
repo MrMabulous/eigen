@@ -25,9 +25,21 @@ psin<Packet8f>(const Packet8f& _x) {
 }
 
 template <>
+EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet8bf
+psin<Packet8bf>(const Packet8bf& _x) {
+  return F32ToBf16(psin<Packet8f>(Bf16ToF32(_x)));
+}
+
+template <>
 EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet8f
 pcos<Packet8f>(const Packet8f& _x) {
   return pcos_float(_x);
+}
+
+template <>
+EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet8bf
+pcos<Packet8bf>(const Packet8bf& _x) {
+  return F32ToBf16(pcos<Packet8f>(Bf16ToF32(_x)));
 }
 
 template <>
@@ -36,14 +48,30 @@ plog<Packet8f>(const Packet8f& _x) {
   return plog_float(_x);
 }
 
+template <>
+EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet8bf
+plog<Packet8bf>(const Packet8bf& _x) {
+  return F32ToBf16(plog<Packet8f>(Bf16ToF32(_x)));
+}
+
 template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED
 Packet8f plog1p<Packet8f>(const Packet8f& _x) {
   return generic_plog1p(_x);
 }
 
 template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED
+Packet8bf plog1p<Packet8bf>(const Packet8bf& _x) {
+  return F32ToBf16(plog1p<Packet8f>(Bf16ToF32(_x)));
+}
+
+template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED
 Packet8f pexpm1<Packet8f>(const Packet8f& _x) {
   return generic_expm1(_x);
+}
+
+template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED
+Packet8bf pexpm1<Packet8bf>(const Packet8bf& _x) {
+  return F32ToBf16(pexpm1<Packet8f>(Bf16ToF32(_x)));
 }
 
 // Exponential function. Works by writing "x = m*log(2) + r" where
@@ -55,11 +83,23 @@ pexp<Packet8f>(const Packet8f& _x) {
   return pexp_float(_x);
 }
 
+template <>
+EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet8bf
+pexp<Packet8bf>(const Packet8bf& _x) {
+  return F32ToBf16(pexp<Packet8f>(Bf16ToF32(_x)));
+}
+
 // Hyperbolic Tangent function.
 template <>
 EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet8f
 ptanh<Packet8f>(const Packet8f& x) {
   return internal::generic_fast_tanh_float(x);
+}
+
+template <>
+EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet8bf
+ptanh<Packet8bf>(const Packet8bf& x) {
+  return F32ToBf16(ptanh<Packet8f>(Bf16ToF32(x)));
 }
 
 // Exponential function for doubles.
@@ -103,6 +143,11 @@ Packet8f psqrt<Packet8f>(const Packet8f& x) {
 template <> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED
 Packet4d psqrt<Packet4d>(const Packet4d& x) {
   return _mm256_sqrt_pd(x);
+}
+template <>
+EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packet8bf
+psqrt<Packet8bf>(const Packet8bf& _x) {
+  return F32ToBf16(psqrt<Packet8f>(Bf16ToF32(_x)));
 }
 #if EIGEN_FAST_MATH
 
@@ -152,6 +197,10 @@ Packet4d prsqrt<Packet4d>(const Packet4d& x) {
   return _mm256_div_pd(p4d_one, _mm256_sqrt_pd(x));
 }
 
+template <> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED
+Packet8bf prsqrt<Packet8bf>(const Packet8bf& x) {
+  return F32ToBf16(prsqrt<Packet8f>(Bf16ToF32(x)));
+}
 
 }  // end namespace internal
 
