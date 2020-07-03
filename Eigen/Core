@@ -3,6 +3,7 @@
 //
 // Copyright (C) 2008 Gael Guennebaud <gael.guennebaud@inria.fr>
 // Copyright (C) 2007-2011 Benoit Jacob <jacob.benoit.1@gmail.com>
+// Copyright (C) 2020, Arm Limited and Contributors
 //
 // This Source Code Form is subject to the terms of the Mozilla
 // Public License v. 2.0. If a copy of the MPL was not distributed
@@ -18,7 +19,7 @@
 // it's where we do all the compiler/OS/arch detections and define most defaults.
 #include "src/Core/util/Macros.h"
 
-// This detects SSE/AVX/NEON/etc. and configure alignment settings
+// This detects SSE/AVX/NEON/SVE/etc. and configure alignment settings
 #include "src/Core/util/ConfigureVectorization.h"
 
 // We need cuda_runtime.h/hip_runtime.h to ensure that
@@ -208,6 +209,11 @@ using std::ptrdiff_t;
   #include "src/Core/arch/NEON/TypeCasting.h"
   #include "src/Core/arch/NEON/MathFunctions.h"
   #include "src/Core/arch/NEON/Complex.h"
+#elif defined EIGEN_VECTORIZE_SVE
+  #include "src/Core/arch/SVE/PacketMath.h"
+  #include "src/Core/arch/SVE/TypeCasting.h"
+  #include "src/Core/arch/SVE/MathFunctions.h"
+  // TODO [SVE] add Complex
 #elif defined EIGEN_VECTORIZE_ZVECTOR
   #include "src/Core/arch/ZVector/PacketMath.h"
   #include "src/Core/arch/ZVector/MathFunctions.h"

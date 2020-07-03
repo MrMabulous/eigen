@@ -298,6 +298,13 @@ if(NOT MSVC)
     message(STATUS "Enabling NEON in tests/examples")
   endif()
 
+  option(EIGEN_TEST_SVE "Enable/Disable SVE in tests/examples" OFF)
+  if(EIGEN_TEST_SVE)
+    set(EIGEN_SVE_VL 128 CACHE STRING "SVE fixed vector length")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8-a+sve -D__ARM_FEATURE_SVE_BITS=${EIGEN_SVE_VL}")
+    message(STATUS "Enabling SVE in tests/examples")
+  endif()
+
   option(EIGEN_TEST_Z13 "Enable/Disable S390X(zEC13) ZVECTOR in tests/examples" OFF)
   if(EIGEN_TEST_Z13)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=z13 -mzvector")

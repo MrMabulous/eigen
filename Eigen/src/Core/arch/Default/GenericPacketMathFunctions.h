@@ -4,6 +4,7 @@
 // Copyright (C) 2007 Julien Pommier
 // Copyright (C) 2014 Pedro Gonnet (pedro.gonnet@gmail.com)
 // Copyright (C) 2009-2019 Gael Guennebaud <gael.guennebaud@inria.fr>
+// Copyright (C) 2020, Arm Limited and Contributors
 //
 // This Source Code Form is subject to the terms of the Mozilla
 // Public License v. 2.0. If a copy of the MPL was not distributed
@@ -447,9 +448,16 @@ Packet psincos_float(const Packet& _x)
   if(predux_any(pcmp_le(pset1<Packet>(huge_th),pabs(_x))))
   {
     const int PacketSize = unpacket_traits<Packet>::size;
-    EIGEN_ALIGN_TO_BOUNDARY(sizeof(Packet)) float vals[PacketSize];
-    EIGEN_ALIGN_TO_BOUNDARY(sizeof(Packet)) float x_cpy[PacketSize];
-    EIGEN_ALIGN_TO_BOUNDARY(sizeof(Packet)) int y_int2[PacketSize];
+#if defined(EIGEN_VECTORIZE_SVE)
+    const int TypeSize = unpacket_traits<Packet>::typesize;
+    EIGEN_ALIGN_TO_BOUNDARY(TypeSize) float vals[PacketSize];
+    EIGEN_ALIGN_TO_BOUNDARY(TypeSize) float x_cpy[PacketSize];
+    EIGEN_ALIGN_TO_BOUNDARY(TypeSize) int y_int2[PacketSize];
+#else
+     EIGEN_ALIGN_TO_BOUNDARY(sizeof(Packet)) float vals[PacketSize];
+     EIGEN_ALIGN_TO_BOUNDARY(sizeof(Packet)) float x_cpy[PacketSize];
+     EIGEN_ALIGN_TO_BOUNDARY(sizeof(Packet)) int y_int2[PacketSize];
+#endif    
     pstoreu(vals, pabs(_x));
     pstoreu(x_cpy, x);
     pstoreu(y_int2, y_int);
