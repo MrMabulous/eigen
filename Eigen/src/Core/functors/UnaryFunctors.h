@@ -904,7 +904,7 @@ struct functor_traits<scalar_boolean_not_op<Scalar> > {
   * \brief Template functor to compute the signum of a scalar
   * \sa class CwiseUnaryOp, Cwise::sign()
   */
-template<typename Scalar,bool iscpx=(NumTraits<Scalar>::IsComplex!=0), bool is_integer=(NumTraits<Scalar>::IsInteger!=0) > struct scalar_sign_op;
+template<typename Scalar,bool is_complex=(NumTraits<Scalar>::IsComplex!=0), bool is_integer=(NumTraits<Scalar>::IsInteger!=0) > struct scalar_sign_op;
 template<typename Scalar>
 struct scalar_sign_op<Scalar, false, true> {
   EIGEN_EMPTY_STRUCT_CTOR(scalar_sign_op)
