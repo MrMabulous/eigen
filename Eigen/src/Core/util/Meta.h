@@ -112,6 +112,10 @@ template<> struct is_arithmetic<unsigned int>  { enum { value = true }; };
 template<> struct is_arithmetic<signed long>   { enum { value = true }; };
 template<> struct is_arithmetic<unsigned long> { enum { value = true }; };
 
+// All other fixed-size types should be covered by the specializations above
+template<> struct is_arithmetic<int64_t>       { enum { value = true }; };
+template<> struct is_arithmetic<uint64_t>      { enum { value = true }; };
+
 template<typename T, typename U> struct is_same { enum { value = 0 }; };
 template<typename T> struct is_same<T,T> { enum { value = 1 }; };
 
@@ -119,8 +123,6 @@ template< class T >
 struct is_void : is_same<void, typename remove_const<T>::type> {};
 
 #if EIGEN_HAS_CXX11
-template<> struct is_arithmetic<signed long long>   { enum { value = true }; };
-template<> struct is_arithmetic<unsigned long long> { enum { value = true }; };
 using std::is_integral;
 #else
 template<typename T> struct is_integral               { enum { value = false }; };
