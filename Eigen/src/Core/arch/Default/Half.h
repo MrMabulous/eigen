@@ -751,7 +751,6 @@ EIGEN_STRONG_INLINE EIGEN_DEVICE_FUNC Eigen::half __ldg(const Eigen::half* ptr) 
 }
 #endif
 
-
 #if defined(EIGEN_GPU_COMPILE_PHASE)
 namespace Eigen {
 namespace numext {
@@ -777,8 +776,5 @@ bool (isfinite)(const Eigen::half& h) {
 } // namespace Eigen
 }  // namespace numext
 #endif
-
-
-
 
 #endif // EIGEN_HALF_H
