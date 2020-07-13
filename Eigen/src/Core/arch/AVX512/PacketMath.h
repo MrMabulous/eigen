@@ -1633,13 +1633,13 @@ template <>
 struct packet_traits<bfloat16> : default_packet_traits {
   typedef Packet16bf type;
   // There is no half-size packet for current Packet16bf.
-  // TODO: support as SSE/AVX path.
-  typedef Packet16bf half;
+  // TODO: support as SSE path.
+  typedef Packet8bf half;
   enum {
     Vectorizable = 1,
     AlignedOnScalar = 1,
     size = 16,
-    HasHalfPacket = 0,
+    HasHalfPacket = 1,
     HasBlend = 0,
     HasInsert = 1,
     HasSin = EIGEN_FAST_MATH,
@@ -1668,7 +1668,7 @@ struct unpacket_traits<Packet16bf>
 {
   typedef bfloat16 type;
   enum {size=16, alignment=Aligned32, vectorizable=true, masked_load_available=false, masked_store_available=false};
-  typedef Packet16bf half;
+  typedef Packet8bf half;
 };
 
 template <>
@@ -1741,7 +1741,7 @@ EIGEN_STRONG_INLINE Packet16f Bf16ToF32(const Packet16bf& a) {
   return _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepu16_epi32(a.i), 16));
 }
 
-// Convert float to bfloat16 according to round-to-even/denormals alogrithm.
+// Convert float to bfloat16 according to round-to-nearest-even/denormals algorithm.
 EIGEN_STRONG_INLINE Packet16bf F32ToBf16(const Packet16f& a) {
   Packet16bf r;
 
@@ -1913,6 +1913,13 @@ template <>
 EIGEN_STRONG_INLINE Packet16bf pmax<Packet16bf>(const Packet16bf& a,
                                                 const Packet16bf& b) {
   return F32ToBf16(pmax<Packet16f>(Bf16ToF32(a), Bf16ToF32(b)));
+}
+
+template <>
+EIGEN_STRONG_INLINE Packet8bf predux_half_dowto4<Packet16bf>(const Packet16bf& a) {
+  Packet8bf lane0 = _mm256_extractf128_si256(a.i, 0);
+  Packet8bf lane1 = _mm256_extractf128_si256(a.i, 1);
+  return padd<Packet8bf>(lane0, lane1);
 }
 
 template <>

@@ -141,7 +141,7 @@ template <>
 struct packet_traits<bfloat16> : default_packet_traits {
   typedef Packet8bf type;
   // There is no half-size packet for current Packet8bf.
-  // TODO: support as SSE/AVX path.
+  // TODO: support as SSE path.
   typedef Packet8bf half;
   enum {
     Vectorizable = 1,
@@ -1082,14 +1082,14 @@ EIGEN_STRONG_INLINE Packet8f Bf16ToF32(const Packet8bf& a) {
   return _mm256_castsi256_ps(_mm256_slli_epi32(extend, 16));
 #else
   __m128i lo = _mm_cvtepu16_epi32(a);
-  __m128i hi = _mm_cvtepu16_epi32(_mm_insert_epi64(a, _mm_extract_epi64(a, 1), 0));
+  __m128i hi = _mm_cvtepu16_epi32(_mm_srli_si128(a, 8));
   __m128i lo_shift = _mm_slli_epi32(lo, 16);
   __m128i hi_shift = _mm_slli_epi32(hi, 16);
-  return _mm256_castsi256_ps(_mm256_insertf128_si256(_mm256_castsi128_si256(lo_shift), (hi_shift), 1));
+  return _mm256_castsi256_ps(_mm256_insertf128_si256(_mm256_castsi128_si256(lo_shift), hi_shift, 1));
 #endif
 }
 
-// Convert float to bfloat16 according to round-to-even/denormals alogrithm.
+// Convert float to bfloat16 according to round-to-nearest-even/denormals algorithm.
 EIGEN_STRONG_INLINE Packet8bf F32ToBf16(const Packet8f& a) {
   Packet8bf r;
 
@@ -1108,7 +1108,7 @@ EIGEN_STRONG_INLINE Packet8bf F32ToBf16(const Packet8f& a) {
   // uint32_t rounding_bias = 0x7fff + lsb;
   t = _mm256_add_epi32(t, _mm256_set1_epi32(0x7fff));
   // input += rounding_bias;
-  t = _mm256_add_epi32(t,input);
+  t = _mm256_add_epi32(t, input);
   // input = input >> 16;
   t = _mm256_srli_epi32(t, 16);
   // Check NaN before converting back to bf16
@@ -1206,8 +1206,6 @@ EIGEN_STRONG_INLINE Packet8bf pmax<Packet8bf>(const Packet8bf& a,
 }
 
 template<> EIGEN_STRONG_INLINE Packet8bf por(const Packet8bf& a,const Packet8bf& b) {
-  // in some cases Packet4i is a wrapper around __m128i, so we either need to
-  // cast to Packet4i to directly call the intrinsics as below:
   return _mm_or_si128(a,b);
 }
 template<> EIGEN_STRONG_INLINE Packet8bf pxor(const Packet8bf& a,const Packet8bf& b) {
