@@ -385,23 +385,21 @@
     #undef vector
     #undef pixel
 
-  #elif ((defined  __ARM_NEON) || (defined __ARM_NEON__)) && !(defined __ARM_FEATURE_SVE)
+  #elif ((defined  __ARM_NEON) || (defined __ARM_NEON__)) // && !(defined __ARM_FEATURE_SVE)
 
     #define EIGEN_VECTORIZE
     #define EIGEN_VECTORIZE_NEON
     #include <arm_neon.h>
 
-  #elif defined __ARM_FEATURE_SVE
+    #if (defined __ARM_FEATURE_SVE) && (defined __ARM_FEATURE_SVE_BITS)
 
-    #define EIGEN_VECTORIZE
-    #define EIGEN_VECTORIZE_SVE
-    #include <arm_sve.h>
-
-    #ifndef __ARM_FEATURE_SVE_BITS
-    // SVE backend requires a fixed VL to be compatible
-    #error "ARM_SVE not defined"
+      #define EIGEN_VECTORIZE
+      #define EIGEN_VECTORIZE_SVE
+      #include <arm_sve.h>
+      // SVE backend requires a fixed VL to be compatible
+      #define EIGEN_SVE_VL __ARM_FEATURE_SVE_BITS
     #else
-    #define EIGEN_SVE_VL __ARM_FEATURE_SVE_BITS
+      #error "Arm SVE fixed vector length not defined. Please set the Eigen flag 'EIGEN_SVE_VL' during the build process."
     #endif
 
   #elif (defined __s390x__ && defined __VEC__)
