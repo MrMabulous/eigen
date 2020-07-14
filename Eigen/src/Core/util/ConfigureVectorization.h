@@ -385,13 +385,13 @@
     #undef vector
     #undef pixel
 
-  #elif ((defined  __ARM_NEON) || (defined __ARM_NEON__))  && !(defined __ARM_FEATURE_SVE)
+  #elif ((defined  __ARM_NEON) || (defined __ARM_NEON__))  && !(defined EIGEN_ARM_USE_SVE)
 
     #define EIGEN_VECTORIZE
     #define EIGEN_VECTORIZE_NEON
     #include <arm_neon.h>
 
-  #elif defined __ARM_FEATURE_SVE
+  #elif (defined __ARM_FEATURE_SVE) && (defined EIGEN_ARM_USE_SVE)
 
     #define EIGEN_VECTORIZE
     #define EIGEN_VECTORIZE_SVE

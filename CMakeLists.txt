@@ -298,8 +298,15 @@ if(NOT MSVC)
     message(STATUS "Enabling NEON in tests/examples")
   endif()
 
+  option(EIGEN_ARM_USE_SVE "Enables Arm SVE instead of NEON if both are available" OFF)
+  if(EIGEN_ARM_USE_SVE)
+    add_definitions(-DEIGEN_ARM_USE_SVE=1)
+  endif()
+
   option(EIGEN_TEST_SVE "Enable/Disable SVE in tests/examples" OFF)
   if(EIGEN_TEST_SVE)
+    # Force SVE use
+    add_definitions(-DEIGEN_ARM_USE_SVE=1)
     if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.1)
       if(NOT EIGEN_SVE_VL)
         message(STATUS "EIGEN_SVE_VL not found. Setting to default value of 128 bits")
