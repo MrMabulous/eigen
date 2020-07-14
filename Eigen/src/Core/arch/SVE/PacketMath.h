@@ -152,7 +152,6 @@ template<> struct unpacket_traits<Packetf>
   enum
   {
     size = FLOAT_PACKET_SIZE,
-    typesize = 4, // in Bytes
     alignment = Aligned64,
     vectorizable = true,
     masked_load_available = false,
@@ -167,7 +166,6 @@ template<> struct unpacket_traits<Packeti>
   enum
   {
     size = INT_PACKET_SIZE,
-    typesize = 4, // in Bytes
     alignment = Aligned64,
     vectorizable = true,
     masked_load_available = false,
@@ -537,7 +535,6 @@ template<> struct unpacket_traits<Packetd>
   enum
   {
     size = DOUBLE_PACKET_SIZE,
-    typesize = 8, // in Bytes
     alignment = Aligned64,
     vectorizable = true,
     masked_load_available = false,

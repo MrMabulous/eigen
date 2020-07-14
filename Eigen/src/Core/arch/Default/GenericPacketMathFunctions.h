@@ -448,17 +448,11 @@ Packet psincos_float(const Packet& _x)
   if(predux_any(pcmp_le(pset1<Packet>(huge_th),pabs(_x))))
   {
     const int PacketSize = unpacket_traits<Packet>::size;
-// Find a generic way to extract size of packet compatible with SVE
-//#if defined(EIGEN_VECTORIZE_SVE)
-//    const int TypeSize = unpacket_traits<Packet>::typesize;
-//    EIGEN_ALIGN_TO_BOUNDARY(TypeSize) float vals[PacketSize];
-//    EIGEN_ALIGN_TO_BOUNDARY(TypeSize) float x_cpy[PacketSize];
-//    EIGEN_ALIGN_TO_BOUNDARY(TypeSize) int y_int2[PacketSize];
-//#else
-     EIGEN_ALIGN_TO_BOUNDARY(sizeof(Packet)) float vals[PacketSize];
-     EIGEN_ALIGN_TO_BOUNDARY(sizeof(Packet)) float x_cpy[PacketSize];
-     EIGEN_ALIGN_TO_BOUNDARY(sizeof(Packet)) int y_int2[PacketSize];
-//#endif
+    // Do these need to be aligned?
+    EIGEN_ALIGN_TO_BOUNDARY(unpacket_traits<Packet>::size * sizeof(typename unpacket_traits<Packet>::type)) float vals[PacketSize];
+    EIGEN_ALIGN_TO_BOUNDARY(unpacket_traits<Packet>::size * sizeof(typename unpacket_traits<Packet>::type)) float x_cpy[PacketSize];
+    EIGEN_ALIGN_TO_BOUNDARY(unpacket_traits<Packet>::size * sizeof(typename unpacket_traits<Packet>::type)) int y_int2[PacketSize];
+
     pstoreu(vals, pabs(_x));
     pstoreu(x_cpy, x);
     pstoreu(y_int2, y_int);
