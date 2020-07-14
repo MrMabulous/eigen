@@ -13,20 +13,20 @@ namespace Eigen {
 
 namespace internal {
 
-template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packetf pexp<Packetf>(const Packetf& x)
+template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED PacketXf pexp<PacketXf>(const PacketXf& x)
 { return pexp_float(x); }
 
-template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packetf plog<Packetf>(const Packetf& x)
+template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED PacketXf plog<PacketXf>(const PacketXf& x)
 { return plog_float(x); }
 
-template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packetf psin<Packetf>(const Packetf& x)
+template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED PacketXf psin<PacketXf>(const PacketXf& x)
 { return psin_float(x); }
 
-template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packetf pcos<Packetf>(const Packetf& x)
+template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED PacketXf pcos<PacketXf>(const PacketXf& x)
 { return pcos_float(x); }
 
 // Hyperbolic Tangent function.
-template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED Packetf ptanh<Packetf>(const Packetf& x)
+template<> EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED PacketXf ptanh<PacketXf>(const PacketXf& x)
 
 { return internal::generic_fast_tanh_float(x); }
 

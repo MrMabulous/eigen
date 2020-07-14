@@ -20,13 +20,13 @@ template<> struct type_casting_traits<float,numext::int32_t>
 template<> struct type_casting_traits<numext::int32_t,float>
 { enum { VectorizedCast = 1, SrcCoeffRatio = 1, TgtCoeffRatio = 1 }; };
 
-template<> EIGEN_STRONG_INLINE Packetf pcast<Packeti,Packetf>(const Packeti& a) {
+template<> EIGEN_STRONG_INLINE PacketXf pcast<PacketXi,PacketXf>(const PacketXi& a) {
   return svcvt_f32_s32_z(svptrue_b32(), a); } // Convert integer to FP, setting inactive to zero
-template<> EIGEN_STRONG_INLINE Packeti pcast<Packetf,Packeti>(const Packetf& a) { return svcvt_s32_f32_z(svptrue_b32(), a); } // Convert FP to integer, setting inactive to zero
+template<> EIGEN_STRONG_INLINE PacketXi pcast<PacketXf,PacketXi>(const PacketXf& a) { return svcvt_s32_f32_z(svptrue_b32(), a); } // Convert FP to integer, setting inactive to zero
 
-template<> EIGEN_STRONG_INLINE Packetf preinterpret<Packetf,Packeti>(const Packeti& a)
+template<> EIGEN_STRONG_INLINE PacketXf preinterpret<PacketXf,PacketXi>(const PacketXi& a)
 { return svreinterpret_f32_s32(a); }
-template<> EIGEN_STRONG_INLINE Packeti preinterpret<Packeti,Packetf>(const Packetf& a)
+template<> EIGEN_STRONG_INLINE PacketXi preinterpret<PacketXi,PacketXf>(const PacketXf& a)
 { return svreinterpret_s32_f32(a); }
 
 } // end namespace internal
