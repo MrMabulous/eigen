@@ -16,12 +16,6 @@ limitations under the License.
 #ifndef EIGEN_BFLOAT16_H
 #define EIGEN_BFLOAT16_H
 
-#if EIGEN_HAS_CXX11
-#define EIGEN_EXPLICIT_CAST(tgt_type) explicit operator tgt_type()
-#else
-#define EIGEN_EXPLICIT_CAST(tgt_type) operator tgt_type()
-#endif
-
 #define BF16_PACKET_FUNCTION(PACKET_F, PACKET_BF16, METHOD)         \
   template <>                                                       \
   EIGEN_DEFINE_FUNCTION_ALLOWING_MULTIPLE_DEFINITIONS EIGEN_UNUSED  \
@@ -32,20 +26,6 @@ limitations under the License.
 namespace Eigen {
 
 struct bfloat16;
-
-// explicit conversion operators are no available before C++11 so we first cast
-// bfloat16 to RealScalar rather than to std::complex<RealScalar> directly
-#if !EIGEN_HAS_CXX11
-namespace internal {
-template <typename RealScalar>
-struct cast_impl<bfloat16, std::complex<RealScalar> > {
-  EIGEN_DEVICE_FUNC static inline std::complex<RealScalar> run(const bfloat16 &x)
-  {
-    return static_cast<std::complex<RealScalar> >(static_cast<RealScalar>(x));
-  }
-};
-} // namespace internal
-#endif  // EIGEN_HAS_CXX11
 
 namespace bfloat16_impl {
 
@@ -99,7 +79,7 @@ struct bfloat16 : public bfloat16_impl::bfloat16_base {
   explicit EIGEN_DEVICE_FUNC bfloat16(const std::complex<RealScalar>& val)
       : bfloat16_impl::bfloat16_base(bfloat16_impl::float_to_bfloat16_rtne<false>(static_cast<float>(val.real()))) {}
 
-  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(float) const {
+  EIGEN_DEVICE_FUNC operator float() const {
     return bfloat16_impl::bfloat16_to_float(*this);
   }
 
@@ -108,32 +88,8 @@ struct bfloat16 : public bfloat16_impl::bfloat16_base {
     // +0.0 and -0.0 become false, everything else becomes true.
     return (value & 0x7fff) != 0;
   }
+#endif 
 
-#define EIGEN_BFLOAT16_CAST(Type)                                              \
-  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(Type) const {                          \
-    return static_cast<Type>(bfloat16_impl::bfloat16_to_float(*this));         \
-  }
-
-  EIGEN_BFLOAT16_CAST(signed char);
-  EIGEN_BFLOAT16_CAST(unsigned char);
-  EIGEN_BFLOAT16_CAST(short);
-  EIGEN_BFLOAT16_CAST(unsigned short);
-  EIGEN_BFLOAT16_CAST(int);
-  EIGEN_BFLOAT16_CAST(unsigned int);
-  EIGEN_BFLOAT16_CAST(long);
-  EIGEN_BFLOAT16_CAST(unsigned long);
-  EIGEN_BFLOAT16_CAST(long long);
-  EIGEN_BFLOAT16_CAST(unsigned long long);
-  EIGEN_BFLOAT16_CAST(double);
-  EIGEN_BFLOAT16_CAST(half);
-
-#undef EIGEN_BFLOAT16_CAST
-
-  template<typename RealScalar>
-  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(std::complex<RealScalar>) const {
-    return std::complex<RealScalar>(static_cast<RealScalar>(bfloat16_impl::bfloat16_to_float(*this)), RealScalar(0));
-  }
-#endif
 };
 } // end namespace Eigen
 
