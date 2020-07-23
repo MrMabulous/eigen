@@ -13,11 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-
 #ifndef EIGEN_BFLOAT16_H
 #define EIGEN_BFLOAT16_H
 
-#if __cplusplus > 199711L
+#if EIGEN_HAS_CXX11
 #define EIGEN_EXPLICIT_CAST(tgt_type) explicit operator tgt_type()
 #else
 #define EIGEN_EXPLICIT_CAST(tgt_type) operator tgt_type()
@@ -86,66 +85,56 @@ struct bfloat16 : public bfloat16_impl::bfloat16_base {
 
   explicit EIGEN_DEVICE_FUNC bfloat16(bool b)
       : bfloat16_impl::bfloat16_base(bfloat16_impl::raw_uint16_to_bfloat16(b ? 0x3f80 : 0)) {}
+
   template<class T>
   explicit EIGEN_DEVICE_FUNC bfloat16(const T& val)
       : bfloat16_impl::bfloat16_base(bfloat16_impl::float_to_bfloat16_rtne<internal::is_integral<T>::value>(static_cast<float>(val))) {}
+  
   explicit EIGEN_DEVICE_FUNC bfloat16(float f)
       : bfloat16_impl::bfloat16_base(bfloat16_impl::float_to_bfloat16_rtne<false>(f)) {}
+
   // Following the convention of numpy, converting between complex and
   // float will lead to loss of imag value.
   template<typename RealScalar>
   explicit EIGEN_DEVICE_FUNC bfloat16(const std::complex<RealScalar>& val)
       : bfloat16_impl::bfloat16_base(bfloat16_impl::float_to_bfloat16_rtne<false>(static_cast<float>(val.real()))) {}
 
+  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(float) const {
+    return bfloat16_impl::bfloat16_to_float(*this);
+  }
+
+#if EIGEN_HAS_CXX11
   EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(bool) const {
     // +0.0 and -0.0 become false, everything else becomes true.
     return (value & 0x7fff) != 0;
   }
-  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(signed char) const {
-    return static_cast<signed char>(bfloat16_impl::bfloat16_to_float(*this));
+
+#define EIGEN_BFLOAT16_CAST(Type)                                              \
+  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(Type) const {                          \
+    return static_cast<Type>(bfloat16_impl::bfloat16_to_float(*this));         \
   }
-  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(unsigned char) const {
-    return static_cast<unsigned char>(bfloat16_impl::bfloat16_to_float(*this));
-  }
-  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(short) const {
-    return static_cast<short>(bfloat16_impl::bfloat16_to_float(*this));
-  }
-  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(unsigned short) const {
-    return static_cast<unsigned short>(bfloat16_impl::bfloat16_to_float(*this));
-  }
-  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(int) const {
-    return static_cast<int>(bfloat16_impl::bfloat16_to_float(*this));
-  }
-  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(unsigned int) const {
-    return static_cast<unsigned int>(bfloat16_impl::bfloat16_to_float(*this));
-  }
-  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(long) const {
-    return static_cast<long>(bfloat16_impl::bfloat16_to_float(*this));
-  }
-  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(unsigned long) const {
-    return static_cast<unsigned long>(bfloat16_impl::bfloat16_to_float(*this));
-  }
-  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(long long) const {
-    return static_cast<long long>(bfloat16_impl::bfloat16_to_float(*this));
-  }
-  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(unsigned long long) const {
-    return static_cast<unsigned long long>(bfloat16_to_float(*this));
-  }
-  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(float) const {
-    return bfloat16_impl::bfloat16_to_float(*this);
-  }
-  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(double) const {
-    return static_cast<double>(bfloat16_impl::bfloat16_to_float(*this));
-  }
+
+  EIGEN_BFLOAT16_CAST(signed char);
+  EIGEN_BFLOAT16_CAST(unsigned char);
+  EIGEN_BFLOAT16_CAST(short);
+  EIGEN_BFLOAT16_CAST(unsigned short);
+  EIGEN_BFLOAT16_CAST(int);
+  EIGEN_BFLOAT16_CAST(unsigned int);
+  EIGEN_BFLOAT16_CAST(long);
+  EIGEN_BFLOAT16_CAST(unsigned long);
+  EIGEN_BFLOAT16_CAST(long long);
+  EIGEN_BFLOAT16_CAST(unsigned long long);
+  EIGEN_BFLOAT16_CAST(double);
+  EIGEN_BFLOAT16_CAST(half);
+
+#undef EIGEN_BFLOAT16_CAST
+
   template<typename RealScalar>
   EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(std::complex<RealScalar>) const {
     return std::complex<RealScalar>(static_cast<RealScalar>(bfloat16_impl::bfloat16_to_float(*this)), RealScalar(0));
   }
-  EIGEN_DEVICE_FUNC EIGEN_EXPLICIT_CAST(Eigen::half) const {
-    return static_cast<Eigen::half>(bfloat16_impl::bfloat16_to_float(*this));
-  }
+#endif
 };
-
 } // end namespace Eigen
 
 namespace std {

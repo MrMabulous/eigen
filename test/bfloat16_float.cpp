@@ -84,6 +84,12 @@ void test_conversion()
   VERIFY_IS_EQUAL(bfloat16(false).value, 0x0000);
   VERIFY_IS_EQUAL(bfloat16(true).value, 0x3f80);
 
+  // Conversion to bool
+  VERIFY_IS_EQUAL(static_cast<bool>(bfloat16(3)), true);
+  VERIFY_IS_EQUAL(static_cast<bool>(bfloat16(0.33333f)), true);
+  VERIFY_IS_EQUAL(static_cast<bool>(bfloat16(-0.0)), false);
+  VERIFY_IS_EQUAL(static_cast<bool>(bfloat16(0.0)), false);
+
   // Conversion to float.
   VERIFY_IS_EQUAL(static_cast<float>(bfloat16(__bfloat16_raw(0x0000))), 0.0f);
   VERIFY_IS_EQUAL(static_cast<float>(bfloat16(__bfloat16_raw(0x3f80))), 1.0f);
