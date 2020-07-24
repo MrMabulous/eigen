@@ -62,10 +62,14 @@ build-test-cxx11-off:
 
 run-tests-cxx11-on:
   extends: .run_tests
+  variables:
+    EIGEN_TEST_CXX11: "ON"
   needs: ["build-test-cxx11-on"]
 
 run-tests-cxx11-off:
   extends: .run_tests
+  variables:
+    EIGEN_TEST_CXX11: "OFF"
   needs: ["build-test-cxx11-off"]
 
 build-doc:
