@@ -14,12 +14,15 @@
 #include "../../Eigen/Jacobi"
 #include "../../Eigen/Householder"
 
+
 /**
   * \defgroup IterativeSolvers_Module Iterative solvers module
   * This module aims to provide various iterative linear and non linear solver algorithms.
   * It currently provides:
   *  - a constrained conjugate gradient
   *  - a Householder GMRES implementation
+  *  - a BiCGSTAB(L) implementation
+  *  - a IDRStab implementation
   * \code
   * #include <unsupported/Eigen/IterativeSolvers>
   * \endcode
@@ -38,7 +41,8 @@
 #include "src/IterativeSolvers/DGMRES.h"
 //#include "src/IterativeSolvers/SSORPreconditioner.h"
 #include "src/IterativeSolvers/MINRES.h"
-
+#include "src/IterativeSolvers/IDRStab.h"
+#include "src/IterativeSolvers/BiCGSTABL.h"
 #include "../../Eigen/src/Core/util/ReenableStupidWarnings.h"
 
 //@}
