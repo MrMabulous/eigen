@@ -58,6 +58,9 @@ struct default_packet_traits
     HasConj      = 1,
     HasSetLinear = 1,
     HasBlend     = 0,
+    // This flag is used to indicate whether packet comparison is supported.
+    // pcmp_eq, pcmp_lt and pcmp_le should be defined for it to be true.
+    HasCmp       = 0,
 
     HasDiv    = 0,
     HasSqrt   = 0,
@@ -96,7 +99,6 @@ struct default_packet_traits
     HasRint   = 0,
     HasFloor  = 0,
     HasCeil   = 0,
-    HasCast   = 0, 
     HasSign   = 0
   };
 };
@@ -163,10 +165,15 @@ EIGEN_DEVICE_FUNC inline TgtPacket
 pcast(const SrcPacket& a, const SrcPacket& /*b*/) {
   return static_cast<TgtPacket>(a);
 }
-
 template <typename SrcPacket, typename TgtPacket>
 EIGEN_DEVICE_FUNC inline TgtPacket
 pcast(const SrcPacket& a, const SrcPacket& /*b*/, const SrcPacket& /*c*/, const SrcPacket& /*d*/) {
+  return static_cast<TgtPacket>(a);
+}
+template <typename SrcPacket, typename TgtPacket>
+EIGEN_DEVICE_FUNC inline TgtPacket
+pcast(const SrcPacket& a, const SrcPacket& /*b*/, const SrcPacket& /*c*/, const SrcPacket& /*d*/,
+      const SrcPacket& /*e*/, const SrcPacket& /*f*/, const SrcPacket& /*g*/, const SrcPacket& /*h*/) {
   return static_cast<TgtPacket>(a);
 }
 
@@ -325,7 +332,7 @@ pcmp_eq(const Packet& a, const Packet& b) { return a==b ? ptrue(a) : pzero(a); }
 
 /** \internal \returns a < b or a==NaN or b==NaN as a bit mask */
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
-pcmp_lt_or_nan(const Packet& a, const Packet& b) { return a>=b ? pzero(a) : ptrue(a); } 
+pcmp_lt_or_nan(const Packet& a, const Packet& b) { return a>=b ? pzero(a) : ptrue(a); }
 
 /** \internal \returns \a or \b for each field in packet according to \mask */
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
@@ -392,7 +399,7 @@ ploaddup(const typename unpacket_traits<Packet>::type* from) { return *from; }
   * For instance, for a packet of 8 elements, 2 scalars will be read from \a *from and
   * replicated to form: {from[0],from[0],from[0],from[0],from[1],from[1],from[1],from[1]}
   * Currently, this function is only used in matrix products.
-  * For packet-size smaller or equal to 4, this function is equivalent to pload1 
+  * For packet-size smaller or equal to 4, this function is equivalent to pload1
   */
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
 ploadquad(const typename unpacket_traits<Packet>::type* from)
@@ -524,7 +531,8 @@ template<typename Packet> EIGEN_DEVICE_FUNC inline bool predux_any(const Packet&
   //  - bits full of ones (NaN for floats),
   //  - or first bit equals to 1 (1 for ints, smallest denormal for floats).
   // For all these cases, taking the sum is just fine, and this boils down to a no-op for scalars.
-  return bool(predux(a));
+  typedef typename unpacket_traits<Packet>::type Scalar;
+  return numext::not_equal_strict(predux(a), Scalar(0));
 }
 
 /** \internal \returns the reversed elements of \a a*/
