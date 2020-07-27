@@ -117,9 +117,9 @@ bool bicgstabl(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditio
 
       if (zeta < tol * zeta0) {
         /*
-                Convergence was achieved during BiCG step.
-                Without this check BiCGStab(L) fails for trivial matrices, such as when the preconditioner already is
-           the inverse, or the input matrix is identity.
+          Convergence was achieved during BiCG step.
+          Without this check BiCGStab(L) fails for trivial matrices, such as when the preconditioner already is
+          the inverse, or the input matrix is identity.
         */
         bicg_convergence = true;
         break;
@@ -128,11 +128,11 @@ bool bicgstabl(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditio
 
     if (bicg_convergence == false) {
       /*
-              The polynomial/minimize residual step.
+        The polynomial/minimize residual step.
 
-              QR Householder method for argmin is more stable than (modified) Gram-Schmidt, in the sense that there is
-         less loss of orthogonality. It is more accurate than solving the normal equations, since the normal equations
-         scale with condition number squared.
+        QR Householder method for argmin is more stable than (modified) Gram-Schmidt, in the sense that there is
+        less loss of orthogonality. It is more accurate than solving the normal equations, since the normal equations
+        scale with condition number squared.
       */
       VectorType gamma = (rHat.rightCols(L)).householderQr().solve(rHat.col(0));
       x += rHat.leftCols(L) * gamma;
@@ -147,12 +147,12 @@ bool bicgstabl(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditio
     k++;
 
     /*
-            Reliable update part
+      Reliable update part
 
-            The recursively computed residual can deviate from the actual residual after several iterations. However,
-       computing the residual from the definition costs extra MVs and should not be done at each iteration. The reliable
-       update strategy computes the true residual from the definition: r=b-A*x at strategic intervals. Furthermore a
-       "group wise update" strategy is used to combine updates, which improves accuracy.
+      The recursively computed residual can deviate from the actual residual after several iterations. However,
+      computing the residual from the definition costs extra MVs and should not be done at each iteration. The reliable
+      update strategy computes the true residual from the definition: r=b-A*x at strategic intervals. Furthermore a
+      "group wise update" strategy is used to combine updates, which improves accuracy.
     */
 
     Mx = (std::max)(Mx, zeta);  // Maximum norm of residuals since last update of x.
@@ -237,14 +237,14 @@ class BiCGSTABL : public IterativeSolverBase<BiCGSTABL<_MatrixType, _Preconditio
 
   /**     Initialize the solver with matrix \a A for further \c Ax=b solving.
 
-                  This constructor is a shortcut for the default constructor followed
-                  by a call to compute().
+    This constructor is a shortcut for the default constructor followed
+    by a call to compute().
 
-                  \warning this class stores a reference to the matrix A as well as some
-                  precomputed values that depend on it. Therefore, if \a A is changed
-                  this class becomes invalid. Call compute() to update it with the new
-                  matrix A, or modify a copy of A.
-          */
+    \warning this class stores a reference to the matrix A as well as some
+    precomputed values that depend on it. Therefore, if \a A is changed
+    this class becomes invalid. Call compute() to update it with the new
+    matrix A, or modify a copy of A.
+    */
   template <typename MatrixDerived>
   explicit BiCGSTABL(const EigenBase<MatrixDerived> &A) : Base(A.derived()) {
     m_L = 2;

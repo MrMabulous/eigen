@@ -32,7 +32,7 @@
                 5. Sonneveld, P. (2012). On the convergence behavior of IDR (s) and related methods. SIAM Journal on
    Scientific Computing, 34(5), A2576-A2598.
 
-        Right-preconditioning based on Ref. 3 is implemented here.
+    Right-preconditioning based on Ref. 3 is implemented here.
 */
 
 #ifndef EIGEN_IDRSTAB_H
@@ -46,7 +46,7 @@ template <typename MatrixType, typename Rhs, typename Dest, typename Preconditio
 bool idrstab(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditioner &precond, Index &iters,
              typename Dest::RealScalar &tol_error, Index L, Index S) {
   /*
-          Setup and type definitions.
+    Setup and type definitions.
   */
   using numext::abs;
   using numext::sqrt;
@@ -66,12 +66,9 @@ bool idrstab(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditione
 
   if (rhs_norm == 0) {
     /*
-            If b==0, then the exact solution is x=0.
-            rhs_norm is needed for other calculations anyways, this exit is a freebie.
-    */
-    /*
-            exit
-    */
+      If b==0, then the exact solution is x=0.
+      rhs_norm is needed for other calculations anyways, this exit is a freebie.
+    */d
     x.setZero();
     tol_error = 0.0;
     return true;
@@ -82,11 +79,11 @@ bool idrstab(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditione
 
   if (S >= N || L >= N) {
     /*
-            The matrix is very small, or the choice of L and S is very poor
-            in that case solving directly will be best.
+      The matrix is very small, or the choice of L and S is very poor
+      in that case solving directly will be best.
     */
     /*
-            Exit
+      Exit
     */
     lu_solver.compute(DenseMatrixTypeRow(mat));
     x = lu_solver.solve(rhs);
@@ -106,7 +103,7 @@ bool idrstab(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditione
   VectorType update(N);
 
   /*
-          Main IDRStab algorithm
+    Main IDRStab algorithm
   */
   // Set up the initial residual
   r.head(N) = rhs - mat * precond.solve(x);
@@ -116,7 +113,7 @@ bool idrstab(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditione
   h_FOM.setZero();
 
   /*
-          Determine an initial U matrix of size N x S
+    Determine an initial U matrix of size N x S
   */
 
   DenseMatrixTypeCol U(N * (L + 1), S);
@@ -125,17 +122,9 @@ bool idrstab(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditione
     // This construction can be combined with the Full Orthogonalization Method (FOM) from Ref.3 to provide a possible
     // early exit with no additional MV.
     if (col_index != 0) {
-      /*
-              Original Gram-Schmidt orthogonalization strategy from Ref. 1:
-      */
-      // u.head(N) -= U.topLeftCorner(N, q) * (U.topLeftCorner(N, q).adjoint() * u.head(N));
 
       /*
-              Modified Gram-Schmidt strategy:
-              Note that GS and MGS are mathematically equivalent, they are NOT numerically equivalent.
-
-              Eventough h is a scalar, converting the dot product to Scalar is not supported:
-              http://eigen.tuxfamily.org/bz/show_bug.cgi?id=1610
+      Modified Gram-Schmidt strategy:
       */
       VectorType w = mat * precond.solve(u.head(N));
       for (Index i = 0; i < col_index; ++i) {
@@ -153,23 +142,23 @@ bool idrstab(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditione
 
       if (abs(h_FOM(col_index, col_index - 1)) != 0.0) {
         /*
-                This only happens if u is NOT exactly zero. In case it is exactly zero
-                it would imply that that this u has no component in the direction of the current residual.
+        This only happens if u is NOT exactly zero. In case it is exactly zero
+        it would imply that that this u has no component in the direction of the current residual.
 
-                By then setting u to zero it will not contribute any further (as it should).
-                Whereas attempting to normalize results in division by zero.
+        By then setting u to zero it will not contribute any further (as it should).
+        Whereas attempting to normalize results in division by zero.
 
-                Such cases occur if:
-                1. The basis of dimension <S is sufficient to exactly solve the linear system.
-                I.e. the current residual is in span{r,Ar,...A^{m-1}r}, where (m-1)<=S.
-                2. Two vectors vectors generated from r, Ar,... are (numerically) parallel.
+        Such cases occur if:
+        1. The basis of dimension <S is sufficient to exactly solve the linear system.
+        I.e. the current residual is in span{r,Ar,...A^{m-1}r}, where (m-1)<=S.
+        2. Two vectors vectors generated from r, Ar,... are (numerically) parallel.
 
-                In case 1, the exact solution to the system can be obtained from the "Full Orthogonalization Method"
-           (Algorithm 6.4 in the book of Saad), without any additional MV.
+        In case 1, the exact solution to the system can be obtained from the "Full Orthogonalization Method"
+        (Algorithm 6.4 in the book of Saad), without any additional MV.
 
-                Contrary to what one would suspect, the comparison with ==0.0 for floating-point types is intended here.
-                Any arbritary non-zero u is fine to continue, however if u contains either NaN or Inf the algorithm will
-           break down.
+        Contrary to what one would suspect, the comparison with ==0.0 for floating-point types is intended here.
+        Any arbritary non-zero u is fine to continue, however if u contains either NaN or Inf the algorithm will
+        break down.
         */
         u.head(N) /= h_FOM(col_index, col_index - 1);
       }
@@ -183,7 +172,7 @@ bool idrstab(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditione
 
   if (S > 1) {
     /*
-            Check for early FOM exit.
+    Check for early FOM exit.
     */
     Scalar beta = r.head(N).norm();
     VectorType e1 = VectorType::Zero(S - 1);
@@ -197,7 +186,7 @@ bool idrstab(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditione
 
     if (FOM_residual < tol2) {
       /*
-              Exit, the FOM algorithm was already accurate enough
+      Exit, the FOM algorithm was already accurate enough
       */
       iters = k;
       x = precond.solve(x2);
@@ -207,13 +196,13 @@ bool idrstab(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditione
   }
 
   /*
-          Select an initial (N x S) matrix R0.
-          1. Generate random R0, orthonormalize the result.
-          2. This results in R0, however to save memory and compute we only need the adjoint of R0. This is given by the
-     matrix R_T.\ Additionally, the matrix (mat.adjoint()*R_tilde).adjoint()=R_tilde.adjoint()*mat by the
-     anti-distributivity property of the adjoint. This results in AR_T, which is constant if R_T does not have to be
-     regenerated and can be precomputed. Based on reference 4, this has zero probability in exact arithmetic. However in
-     practice it does (extremely infrequently) occur, most notably for small matrices.
+    Select an initial (N x S) matrix R0.
+    1. Generate random R0, orthonormalize the result.
+    2. This results in R0, however to save memory and compute we only need the adjoint of R0. This is given by the
+    matrix R_T.\ Additionally, the matrix (mat.adjoint()*R_tilde).adjoint()=R_tilde.adjoint()*mat by the
+    anti-distributivity property of the adjoint. This results in AR_T, which is constant if R_T does not have to be
+    regenerated and can be precomputed. Based on reference 4, this has zero probability in exact arithmetic. However in
+    practice it does (extremely infrequently) occur, most notably for small matrices.
   */
   // PO: To save on memory consumption identity can be sparse
   // PO: can this be done with colPiv/fullPiv version as well? This would save 1 construction of a HouseholderQR object
@@ -244,19 +233,19 @@ bool idrstab(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditione
       const Index Nj_min_1 = N * (j - 1);
 
       /*
-              The IDR Step
+        The IDR Step
       */
       // Construction of the sigma-matrix, and the decomposition of sigma.
       for (Index i = 0; i < S; ++i) {
         sigma.col(i).noalias() = AR_T * precond.solve(U.block(Nj_min_1, i, N, 1));
       }
       /*
-              Suspected is that sigma could be badly scaled, since causes alpha~=0, but the
-              update vector is not zero. To improve stability we scale with absolute row and col sums first.
-              Sigma can become badly scaled (but still well-conditioned).
-              A bad sigma also happens if R_T is not chosen properly, for example if R_T is zeros sigma would be zeros
-         as well. The effect of this is a left-right preconditioner, instead of solving Ax=b, we solve
-              Q*A*P*inv(P)*x=Q*b.
+        Suspected is that sigma could be badly scaled, since causes alpha~=0, but the
+        update vector is not zero. To improve stability we scale with absolute row and col sums first.
+        Sigma can become badly scaled (but still well-conditioned).
+        A bad sigma also happens if R_T is not chosen properly, for example if R_T is zeros sigma would be zeros
+        as well. The effect of this is a left-right preconditioner, instead of solving Ax=b, we solve
+        Q*A*P*inv(P)*x=Q*b.
       */
 
       Q = (sigma.cwiseAbs().rowwise().sum()).cwiseInverse();  // Calculate absolute inverse row sum
@@ -327,8 +316,8 @@ bool idrstab(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditione
           R_T = (qr.householderQ() * DenseMatrixTypeCol::Identity(N, S))
                     .transpose();  //.adjoint() vs .transpose() makes no difference, R_T is random anyways.
           /*
-                  Additionally, the matrix (mat.adjoint()*R_tilde).adjoint()=R_tilde.adjoint()*mat by the
-             anti-distributivity property of the adjoint. This results in AR_T, which can be precomputed.
+            Additionally, the matrix (mat.adjoint()*R_tilde).adjoint()=R_tilde.adjoint()*mat by the
+            anti-distributivity property of the adjoint. This results in AR_T, which can be precomputed.
           */
           AR_T = DenseMatrixTypeRow(R_T * mat);
           j = 0;  // WARNING reset the for loop counter
@@ -357,10 +346,10 @@ bool idrstab(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditione
         // Orthonormalize u_j to the columns of V_j(:,1:q-1)
         if (q > 1) {
           /*
-                  Modified Gram-Schmidt-like procedure to make u orthogonal to the columns of V from Ref. 1.
+          Modified Gram-Schmidt-like procedure to make u orthogonal to the columns of V from Ref. 1.
 
-                  The vector mu from Ref. 1 is obtained implicitly:
-                  mu=V.block(Nj, 0, N, q - 1).adjoint() * u.block(Nj, 0, N, 1).
+          The vector mu from Ref. 1 is obtained implicitly:
+          mu=V.block(Nj, 0, N, q - 1).adjoint() * u.block(Nj, 0, N, 1).
           */
 
           for (Index i = 0; i <= q - 2; ++i) {
@@ -379,9 +368,9 @@ bool idrstab(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditione
 
         if (normalization_constant != 0.0) {
           /*
-                  If u is exactly zero, this will lead to a NaN. Small, non-zero u is fine. In the case of NaN the
-             algorithm breaks down, eventhough it could have continued, since u zero implies that there is no further
-             update in a given direction.
+            If u is exactly zero, this will lead to a NaN. Small, non-zero u is fine. In the case of NaN the
+            algorithm breaks down, eventhough it could have continued, since u zero implies that there is no further
+            update in a given direction.
           */
           u.head(Nj_plus_1) /= normalization_constant;
         } else {
@@ -409,8 +398,8 @@ bool idrstab(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditione
       tol_error = r.head(N).norm();
       if (tol_error < tol2) {
         /*
-                Slightly early exit by moving the criterion before the update of U,
-                after the main while loop the result of that calculation would not be needed.
+        Slightly early exit by moving the criterion before the update of U,
+        after the main while loop the result of that calculation would not be needed.
         */
         break;
       }
@@ -458,9 +447,9 @@ bool idrstab(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditione
     }
 
     /*
-            U=U0-sum(gamma_j*U_j)
-            Consider the first iteration. Then U only contains U0, so at the start of the while-loop
-            U should be U0. Therefore only the first N rows of U have to be updated.
+    U=U0-sum(gamma_j*U_j)
+    Consider the first iteration. Then U only contains U0, so at the start of the while-loop
+    U should be U0. Therefore only the first N rows of U have to be updated.
     */
     for (Index i = 1; i <= L; ++i) {
       U.topRows(N) -= U.block(N * i, 0, N, S) * gamma(i - 1);
@@ -515,15 +504,15 @@ class IDRStab : public IterativeSolverBase<IDRStab<_MatrixType, _Preconditioner>
     m_S = 4;
   }
 
-  /**     Initialize the solver with matrix \a A for further \c Ax=b solving.
+  /**   Initialize the solver with matrix \a A for further \c Ax=b solving.
 
-                  This constructor is a shortcut for the default constructor followed
-                  by a call to compute().
+  This constructor is a shortcut for the default constructor followed
+  by a call to compute().
 
-                  \warning this class stores a reference to the matrix A as well as some
-                  precomputed values that depend on it. Therefore, if \a A is changed
-                  this class becomes invalid. Call compute() to update it with the new
-                  matrix A, or modify a copy of A.
+  \warning this class stores a reference to the matrix A as well as some
+  precomputed values that depend on it. Therefore, if \a A is changed
+  this class becomes invalid. Call compute() to update it with the new
+  matrix A, or modify a copy of A.
           */
   template <typename MatrixDerived>
   explicit IDRStab(const EigenBase<MatrixDerived> &A) : Base(A.derived()) {
