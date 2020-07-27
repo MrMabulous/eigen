@@ -107,7 +107,6 @@ bool bicgstabl(const MatrixType &mat, const Rhs &rhs, Dest &x, const Preconditio
       uHat.col(j + 1) = precond.solve(mat * uHat.col(j));
       alpha = rho1 / (rShadow.dot(uHat.col(j + 1)));
       // Update residuals
-      // TODO check this block
       rHat.leftCols(j + 1) -= alpha * uHat.block(0, 1, N, j + 1);
       rHat.col(j + 1) = precond.solve(mat * rHat.col(j));
       // Complete BiCG iteration by updating x
