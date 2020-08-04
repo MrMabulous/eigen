@@ -1398,7 +1398,8 @@ template<> EIGEN_STRONG_INLINE Packet4f pcmp_lt_or_nan<Packet4f>(const Packet4f&
 { return vreinterpretq_f32_u32(vmvnq_u32(vcgeq_f32(a,b))); }
 
 // WARNING: this pfloor implementation makes sense for inputs that fit in
-// signed int32 integers (up to ~2.14e9), hence it is not exposed.
+// signed int32 integers (up to ~2.14e9), hence this is currently only used
+// by pexp and not exposed through HasFloor.
 template<> EIGEN_STRONG_INLINE Packet2f pfloor<Packet2f>(const Packet2f& a)
 {
   const Packet2f cst_1 = pset1<Packet2f>(1.0f);
@@ -3332,7 +3333,8 @@ template<> EIGEN_STRONG_INLINE Packet2d pmin<Packet2d>(const Packet2d& a, const 
 template<> EIGEN_STRONG_INLINE Packet2d pmax<Packet2d>(const Packet2d& a, const Packet2d& b) { return vmaxq_f64(a,b); }
 
 // WARNING: this pfloor implementation makes sense for inputs that fit in
-// signed int64 integers (up to ~9.22e18), hence it is not exposed.
+// signed int64 integers (up to ~9.22e18), hence this is currently only used
+// by pexp and not exposed through HasFloor.
 template<> EIGEN_STRONG_INLINE Packet2d pfloor<Packet2d>(const Packet2d& a)
 {
   const Packet2d cst_1 = pset1<Packet2d>(1.0);
