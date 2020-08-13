@@ -537,19 +537,36 @@ public:
     dest = ploadu<LhsPacketType>(a);
   }
 
+  template<typename LhsPacketType, typename RhsPacketType, typename AccPacketType>
+  EIGEN_STRONG_INLINE typename internal::enable_if<internal::is_convertible<AccPacketType,RhsPacketType>::value, void>::type
+  madd_no_fma_helper(const LhsPacketType& a, const RhsPacketType& b, AccPacketType& c, RhsPacketType& tmp) const
+  {
+    conj_helper<LhsPacketType,RhsPacketType,ConjLhs,ConjRhs> cj;
+    tmp = b; tmp = cj.pmul(a,tmp); c = padd(c,tmp);
+  }
+
+  template<typename LhsPacketType, typename RhsPacketType, typename AccPacketType>
+  EIGEN_STRONG_INLINE typename internal::enable_if<!internal::is_convertible<AccPacketType,RhsPacketType>::value, void>::type
+  madd_no_fma_helper(const LhsPacketType& a, const RhsPacketType& b, AccPacketType& c, const RhsPacketType&) const
+  {
+    conj_helper<LhsPacketType,AccPacketType,ConjLhs,ConjRhs> cj;
+    AccPacketType tmp;
+    tmp = b; tmp = cj.pmul(a,tmp); c = padd(c,tmp);
+  }
+
   template<typename LhsPacketType, typename RhsPacketType, typename AccPacketType, typename LaneIdType>
   EIGEN_STRONG_INLINE void madd(const LhsPacketType& a, const RhsPacketType& b, AccPacketType& c, RhsPacketType& tmp, const LaneIdType&) const
   {
-    conj_helper<LhsPacketType,RhsPacketType,ConjLhs,ConjRhs> cj;
     // It would be a lot cleaner to call pmadd all the time. Unfortunately if we
     // let gcc allocate the register in which to store the result of the pmul
     // (in the case where there is no FMA) gcc fails to figure out how to avoid
     // spilling register.
 #ifdef EIGEN_HAS_SINGLE_INSTRUCTION_MADD
+    conj_helper<LhsPacketType,RhsPacketType,ConjLhs,ConjRhs> cj;
     EIGEN_UNUSED_VARIABLE(tmp);
     c = cj.pmadd(a,b,c);
 #else
-    tmp = b; tmp = cj.pmul(a,tmp); c = padd(c,tmp);
+    madd_no_fma_helper(a,b,c,tmp);
 #endif
   }
 
