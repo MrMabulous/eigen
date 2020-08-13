@@ -15,7 +15,7 @@ stages:
 variables:
   BUILDDIR: builddir
   EIGEN_CI_CMAKE_GENEATOR: "Ninja"
-  EIGEN_CI_TESTSUITE_SIZE: 10
+  EIGEN_CI_TESTSUITE_SIZE: 15
 
 include:
   - "/ci/build-tests.gitlab-ci.yml"

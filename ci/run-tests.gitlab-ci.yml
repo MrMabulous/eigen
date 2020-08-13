@@ -9,8 +9,6 @@
     - echo "cd ${BUILDDIR} && ctest --output-on-failure"
     - cd ${BUILDDIR} && ctest --output-on-failure --no-compress-output --build-no-clean -T test
     - xsltproc ../ci/CTest2JUnit.xsl Testing/`head -n 1 < Testing/TAG`/Test.xml > "JUnitTestResults_$CI_JOB_ID.xml"
-  dependencies:
-    - build-tests-${EIGEN_CI_CXX_COMPILER}-cxx11-${EIGEN_TEST_CXX11}
   artifacts:
     reports:
       junit:
@@ -22,28 +20,24 @@ run-tests-g++-4.8-cxx11-on:
   only:
     - schedules
   extends: .run_tests
-  variables:
-    EIGEN_TEST_CXX11: "on"
-    EIGEN_CI_CXX_COMPILER: "g++-4.8"
+  dependencies:
+    - build-tests-g++-4.8-cxx11-on
 
 run-tests-g++-4.8-cxx11-off:
   only:
     - schedules
   extends: .run_tests
-  variables:
-    EIGEN_TEST_CXX11: "off"
-    EIGEN_CI_CXX_COMPILER: "g++-4.8"
+  dependencies:
+    - build-tests-g++-4.8-cxx11-off
 
 # GCC 10
 run-tests-g++-10-cxx11-on:
   extends: .run_tests
-  variables:
-    EIGEN_TEST_CXX11: "on"
-    EIGEN_CI_CXX_COMPILER: "g++10"
+  dependencies:
+    - build-tests-g++-10-cxx11-on
 
 run-tests-g++-10-cxx11-off:
   extends: .run_tests
-  variables:
-    EIGEN_TEST_CXX11: "off"
-    EIGEN_CI_CXX_COMPILER: "g++10"
+  dependencies:
+    - build-tests-g++-10-cxx11-off
 

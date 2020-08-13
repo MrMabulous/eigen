@@ -27,7 +27,7 @@ build-tests-g++-4.8-cxx11-on:
     EIGEN_CI_CC_COMPILER: "gcc-4.8"
   parallel:
     matrix:
-      - EIGEN_CI_TESTSUITE_PART: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+      - EIGEN_CI_TESTSUITE_PART: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
         EIGEN_TEST_CXX11: "on"
 
 build-tests-g++-4.8-cxx11-off:
@@ -39,7 +39,7 @@ build-tests-g++-4.8-cxx11-off:
     EIGEN_CI_CC_COMPILER: "gcc-4.8"
   parallel:
     matrix:
-      - EIGEN_CI_TESTSUITE_PART: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+      - EIGEN_CI_TESTSUITE_PART: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
         EIGEN_TEST_CXX11: "off"
 
 # GCC 10
@@ -53,21 +53,21 @@ build-tests-g++-4.8-cxx11-off:
     - apt-get install --no-install-recommends -y ${EIGEN_CI_CXX_COMPILER} ${EIGEN_CI_CC_COMPILER} cmake ninja-build
 
 build-tests-g++-10-cxx11-on:
-  extends: .build-tests-base
+  extends: .build-tests-g++-10
   variables:
     EIGEN_CI_CXX_COMPILER: "g++-10"
     EIGEN_CI_CC_COMPILER: "gcc-10"
   parallel:
     matrix:
-      - EIGEN_CI_TESTSUITE_PART: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+      - EIGEN_CI_TESTSUITE_PART: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
         EIGEN_TEST_CXX11: "on"
 
 build-tests-g++-10-cxx11-off:
-  extends: .build-tests-base
+  extends: .build-tests-g++-10
   variables:
     EIGEN_CI_CXX_COMPILER: "g++-10"
     EIGEN_CI_CC_COMPILER: "gcc-10"
   parallel:
     matrix:
-      - EIGEN_CI_TESTSUITE_PART: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+      - EIGEN_CI_TESTSUITE_PART: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
         EIGEN_TEST_CXX11: "off"
