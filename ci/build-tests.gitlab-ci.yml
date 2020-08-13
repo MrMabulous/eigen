@@ -3,11 +3,14 @@
   image: ubuntu:18.04
   before_script:
     - apt-get update -y
+    - apt-get install -y --no-install-recommends software-properties-common
+    - add-apt-repository -y  ppa:ubuntu-toolchain-r/test
+    - apt-get update
     - apt-get install --no-install-recommends -y ${EIGEN_CI_CXX_COMPILER} ${EIGEN_CI_CC_COMPILER} cmake ninja-build
   script:
     - mkdir -p ${BUILDDIR} && cd ${BUILDDIR}
-    - echo "CXX=${EIGEN_CI_CXX_COMPILER} CC=${EIGEN_CI_CC_COMPILER} cmake -G ${EIGEN_CI_CMAKE_GENEATOR} -DEIGEN_SPLIT_TESTSUITE=${EIGEN_CI_TESTSUITE_SIZE} -DEIGEN_TEST_CXX11=${EIGEN_TEST_CXX11} ${EIGEN_CI_CXX_FLAGS} .."
-    - CXX=${EIGEN_CI_CXX_COMPILER} CC=${EIGEN_CI_CC_COMPILER} cmake -G ${EIGEN_CI_CMAKE_GENEATOR} -DEIGEN_SPLIT_TESTSUITE=${EIGEN_CI_TESTSUITE_SIZE} -DEIGEN_TEST_CXX11=${EIGEN_TEST_CXX11} ${EIGEN_CI_CXX_FLAGS} ..
+    - echo "CXX=${EIGEN_CI_CXX_COMPILER} CC=${EIGEN_CI_CC_COMPILER} cmake -G ${EIGEN_CI_CMAKE_GENEATOR} -DEIGEN_SPLIT_TESTSUITE=${EIGEN_CI_TESTSUITE_SIZE} -DEIGEN_TEST_CXX11=${EIGEN_TEST_CXX11} ${EIGEN_CI_CXX_FLAGS} -DEIGEN_TEST_AVX=On -DEIGEN_TEST_AVX2=On .."
+    - CXX=${EIGEN_CI_CXX_COMPILER} CC=${EIGEN_CI_CC_COMPILER} cmake -G ${EIGEN_CI_CMAKE_GENEATOR} -DEIGEN_SPLIT_TESTSUITE=${EIGEN_CI_TESTSUITE_SIZE} -DEIGEN_TEST_CXX11=${EIGEN_TEST_CXX11} -DEIGEN_TEST_AVX=On -DEIGEN_TEST_AVX2=On ..
     - echo "cmake --build . --target buildtestspart${EIGEN_CI_TESTSUITE_PART}"
     - cmake --build . --target buildtestspart${EIGEN_CI_TESTSUITE_PART}
   artifacts:
@@ -43,31 +46,22 @@ build-tests-g++-4.8-cxx11-off:
         EIGEN_TEST_CXX11: "off"
 
 # GCC 10
-.build-tests-g++-10:
-  extends: .build-tests-base
-  before_script:
-    - apt-get update -y
-    - apt-get install -y --no-install-recommends software-properties-common
-    - add-apt-repository -y  ppa:ubuntu-toolchain-r/test
-    - apt-get update
-    - apt-get install --no-install-recommends -y ${EIGEN_CI_CXX_COMPILER} ${EIGEN_CI_CC_COMPILER} cmake ninja-build
-
-build-tests-g++-10-cxx11-on:
-  extends: .build-tests-g++-10
-  variables:
-    EIGEN_CI_CXX_COMPILER: "g++-10"
-    EIGEN_CI_CC_COMPILER: "gcc-10"
-  parallel:
-    matrix:
-      - EIGEN_CI_TESTSUITE_PART: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-        EIGEN_TEST_CXX11: "on"
+# build-tests-g++-10-cxx11-on:
+#   extends: .build-tests-base
+#   variables:
+#     EIGEN_CI_CXX_COMPILER: "g++-10"
+#     EIGEN_CI_CC_COMPILER: "gcc-10"
+#   parallel:
+#     matrix:
+#       - EIGEN_CI_TESTSUITE_PART: [0]
+#         EIGEN_TEST_CXX11: "on"
 
 build-tests-g++-10-cxx11-off:
-  extends: .build-tests-g++-10
+  extends: .build-tests-base
   variables:
     EIGEN_CI_CXX_COMPILER: "g++-10"
     EIGEN_CI_CC_COMPILER: "gcc-10"
   parallel:
     matrix:
-      - EIGEN_CI_TESTSUITE_PART: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+      - EIGEN_CI_TESTSUITE_PART: [0]
         EIGEN_TEST_CXX11: "off"
