@@ -1,0 +1,29 @@
+.run_tests:
+  allow_failure: true
+  stage: test
+  image: ubuntu:18.04
+  before_script:
+    - apt-get update -y
+    - apt-get install --no-install-recommends -y cmake ninja-build
+  script:
+    - cd ${BUILDDIR} && ctest --output-on-failure
+
+# GCC 4.8
+run-tests-g++-4.8-cxx11:
+  extends: .run_tests
+  variables:
+    EIGEN_TEST_CXX11: "On"
+    EIGEN_CI_CXX_COMPILER: "g++-4.8"
+  dependencies:
+    - build-tests-g++-4.8-cxx11
+  needs: ["build-tests-g++-4.8-cxx11"]
+
+run-tests-g++-4.8-cxx03:
+  extends: .run_tests
+  variables:
+    EIGEN_TEST_CXX11: "Off"
+    EIGEN_CI_CXX_COMPILER: "g++-4.8"
+  dependencies:
+    - build-tests-g++-4.8-cxx03
+  needs: ["build-tests-g++-4.8-cxx03"]
+

@@ -683,7 +683,6 @@ macro(ei_split_testsuite num_splits)
     math(EXPR eigen_test_count "${eigen_test_count}+1")
   endforeach()
 
-  message(STATUS "Discovered ${eigen_test_count} tests")
   # Get number of tests per target
   math(EXPR num_tests_per_target "${eigen_test_count}/${num_splits} - ${eigen_test_count}/${num_splits} % 1")
 
@@ -693,7 +692,6 @@ macro(ei_split_testsuite num_splits)
     # Create target
     set(current_target "buildtestspart${part}")
     add_custom_target("${current_target}")
-
     math(EXPR upper_bound "${test_idx} + ${num_tests_per_target} - 1")
     foreach(test_idx RANGE "${test_idx}" "${upper_bound}")
       list(GET EIGEN_TESTS_LIST "${test_idx}" curr_test)
@@ -701,8 +699,6 @@ macro(ei_split_testsuite num_splits)
     endforeach()
     math(EXPR test_idx "${test_idx} + ${num_tests_per_target}")
   endforeach()
-
-  message(STATUS "Found ${eigen_test_count} tests")
   
   # Handle the possibly remaining tests
   math(EXPR test_idx "${num_splits} * ${num_tests_per_target}")
