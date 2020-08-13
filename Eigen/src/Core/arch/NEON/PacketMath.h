@@ -3283,8 +3283,7 @@ EIGEN_STRONG_INLINE Packet4bf F32ToBf16(const Packet4f& p)
 {
   // See the scalar implemention in BFloat16.h for a comprehensible explanation
   // of this fast rounding algorithm
-  Packet4ui input;
-  std::memcpy(&input, &p, sizeof(p));
+  Packet4ui input = reinterpret_cast<Packet4ui>(p);
 
   // lsb = (input >> 16) & 1
   Packet4ui lsb =  vandq_u32(vshrq_n_u32(input, 16), vdupq_n_u32(1));
@@ -3309,10 +3308,7 @@ EIGEN_STRONG_INLINE Packet4bf F32ToBf16(const Packet4f& p)
 
 EIGEN_STRONG_INLINE Packet4f Bf16ToF32(const Packet4bf& p)
 {
-  Packet4f f;
-  Packet4ui t = vshlq_n_u32(vmovl_u16(p), 16);
-  memcpy(&f, &t, sizeof(Packet4ui));
-  return f;
+  return reinterpret_cast<Packet4f>(vshlq_n_u32(vmovl_u16(p), 16));
 }
 
 template<> EIGEN_STRONG_INLINE Packet4bf pset1<Packet4bf>(const bfloat16& from) {
@@ -3441,7 +3437,7 @@ template<> EIGEN_STRONG_INLINE bfloat16 predux_mul<Packet4bf>(const Packet4bf& a
   return static_cast<bfloat16>(predux_mul<Packet4f>(Bf16ToF32(a)));
 }
 
-template<> EIGEN_STRONG_INLINE Packet4bf preverse(const Packet4bf& a)
+template<> EIGEN_STRONG_INLINE Packet4bf preverse<Packet4bf>(const Packet4bf& a)
 {
   return preverse<Packet4us>(a);
 }
@@ -3480,10 +3476,9 @@ template<> EIGEN_STRONG_INLINE Packet4bf pcmp_le<Packet4bf>(const Packet4bf& a, 
   return F32ToBf16(pcmp_le<Packet4f>(Bf16ToF32(a), Bf16ToF32(b)));
 }
 
-template<> EIGEN_STRONG_INLINE Packet4bf pnegate(const Packet4bf& a)
+template<> EIGEN_STRONG_INLINE Packet4bf pnegate<Packet4bf>(const Packet4bf& a)
 {
-  Packet4bf sign_mask = pset1<Packet4us>(static_cast<uint16_t>(0x8000));
-  return veor_u16(a, sign_mask);
+  return pxor<Packet4us>(a, pset1<Packet4us>(static_cast<uint16_t>(0x8000)));
 }
 
 //---------- double ----------
