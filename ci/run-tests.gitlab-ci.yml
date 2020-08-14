@@ -11,6 +11,10 @@
   script:
     - echo "cd ${BUILDDIR} && ctest --output-on-failure --no-compress-output --build-no-clean -T test"
     - cd ${BUILDDIR} && ctest --output-on-failure --no-compress-output --build-no-clean -T test
+  after_script:
+    - apt-get update -y
+    - apt-get install --no-install-recommends -y xsltproc
+    - cd ${BUILDDIR}
     - xsltproc ../ci/CTest2JUnit.xsl Testing/`head -n 1 < Testing/TAG`/Test.xml > "JUnitTestResults_$CI_JOB_ID.xml"
   artifacts:
     reports:
