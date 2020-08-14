@@ -31,8 +31,7 @@ run-tests-g++-4.8-cxx11-on:
   variables:
     EIGEN_CI_CXX_COMPILER: g++-4.8
     EIGEN_CI_CC_COMPILER: gcc-4.8
-  dependencies:
-    - build-tests-g++-4.8-cxx11-on
+  needs: [ "build-tests-g++-4.8-cxx11-on" ]
   tags:
     - eigen-runner
     - x86
@@ -45,8 +44,7 @@ run-tests-g++-4.8-cxx11-off:
   variables:
     EIGEN_CI_CXX_COMPILER: g++-4.8
     EIGEN_CI_CC_COMPILER: gcc-4.8
-  dependencies:
-    - build-tests-g++-4.8-cxx11-off
+  needs: [ "build-tests-g++-4.8-cxx11-off" ]
   tags:
     - eigen-runner
     - x86
@@ -60,8 +58,7 @@ run-tests-clang++-10-cxx11-on:
   variables:
     EIGEN_CI_CXX_COMPILER: clang++-10
     EIGEN_CI_CC_COMPILER: clang-10
-  dependencies:
-    - build-tests-clang++-10-cxx11-on
+  needs: [ "build-tests-clang++-10-cxx11-on" ]
   tags:
     - eigen-runner
     - x86
@@ -74,8 +71,7 @@ run-tests-clang++-10-cxx11-off:
   variables:
     EIGEN_CI_CXX_COMPILER: clang++-10
     EIGEN_CI_CC_COMPILER: clang-10
-  dependencies:
-    - build-tests-clang++-10-cxx11-off
+  needs: [ "build-tests-clang++-10-cxx11-off" ]
   tags:
     - eigen-runner
     - x86
@@ -91,8 +87,7 @@ run-tests-g++-10-cxx11-on:
   variables:
     EIGEN_CI_CXX_COMPILER: g++-10
     EIGEN_CI_CC_COMPILER: gcc-10
-  dependencies:
-    - build-tests-g++-10-cxx11-on
+  needs: [ "build-tests-g++-10-cxx11-on" ] 
 
 run-tests-g++-10-cxx11-off:
   only:
@@ -101,5 +96,4 @@ run-tests-g++-10-cxx11-off:
   variables:
     EIGEN_CI_CXX_COMPILER: g++-10
     EIGEN_CI_CC_COMPILER: gcc-10
-  dependencies:
-    - build-tests-g++-10-cxx11-off
+  needs: [ "build-tests-g++-10-cxx11-off" ]
