@@ -19,35 +19,49 @@
       - ${BUILDDIR}/
     expire_in: 5 days
 
+.build-tests-single-base:
+  extends: .build-tests-base
+  script:
+    - mkdir -p ${BUILDDIR} && cd ${BUILDDIR}
+    - echo "CXX=${EIGEN_CI_CXX_COMPILER} CC=${EIGEN_CI_CC_COMPILER} cmake -G ${EIGEN_CI_CMAKE_GENEATOR} -DEIGEN_TEST_CXX11=${EIGEN_TEST_CXX11} ${EIGEN_CI_CXX_FLAGS} -DEIGEN_TEST_AVX=On -DEIGEN_TEST_AVX2=On .."
+    - CXX=${EIGEN_CI_CXX_COMPILER} CC=${EIGEN_CI_CC_COMPILER} cmake -G ${EIGEN_CI_CMAKE_GENEATOR} -DEIGEN_TEST_CXX11=${EIGEN_TEST_CXX11} -DEIGEN_TEST_AVX=On -DEIGEN_TEST_AVX2=On ..
+    - echo "cmake --build . --target buildtests"
+    - cmake --build . --target buildtests
+  tags:
+    - eigen-runner
+    - x86
+    - linux
+
+.build-tests-split-base:
+  extends: .build-tests-base
+  script:
+    - mkdir -p ${BUILDDIR} && cd ${BUILDDIR}
+    - echo "CXX=${EIGEN_CI_CXX_COMPILER} CC=${EIGEN_CI_CC_COMPILER} cmake -G ${EIGEN_CI_CMAKE_GENEATOR} -DEIGEN_SPLIT_TESTSUITE=${EIGEN_CI_TESTSUITE_SIZE} -DEIGEN_TEST_CXX11=${EIGEN_TEST_CXX11} ${EIGEN_CI_CXX_FLAGS} -DEIGEN_TEST_AVX=On -DEIGEN_TEST_AVX2=On .."
+    - CXX=${EIGEN_CI_CXX_COMPILER} CC=${EIGEN_CI_CC_COMPILER} cmake -G ${EIGEN_CI_CMAKE_GENEATOR} -DEIGEN_SPLIT_TESTSUITE=${EIGEN_CI_TESTSUITE_SIZE} -DEIGEN_TEST_CXX11=${EIGEN_TEST_CXX11} -DEIGEN_TEST_AVX=On -DEIGEN_TEST_AVX2=On ..
+    - echo "cmake --build . --target buildtestspart${EIGEN_CI_TESTSUITE_PART}"
+    - cmake --build . --target buildtestspart${EIGEN_CI_TESTSUITE_PART}
+
 # GCC 4.8
 # This is the oldest GCC version we support
 build-tests-g++-4.8-cxx11-on:
-  only:
-    - schedules
-  extends: .build-tests-base
+  extends: .build-tests-single-base
   variables:
     EIGEN_CI_CXX_COMPILER: "g++-4.8"
     EIGEN_CI_CC_COMPILER: "gcc-4.8"
-  parallel:
-    matrix:
-      - EIGEN_CI_TESTSUITE_PART: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-        EIGEN_TEST_CXX11: "on"
+    EIGEN_TEST_CXX11: "on"
 
 build-tests-g++-4.8-cxx11-off:
-  only:
-    - schedules
-  extends: .build-tests-base
+  extends: .build-tests-single-base
   variables:
     EIGEN_CI_CXX_COMPILER: "g++-4.8"
     EIGEN_CI_CC_COMPILER: "gcc-4.8"
-  parallel:
-    matrix:
-      - EIGEN_CI_TESTSUITE_PART: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-        EIGEN_TEST_CXX11: "off"
+    EIGEN_TEST_CXX11: "off"
 
 # GCC 10
 build-tests-g++-10-cxx11-on:
-  extends: .build-tests-base
+  only:
+    - schedules
+  extends: .build-tests-split-base
   variables:
     EIGEN_CI_CXX_COMPILER: "g++-10"
     EIGEN_CI_CC_COMPILER: "gcc-10"
@@ -57,7 +71,9 @@ build-tests-g++-10-cxx11-on:
         EIGEN_TEST_CXX11: "on"
 
 build-tests-g++-10-cxx11-off:
-  extends: .build-tests-base
+  only:
+    - schedules
+  extends: .build-tests-split-base
   variables:
     EIGEN_CI_CXX_COMPILER: "g++-10"
     EIGEN_CI_CC_COMPILER: "gcc-10"

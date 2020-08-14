@@ -24,27 +24,33 @@
 
 # GCC 4.8
 run-tests-g++-4.8-cxx11-on:
-  only:
-    - schedules
   extends: .run_tests
   variables:
     EIGEN_CI_CXX_COMPILER: g++-4.8
     EIGEN_CI_CC_COMPILER: gcc-4.8
   dependencies:
     - build-tests-g++-4.8-cxx11-on
+  tags:
+    - eigen-runner
+    - x86
+    - linux
 
 run-tests-g++-4.8-cxx11-off:
-  only:
-    - schedules
   extends: .run_tests
   variables:
     EIGEN_CI_CXX_COMPILER: g++-4.8
     EIGEN_CI_CC_COMPILER: gcc-4.8
   dependencies:
     - build-tests-g++-4.8-cxx11-off
+  tags:
+    - eigen-runner
+    - x86
+    - linux
 
 # GCC 10
 run-tests-g++-10-cxx11-on:
+  only:
+    - schedules
   extends: .run_tests
   variables:
     EIGEN_CI_CXX_COMPILER: g++-10
@@ -53,6 +59,8 @@ run-tests-g++-10-cxx11-on:
     - build-tests-g++-10-cxx11-on
 
 run-tests-g++-10-cxx11-off:
+  only:
+    - schedules
   extends: .run_tests
   variables:
     EIGEN_CI_CXX_COMPILER: g++-10
