@@ -46,15 +46,15 @@ build-tests-g++-4.8-cxx11-off:
         EIGEN_TEST_CXX11: "off"
 
 # GCC 10
-# build-tests-g++-10-cxx11-on:
-#   extends: .build-tests-base
-#   variables:
-#     EIGEN_CI_CXX_COMPILER: "g++-10"
-#     EIGEN_CI_CC_COMPILER: "gcc-10"
-#   parallel:
-#     matrix:
-#       - EIGEN_CI_TESTSUITE_PART: [0]
-#         EIGEN_TEST_CXX11: "on"
+build-tests-g++-10-cxx11-on:
+  extends: .build-tests-base
+  variables:
+    EIGEN_CI_CXX_COMPILER: "g++-10"
+    EIGEN_CI_CC_COMPILER: "gcc-10"
+  parallel:
+    matrix:
+      - EIGEN_CI_TESTSUITE_PART: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+        EIGEN_TEST_CXX11: "on"
 
 build-tests-g++-10-cxx11-off:
   extends: .build-tests-base
@@ -63,5 +63,5 @@ build-tests-g++-10-cxx11-off:
     EIGEN_CI_CC_COMPILER: "gcc-10"
   parallel:
     matrix:
-      - EIGEN_CI_TESTSUITE_PART: [0]
+      - EIGEN_CI_TESTSUITE_PART: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
         EIGEN_TEST_CXX11: "off"

@@ -44,13 +44,13 @@ run-tests-g++-4.8-cxx11-off:
     - build-tests-g++-4.8-cxx11-off
 
 # GCC 10
-# run-tests-g++-10-cxx11-on:
-#   extends: .run_tests
-#   variables:
-#     EIGEN_CI_CXX_COMPILER: g++-10
-#     EIGEN_CI_CC_COMPILER: gcc-10
-#   dependencies:
-#     - build-tests-g++-10-cxx11-on
+run-tests-g++-10-cxx11-on:
+  extends: .run_tests
+  variables:
+    EIGEN_CI_CXX_COMPILER: g++-10
+    EIGEN_CI_CC_COMPILER: gcc-10
+  dependencies:
+    - build-tests-g++-10-cxx11-on
 
 run-tests-g++-10-cxx11-off:
   extends: .run_tests
@@ -59,4 +59,3 @@ run-tests-g++-10-cxx11-off:
     EIGEN_CI_CC_COMPILER: gcc-10
   dependencies:
     - build-tests-g++-10-cxx11-off
-
