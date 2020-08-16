@@ -82,10 +82,25 @@ build-tests-clang++-10-cxx11-off:
     EIGEN_CI_CC_COMPILER: "clang-10"
     EIGEN_TEST_CXX11: "off"
 
+# GCC 10
+build-tests-g++-10-cxx11-off:
+  extends: .build-tests-single-base
+  variables:
+    EIGEN_CI_CXX_COMPILER: "g++-10"
+    EIGEN_CI_CC_COMPILER: "gcc-10"
+    EIGEN_TEST_CXX11: "off"
+
+build-tests-g++-10-cxx11-on:
+  extends: .build-tests-single-base
+  variables:
+    EIGEN_CI_CXX_COMPILER: "g++-10"
+    EIGEN_CI_CC_COMPILER: "gcc-10"
+    EIGEN_TEST_CXX11: "on"
+
 ########################### Merge request jobs #################################
 
 # GCC 10
-build-tests-g++-10-cxx11-on:
+build-tests-g++-10-cxx11-on-mr:
   only:
     - merge_requests
   extends: .build-tests-split-base
@@ -97,7 +112,7 @@ build-tests-g++-10-cxx11-on:
       - EIGEN_CI_TESTSUITE_PART: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
         EIGEN_TEST_CXX11: "on"
 
-build-tests-g++-10-cxx11-off:
+build-tests-g++-10-cxx11-off-mr:
   only:
     - merge_requests
   extends: .build-tests-split-base
