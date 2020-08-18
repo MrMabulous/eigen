@@ -136,6 +136,28 @@ template<> EIGEN_STRONG_INLINE Packet2cf pconj(const Packet2cf& a)
   return Packet2cf(vreinterpretq_f32_u32(veorq_u32(b, p4ui_CONJ_XOR())));
 }
 
+/*using overloading instead of Function specialized template, 
+  since the type of value return is different*/ 
+ EIGEN_STRONG_INLINE float32_t pabs(const Packet1cf& a){
+  Packet2f v1,v2;
+  v1=a.v;
+  v1=vmul_f32(v1,a.v);
+  v2=vrev64_f32(v1);
+  return vget_lane_f32(psqrt(vadd_f32(v1,v2)),0);
+}
+
+EIGEN_STRONG_INLINE Packet2f pabs(const Packet2cf& a){
+  Packet4f v1;
+  Packet2f v3,v4;
+  v1=a.v;
+  v1=vmulq_f32(v1,a.v);
+  v3=vget_low_f32(v1);
+  v4=vget_high_f32(v1);
+  v3=psqrt(vadd_f32(v3,vrev64_f32(v3)));
+  v4=psqrt(vadd_f32(v4,vrev64_f32(v4)));
+  return vset_lane_f32(vget_lane_f32(v4,0),v3,1);
+}
+
 template<> EIGEN_STRONG_INLINE Packet1cf pmul<Packet1cf>(const Packet1cf& a, const Packet1cf& b)
 {
   Packet2f v1, v2;

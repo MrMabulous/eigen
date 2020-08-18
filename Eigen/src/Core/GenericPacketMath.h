@@ -232,6 +232,10 @@ template<> EIGEN_DEVICE_FUNC inline unsigned long
 pabs(const unsigned long& a) { return a; }
 template<> EIGEN_DEVICE_FUNC inline unsigned long long
 pabs(const unsigned long long& a) { return a; }
+//return tha abs of complex number
+#include<complex.h>
+template<typename T1> EIGEN_DEVICE_FUNC inline T1
+pabs(const std::complex<T1>& a){return a.abs();}
 
 /** \internal \returns the phase angle of \a a */
 template<typename Packet> EIGEN_DEVICE_FUNC inline Packet
