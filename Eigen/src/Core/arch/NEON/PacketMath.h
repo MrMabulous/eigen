@@ -3235,7 +3235,8 @@ EIGEN_STRONG_INLINE Packet4f psqrt(const Packet4f& _x){
                           vcgeq_f32(_x, pset1<Packet4f>((std::numeric_limits<float>::min)())));
   // Compute approximate reciprocal sqrt.
   Packet4f x=vrsqrteq_f32(_x);
-  // Do a single step of Newton's iteration.
+  // Do a single step of Newton's iteration. 
+  //the number 1.5f was set reference to Quake3's fast inverse square root
   x=vmulq_f32(x,psub(pset1<Packet4f>(1.5f),pmul(half,pmul(x,x))));
   // Flush results for denormals to zero.
   return vreinterpretq_f32_u32(vandq_u32(denormal_mask,vreinterpretq_u32_f32(pmul(_x,x))));
