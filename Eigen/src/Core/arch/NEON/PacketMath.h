@@ -3232,7 +3232,7 @@ template<>
 EIGEN_STRONG_INLINE Packet4f psqrt(const Packet4f& _x){
   Packet4f half=vmulq_n_f32(_x,0.5f);
   Packet4ui denormal_mask=vandq_u32(vcgeq_f32(_x, vdupq_n_f32(0.0f)),
-                          vcgeq_f32(_x, pset1<Packet4f>((std::numeric_limits<float>::min)())));
+                                    vcleq_f32(_x, pset1<Packet4f>((std::numeric_limits<float>::max)())));
   // Compute approximate reciprocal sqrt.
   Packet4f x=vrsqrteq_f32(_x);
   // Do a single step of Newton's iteration. 
@@ -3246,7 +3246,7 @@ template<>
 EIGEN_STRONG_INLINE Packet2f psqrt(const Packet2f& _x){
   Packet2f half=vmul_n_f32(_x,0.5f);
   Packet2ui denormal_mask=vand_u32(vcge_f32(_x, vdup_n_f32(0.0f)),
-                          vcge_f32(_x, pset1<Packet2f>((std::numeric_limits<float>::min)())));
+                                   vcle_f32(_x, pset1<Packet2f>((std::numeric_limits<float>::max)())));
   // Compute approximate reciprocal sqrt.
   Packet2f x=vrsqrte_f32(_x);
   // Do a single step of Newton's iteration.
