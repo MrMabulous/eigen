@@ -104,25 +104,27 @@ build-tests-g++-10-cxx11-on:
 ########################### Merge request jobs #################################
 
 # GCC 10
-build-tests-g++-10-cxx11-on-mr:
+build-tests-g++-9-cxx11-on-mr:
   only:
     - merge_requests
   extends: .build-tests-split-base
   variables:
-    EIGEN_CI_CXX_COMPILER: "g++-10"
-    EIGEN_CI_CC_COMPILER: "gcc-10"
+    EIGEN_CI_CXX_COMPILER: "g++-9"
+    EIGEN_CI_CC_COMPILER: "gcc-9"
+    EIGEN_CI_ADDITIONAL_ARGS: "-DEIGEN_TEST_AVX=On -DEIGEN_TEST_AVX2=On"
   parallel:
     matrix:
       - EIGEN_CI_TESTSUITE_PART: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
         EIGEN_TEST_CXX11: "on"
 
-build-tests-g++-10-cxx11-off-mr:
+build-tests-g++-9-cxx11-off-mr:
   only:
     - merge_requests
   extends: .build-tests-split-base
   variables:
-    EIGEN_CI_CXX_COMPILER: "g++-10"
-    EIGEN_CI_CC_COMPILER: "gcc-10"
+    EIGEN_CI_CXX_COMPILER: "g++-9"
+    EIGEN_CI_CC_COMPILER: "gcc-9"
+    EIGEN_CI_ADDITIONAL_ARGS: "-DEIGEN_TEST_AVX=On -DEIGEN_TEST_AVX2=On"
   parallel:
     matrix:
       - EIGEN_CI_TESTSUITE_PART: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]

@@ -107,22 +107,22 @@ run-tests-g++-10-cxx11-off:
 ########################### Merge request jobs #################################
 
 # GCC 10
-run-tests-g++-10-cxx11-on-mr:
+run-tests-g++-9-cxx11-on-mr:
   only:
     - merge_requests
   extends: .run_tests
   variables:
-    EIGEN_CI_CXX_COMPILER: g++-10
-    EIGEN_CI_CC_COMPILER: gcc-10
+    EIGEN_CI_CXX_COMPILER: g++-9
+    EIGEN_CI_CC_COMPILER: gcc-9
   dependencies:
-    - build-tests-g++-10-cxx11-on-mr
+    - build-tests-g++-9-cxx11-on-mr
 
-run-tests-g++-10-cxx11-off-mr:
+run-tests-g++-9-cxx11-off-mr:
   only:
     - merge_requests
   extends: .run_tests
   variables:
-    EIGEN_CI_CXX_COMPILER: g++-10
-    EIGEN_CI_CC_COMPILER: gcc-10
+    EIGEN_CI_CXX_COMPILER: g++-9
+    EIGEN_CI_CC_COMPILER: gcc-9
   dependencies:
-    - build-tests-g++-10-cxx11-off-mr
+    - build-tests-g++-9-cxx11-off-mr
