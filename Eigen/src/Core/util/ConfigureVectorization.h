@@ -2,6 +2,7 @@
 // for linear algebra.
 //
 // Copyright (C) 2008-2018 Gael Guennebaud <gael.guennebaud@inria.fr>
+// Copyright (C) 2020, Arm Limited and Contributors
 //
 // This Source Code Form is subject to the terms of the Mozilla
 // Public License v. 2.0. If a copy of the MPL was not distributed
@@ -384,11 +385,24 @@
     #undef vector
     #undef pixel
 
-  #elif (defined  __ARM_NEON) || (defined __ARM_NEON__)
+  #elif ((defined  __ARM_NEON) || (defined __ARM_NEON__))  && !(defined EIGEN_ARM_USE_SVE)
 
     #define EIGEN_VECTORIZE
     #define EIGEN_VECTORIZE_NEON
     #include <arm_neon.h>
+
+  #elif (defined __ARM_FEATURE_SVE) && (defined EIGEN_ARM_USE_SVE)
+
+    #define EIGEN_VECTORIZE
+    #define EIGEN_VECTORIZE_SVE
+    #include <arm_sve.h>
+
+    // SVE backend requires a fixed VL to be compatible
+    #if defined __ARM_FEATURE_SVE_BITS
+      #define EIGEN_SVE_VL __ARM_FEATURE_SVE_BITS
+    #else
+      #error "Arm SVE fixed vector length not defined. Please set the Eigen flag 'EIGEN_SVE_VL' during the build process."
+    #endif
 
   #elif (defined __s390x__ && defined __VEC__)
 
@@ -471,6 +485,8 @@ inline static const char *SimdInstructionSetsInUse(void) {
   return "VSX";
 #elif defined(EIGEN_VECTORIZE_NEON)
   return "ARM NEON";
+#elif defined(EIGEN_VECTORIZE_SVE)
+  return "ARM SVE";
 #elif defined(EIGEN_VECTORIZE_ZVECTOR)
   return "S390X ZVECTOR";
 #elif defined(EIGEN_VECTORIZE_MSA)

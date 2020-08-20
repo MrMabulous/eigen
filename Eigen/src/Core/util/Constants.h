@@ -3,6 +3,7 @@
 //
 // Copyright (C) 2008-2015 Gael Guennebaud <gael.guennebaud@inria.fr>
 // Copyright (C) 2007-2009 Benoit Jacob <jacob.benoit.1@gmail.com>
+// Copyright (C) 2020, Arm Limited and Contributors
 //
 // This Source Code Form is subject to the terms of the Mozilla
 // Public License v. 2.0. If a copy of the MPL was not distributed
@@ -465,6 +466,7 @@ namespace Architecture
     VSX = 0x3,
     NEON = 0x4,
     MSA = 0x5,
+    SVE = 0x6,
 #if defined EIGEN_VECTORIZE_SSE
     Target = SSE
 #elif defined EIGEN_VECTORIZE_ALTIVEC
@@ -475,6 +477,8 @@ namespace Architecture
     Target = NEON
 #elif defined EIGEN_VECTORIZE_MSA
     Target = MSA
+#elif defined EIGEN_VECTORIZE_SVE
+    Target = SVE
 #else
     Target = Generic
 #endif

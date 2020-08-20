@@ -1654,10 +1654,14 @@ void gebp_kernel<LhsScalar,RhsScalar,Index,DataMapper,mr,nr,ConjugateLhs,Conjuga
             RhsPacket T0;
             LhsPacket A2;
             #if EIGEN_COMP_GNUC_STRICT && EIGEN_ARCH_ARM64 && defined(EIGEN_VECTORIZE_NEON) && !(EIGEN_GNUC_AT_LEAST(9,0))
-            // see http://eigen.tuxfamily.org/bz/show_bug.cgi?id=1633
-            // without this workaround A0, A1, and A2 are loaded in the same register,
-            // which is not good for pipelining
-            #define EIGEN_GEBP_3PX4_REGISTER_ALLOC_WORKAROUND __asm__  ("" : "+w,m" (A0), "+w,m" (A1), "+w,m" (A2));
+              #if defined(EIGEN_VECTORIZE_NEON) || defined(EIGEN_VECTORIZE_SVE)
+              // see http://eigen.tuxfamily.org/bz/show_bug.cgi?id=1633
+              // without this workaround A0, A1, and A2 are loaded in the same register,
+              // which is not good for pipelining
+              #define EIGEN_GEBP_3PX4_REGISTER_ALLOC_WORKAROUND __asm__  ("" : "+w,m" (A0), "+w,m" (A1), "+w,m" (A2));
+              #else
+              #define EIGEN_GEBP_3PX4_REGISTER_ALLOC_WORKAROUND
+              #endif
             #else
             #define EIGEN_GEBP_3PX4_REGISTER_ALLOC_WORKAROUND
             #endif
