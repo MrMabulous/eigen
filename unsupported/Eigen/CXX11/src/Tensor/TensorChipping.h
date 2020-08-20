@@ -119,6 +119,11 @@ class TensorChippingOp : public TensorBase<TensorChippingOp<DimId, XprType> >
     return *this;
   }
 
+  template<typename OtherDerived> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
+  auto operator==(const OtherDerived& other) const {
+    return static_cast<const TensorBase<TensorChippingOp<DimId, XprType>>&>(*this) == other;
+  }
+
   protected:
     typename XprType::Nested m_xpr;
     const Index m_offset;
