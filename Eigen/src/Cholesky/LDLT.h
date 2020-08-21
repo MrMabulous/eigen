@@ -13,6 +13,8 @@
 #ifndef EIGEN_LDLT_H
 #define EIGEN_LDLT_H
 
+#include "mabutrace.h"
+
 namespace Eigen {
 
 namespace internal {
@@ -140,6 +142,7 @@ template<typename _MatrixType, int _UpLo> class LDLT
     /** \returns a view of the upper triangular matrix U */
     inline typename Traits::MatrixU matrixU() const
     {
+      TRACE_SCOPE("matrixU()");
       eigen_assert(m_isInitialized && "LDLT is not initialized.");
       return Traits::getU(m_matrix);
     }
@@ -147,6 +150,7 @@ template<typename _MatrixType, int _UpLo> class LDLT
     /** \returns a view of the lower triangular matrix L */
     inline typename Traits::MatrixL matrixL() const
     {
+      TRACE_SCOPE("matrixL()");
       eigen_assert(m_isInitialized && "LDLT is not initialized.");
       return Traits::getL(m_matrix);
     }
@@ -560,13 +564,16 @@ template<typename _MatrixType, int _UpLo>
 template<typename RhsType, typename DstType>
 void LDLT<_MatrixType,_UpLo>::_solve_impl(const RhsType &rhs, DstType &dst) const
 {
+  TRACE_SCOPE("LDLT::_solve_impl");
   eigen_assert(rhs.rows() == rows());
   // dst = P b
   dst = m_transpositions * rhs;
 
   // dst = L^-1 (P b)
-  matrixL().solveInPlace(dst);
-
+  {
+    TRACE_SCOPE("matrixL().solveInPlace()");
+    matrixL().solveInPlace(dst);
+  }
   // dst = D^-1 (L^-1 P b)
   // more precisely, use pseudo-inverse of D (see bug 241)
   using std::abs;
@@ -589,8 +596,10 @@ void LDLT<_MatrixType,_UpLo>::_solve_impl(const RhsType &rhs, DstType &dst) cons
   }
 
   // dst = L^-T (D^-1 L^-1 P b)
-  matrixU().solveInPlace(dst);
-
+  {
+    TRACE_SCOPE("matrixU().solveInPlace()");
+    matrixU().solveInPlace(dst);
+  }
   // dst = P^-1 (L^-T D^-1 L^-1 P b) = A^-1 b
   dst = m_transpositions.transpose() * dst;
 }
